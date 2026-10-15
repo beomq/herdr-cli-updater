@@ -1,0 +1,9 @@
+.select-trigger {display:flex; align-items:center; justify-content:space-between; gap:var(--s3); width:100%; min-height:var(--touch); border:var(--line) solid var(--border); background:var(--surface); border-radius:var(--r1); padding:var(--s3); text-align:start; font-size:var(--small)}
+.select-trigger:hover:not(:disabled),.select-trigger[aria-expanded=true] {background:var(--inset)}
+.select-trigger svg,.select-check {width:20px; height:20px; flex:none; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round}
+.select-menu {position:fixed; z-index:100; overflow-y:auto; overscroll-behavior:contain; max-height:280px; background:var(--surface); color:var(--text); padding:var(--s1); border:var(--line) solid var(--border); border-radius:var(--r2); box-shadow:0 12px 36px #0003; font:var(--small)/var(--leading) var(--sans)}
+.select-option {display:flex; align-items:center; justify-content:space-between; min-height:var(--touch); gap:var(--s3); padding:var(--s2) var(--s3); border-radius:var(--r1); cursor:pointer; word-break:keep-all; overflow-wrap:anywhere}
+.select-option[data-active=true] {background:var(--wash)}
+.select-option[aria-selected=true] .select-option-label {font-weight:600}
+.select-option[aria-disabled=true] {opacity:.5; cursor:not-allowed}
+.select-description {display:block; color:var(--muted); font-size:var(--caption); margin-top:var(--s1)}

@@ -1,0 +1,20 @@
+{
+  "classification": "genuine-archived-installation-readonly-not-native-qualification",
+  "core": {
+    "path": "/Users/beomseok/Desktop/herdr-updater-toolchain/task20-core-r2-target/release/herdr",
+    "sha256": "b60103c89d66baf5cdea8104dc91b84cf346e063ee317e883267fda3b2aa0c2a",
+    "receipt": ".omo/evidence/herdr-cli-updater/task-20/abi3/DoneClaim-r2.json"
+  },
+  "archives": [
+    {
+      "path": ".omo/evidence/herdr-cli-updater/task-5/families/omo/acquired/omo-ai-5.1.9.tgz",
+      "sha256": "6140150aacec28ed0a33115fe294ac29e528737b8b0f8dc8f263e1e80d7686f6",
+      "destination": "omo"
+    },
+    {
+      "path": ".omo/evidence/herdr-cli-updater/task-5/families/omo/acquired/senpi-2026.10.1-3.tgz",
+      "sha256": "a807496c7d4a387f28548bfb9fb8d9fc3db389681ac735754df7a391f55dc268",
+      "destination": "engine"
+    }
+  ]
+}

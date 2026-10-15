@@ -1,0 +1,27 @@
+id = "beomq.cli-updater"
+name = "CLI updater"
+version = "0.1.0"
+min_herdr_version = "0.9.1"
+description = "CLI updates and same-session restart in a terminal panel with an explicitly configured native runtime."
+platforms = ["macos"]
+
+[[build]]
+command = ["bun", "install", "--frozen-lockfile"]
+
+[[build]]
+command = ["bun", "run", "build"]
+
+[[startup]]
+command = ["bun", "scripts/plugin.ts", "start"]
+
+[[panes]]
+id = "updater"
+title = "CLI updater"
+placement = "overlay"
+command = ["bun", "scripts/plugin.ts", "open"]
+
+[[actions]]
+id = "updater"
+title = "Open CLI updater"
+contexts = ["workspace"]
+command = ["bun", "scripts/plugin.ts", "action"]

@@ -1,0 +1,10 @@
+// Test-only entry. Never imported by main.tsx or included in the product build.
+import { useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { Badge, Button, Dialog, Facts, Notice, Panel, Theme } from './primitives';
+import './styles.css';
+function Showcase() {
+  const [open, setOpen] = useState(false);
+  return <div className="shell"><aside className="rail"><div className="brand">CLI 관리</div><nav aria-label="검증 메뉴">{['설치','세션','작업','자동화'].map((x,i) => <button key={x} aria-current={i===0?'page':undefined}>{x}</button>)}</nav><div className="rail-footer"><Theme /></div></aside><main><div className="content"><div><p className="eyebrow">테스트 전용 · 실제 설치 데이터 아님</p><h1>웹 프리미티브</h1></div><Panel><h2>동작과 상태</h2><div className="cluster"><Button tone="primary">새 세션 시작</Button><Button>최신 버전 확인</Button><Button tone="danger">안전하게 종료</Button><Button disabled>응답 기다리는 중</Button></div><div className="cluster"><Badge tone="success">확인 완료</Badge><Badge tone="warning">확인 필요</Badge><Badge tone="error">실패</Badge><Badge>관찰 전용</Badge></div><Facts items={[["설치 버전","1.0.0"],["최신 버전","확인 전"],["관리 세션",0],["외부 세션",0]]}/></Panel><Panel><h2>폼과 긴 경로</h2><label className="field">작업 폴더<input defaultValue="/Users/owned-test/projects/아주-긴-프로젝트-경로" /></label><p className="path">/Users/owned-test/projects/{'긴경로-'.repeat(30)}</p><label className="field">메시지<textarea placeholder="세션에 보낼 내용을 입력하세요" /></label><Button onClick={()=>setOpen(true)}>승인 대화상자 열기</Button></Panel><Notice>설치가 없습니다. CLI에서 설치 상태를 확인한 뒤 새로고침하세요.</Notice><Notice tone="warning">연결이 끊겼습니다. 마지막 관찰값이며 작업을 다시 보내지 않습니다.</Notice><Notice tone="error">요청 결과를 확인할 수 없습니다. 상태를 먼저 확인하세요.</Notice><Panel><h3>세션 출력</h3><pre className="console">{'긴 출력 줄 '.repeat(80)}</pre></Panel>{open&&<Dialog title="선택한 작업을 승인할까요?" onClose={()=>setOpen(false)}><p>이 대화상자는 테스트 전용입니다. 실제 작업은 실행하지 않습니다.</p><Button tone="primary" onClick={()=>setOpen(false)}>확인</Button></Dialog>}</div></main></div>;
+}
+createRoot(document.getElementById('root')!).render(<Showcase />);

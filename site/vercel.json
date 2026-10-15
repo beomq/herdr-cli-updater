@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "",
+  "installCommand": "",
+  "outputDirectory": ".",
+  "headers": [{
+    "source": "/(.*)",
+    "headers": [
+      {"key": "X-Content-Type-Options", "value": "nosniff"},
+      {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"},
+      {"key": "Content-Security-Policy", "value": "default-src 'none'; img-src 'self'; style-src 'self'; script-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"}
+    ]
+  }]
+}

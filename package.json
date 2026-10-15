@@ -1,0 +1,47 @@
+{
+  "name": "herdr-cli-updater",
+  "private": false,
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beomq/herdr-cli-updater"
+  },
+  "type": "module",
+  "description": "Local CLI updates, managed OmO sessions, and an independent localhost dashboard",
+  "bin": {
+    "cli-updater": "src/index.ts"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "files": [
+    "src/",
+    "!src/**/*.test.ts",
+    "!**/.DS_Store",
+    "dist/web/",
+    "scripts/plugin.ts",
+    "USAGE.md",
+    "README.md",
+    "package.json"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.web.json",
+    "test": "bun test",
+    "build": "bun scripts/build.ts",
+    "build:site": "bun site/build.ts"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.0",
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
+    "react-doctor": "0.9.17",
+    "react-grab": "0.1.47",
+    "react-scan": "0.5.7",
+    "typescript": "^5.9.3"
+  }
+}

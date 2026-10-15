@@ -1,0 +1,1296 @@
+import { QaError } from "./runner";
+
+// Fixed approved plan invocations. File registration cannot supply executable code.
+export const registry = {
+  "version": 1,
+  "task": "task8.dispatch-r1",
+  "scenarios": [
+    {
+      "id": "catalog",
+      "kind": "happy",
+      "invocation": "bun scripts/qa/lifecycle.ts --scenario catalog --fixtures test/fixtures/catalog --evidence-dir E/catalog",
+      "observable": "real socket catalog가 running-first/update-first·한 alias 설치·8행·설치/실행 버전·check 시각을 반환하고 check 이후 mutation count 0",
+      "tasks": [
+        17,
+        26
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/lifecycle.ts",
+        "--scenario",
+        "catalog",
+        "--fixtures",
+        "test/fixtures/catalog",
+        "--evidence-dir",
+        "E/catalog"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/lifecycle.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [
+          "test/fixtures/catalog"
+        ],
+        "build": null,
+        "resources": [],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "runningFirst",
+          "updateFirst",
+          "aliasDeduplicated",
+          "eightRows",
+          "versionsAndCheckTime",
+          "checkMutationZero"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "stale-selection",
+      "kind": "edge",
+      "invocation": "bun scripts/qa/tui.ts --scenario stale-selection --input \"{Enter}\" --evidence-dir E/stale-selection",
+      "observable": "선택 후 fingerprint 바뀌면 submit reject, refreshed confirmation 전 updater/start count 0",
+      "tasks": [
+        27
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/tui.ts",
+        "--scenario",
+        "stale-selection",
+        "--input",
+        "{Enter}",
+        "--evidence-dir",
+        "E/stale-selection"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/tui.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json",
+        "screenshot.png"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "staleSubmitRejected",
+          "updateStartZero"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "identity-eight",
+      "kind": "happy",
+      "invocation": "bun scripts/qa/adapters.ts --scenario identity-eight --families omo,omp,pi,claude,codex,agy,cursor,grok --profile-root QA/profiles --evidence-dir E/identity-eight",
+      "observable": "8/8 actual binary provenance·owner/channel과 CLI별 full identity를 기록; agent alias Grok를 Cursor로 식별하지 않는다",
+      "tasks": [
+        7,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/adapters.ts",
+        "--scenario",
+        "identity-eight",
+        "--families",
+        "omo,omp,pi,claude,codex,agy,cursor,grok",
+        "--profile-root",
+        "QA/profiles",
+        "--evidence-dir",
+        "E/identity-eight"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/adapters.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [
+          "QA/profiles"
+        ],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "eightActualOwners",
+          "fullIdentities",
+          "grokAliasNotCursor"
+        ],
+        "captures": 8,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "shared-engine",
+      "kind": "adversarial",
+      "invocation": "bun scripts/qa/adapters.ts --scenario shared-engine --families omo,pi --profile-root QA/profiles --evidence-dir E/shared-engine",
+      "observable": "owned engine는 OmO-owned 하나의 install resource, independent Senpi updater count0; standalone 다른 prefix는 별도 owner",
+      "tasks": [
+        9,
+        11,
+        21
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/adapters.ts",
+        "--scenario",
+        "shared-engine",
+        "--families",
+        "omo,pi",
+        "--profile-root",
+        "QA/profiles",
+        "--evidence-dir",
+        "E/shared-engine"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/adapters.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [
+          "QA/profiles"
+        ],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "singleOwnedEngine",
+          "independentUpdateZero",
+          "standaloneSeparateOwner"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "update-only-busy",
+      "kind": "edge",
+      "invocation": "bun scripts/qa/lifecycle.ts --scenario update-only-busy --installer test/fixtures/in-use-installer --evidence-dir E/update-only-busy",
+      "observable": "live asset-reading process 동안 waiting_resources+mutation0+exit0; process exit event 후 정확히1 update, pane restart0",
+      "tasks": [
+        21,
+        22,
+        23
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/lifecycle.ts",
+        "--scenario",
+        "update-only-busy",
+        "--installer",
+        "test/fixtures/in-use-installer",
+        "--evidence-dir",
+        "E/update-only-busy"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/lifecycle.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [
+          "test/fixtures/in-use-installer"
+        ],
+        "build": null,
+        "resources": [],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "busyWaitMutationExitZero",
+          "oneUpdateAfterExit",
+          "restartZero"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "update-live-safe",
+      "kind": "happy",
+      "invocation": "bun scripts/qa/lifecycle.ts --scenario update-live-safe --installer test/fixtures/atomic-safe-installer --evidence-dir E/update-live-safe",
+      "observable": "source digest/write-set 검증된 installer만1 update+actual version hash match+pane exit/start0; nonzero/wrong version이면 success0",
+      "tasks": [
+        22
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/lifecycle.ts",
+        "--scenario",
+        "update-live-safe",
+        "--installer",
+        "test/fixtures/atomic-safe-installer",
+        "--evidence-dir",
+        "E/update-live-safe"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/lifecycle.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [
+          "test/fixtures/atomic-safe-installer"
+        ],
+        "build": null,
+        "resources": [],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "reviewedWriteSet",
+          "oneUpdate",
+          "actualVersionHash",
+          "paneExitStartZero",
+          "wrongVersionSuccessZero"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "all-input-race",
+      "kind": "adversarial",
+      "invocation": "bun scripts/qa/core.ts --scenario all-input-race --ingress-inventory docs/core-inputs.json --core-bin QA/core/bin/herdr --evidence-dir E/all-input-race",
+      "observable": "inventory 모든 ingress의 pre/post claim: pre accepted 포함 drain 이전 exit0; post queued sequence receipt와 once consume, lost/duplicate0",
+      "tasks": [
+        18,
+        19,
+        33
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/core.ts",
+        "--scenario",
+        "all-input-race",
+        "--ingress-inventory",
+        "docs/core-inputs.json",
+        "--core-bin",
+        "QA/core/bin/herdr",
+        "--evidence-dir",
+        "E/all-input-race"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/core.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [
+          "docs/core-inputs.json"
+        ],
+        "build": "owned-source-build-observation",
+        "resources": [
+          "QA/core/bin/herdr"
+        ],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "allIngressDrain",
+          "postClaimQueued",
+          "onceConsumed",
+          "lostDuplicateZero"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "drain-eight",
+      "kind": "edge",
+      "invocation": "bun scripts/qa/core.ts --scenario drain-eight --families omo,omp,pi,claude,codex,agy,cursor,grok --core-bin QA/core/bin/herdr --evidence-dir E/drain-eight",
+      "observable": "각8 bridge root idle+child/monitor/running task fixture에서 claim denied, 실제 work_generation drain event 이후만 claim; idle screenshot만 proof 금지",
+      "tasks": [
+        18
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/core.ts",
+        "--scenario",
+        "drain-eight",
+        "--families",
+        "omo,omp,pi,claude,codex,agy,cursor,grok",
+        "--core-bin",
+        "QA/core/bin/herdr",
+        "--evidence-dir",
+        "E/drain-eight"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/core.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": "owned-source-build-observation",
+        "resources": [
+          "QA/core/bin/herdr"
+        ],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "eightActualBridges",
+          "activeWorkClaimDenied",
+          "drainGenerationObserved"
+        ],
+        "captures": 8,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "exact-resume-eight",
+      "kind": "happy",
+      "invocation": "bun scripts/qa/adapters.ts --scenario exact-resume-eight --families omo,omp,pi,claude,codex,agy,cursor,grok --profile-root QA/profiles --core-bin QA/core/bin/herdr --evidence-dir E/exact-resume-eight",
+      "observable": "실제8 CLI 새 process가 same full conversation identity/cwd/options/pane, old instance gone, version match; fresh session/new prompt0",
+      "tasks": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        24,
+        32
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/adapters.ts",
+        "--scenario",
+        "exact-resume-eight",
+        "--families",
+        "omo,omp,pi,claude,codex,agy,cursor,grok",
+        "--profile-root",
+        "QA/profiles",
+        "--core-bin",
+        "QA/core/bin/herdr",
+        "--evidence-dir",
+        "E/exact-resume-eight"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/adapters.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": "owned-source-build-observation",
+        "resources": [
+          "QA/profiles",
+          "QA/core/bin/herdr"
+        ],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "eightActualLoaders",
+          "sameFullIdentityCwdOptionsPane",
+          "oldGone",
+          "versionMatch",
+          "freshPromptZero"
+        ],
+        "captures": 8,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "missing-session",
+      "kind": "edge",
+      "invocation": "bun scripts/qa/adapters.ts --scenario missing-session --families omo,omp,pi,claude,codex,agy,cursor,grok --profile-root QA/profiles --evidence-dir E/missing-session",
+      "observable": "delete exact fixture ID 후 restore는 preflight block 또는 launcher-attestation mismatch recovery, new conversation adopted0, successful restart0",
+      "tasks": [
+        13,
+        24,
+        32
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/adapters.ts",
+        "--scenario",
+        "missing-session",
+        "--families",
+        "omo,omp,pi,claude,codex,agy,cursor,grok",
+        "--profile-root",
+        "QA/profiles",
+        "--evidence-dir",
+        "E/missing-session"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/adapters.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [
+          "QA/profiles"
+        ],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "exactMissingPreflight",
+          "adoptedConversationZero",
+          "restartSuccessZero"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "stale-binding",
+      "kind": "adversarial",
+      "invocation": "bun scripts/qa/core.ts --scenario stale-binding --core-bin QA/core/bin/herdr --evidence-dir E/stale-binding",
+      "observable": "same pane/PID reuse/new epoch와 wrong cwd/session에 stop/start0, stale binding rejected and unrelated shell alive",
+      "tasks": [
+        19,
+        20,
+        24
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/core.ts",
+        "--scenario",
+        "stale-binding",
+        "--core-bin",
+        "QA/core/bin/herdr",
+        "--evidence-dir",
+        "E/stale-binding"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/core.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": "owned-source-build-observation",
+        "resources": [
+          "QA/core/bin/herdr"
+        ],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "staleIdentityRejected",
+          "stopStartZero",
+          "unrelatedShellAlive"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "lost-ack",
+      "kind": "adversarial",
+      "invocation": "bun scripts/qa/core.ts --scenario lost-ack --barrier after-launch-before-response --core-bin QA/core/bin/herdr --evidence-dir E/lost-ack",
+      "observable": "response loss+worker/core recovery 후 durable receipt에 matching new incarnation, launcher count1, all inputs consumed<=1",
+      "tasks": [
+        20,
+        24,
+        25
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/core.ts",
+        "--scenario",
+        "lost-ack",
+        "--barrier",
+        "after-launch-before-response",
+        "--core-bin",
+        "QA/core/bin/herdr",
+        "--evidence-dir",
+        "E/lost-ack"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/core.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": "owned-source-build-observation",
+        "resources": [
+          "QA/core/bin/herdr"
+        ],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "durableMatchingIncarnation",
+          "launcherOnce",
+          "inputsAtMostOnce"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "dual-socket",
+      "kind": "adversarial",
+      "invocation": "bun scripts/qa/lifecycle.ts --scenario dual-socket --sockets QA/core/a.sock,QA/core/b.sock --evidence-dir E/dual-socket",
+      "observable": "동일 installation 요청 둘에서 install count1, target duplicate launch0, conflict reason and other job identity retained",
+      "tasks": [
+        21,
+        23
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/lifecycle.ts",
+        "--scenario",
+        "dual-socket",
+        "--sockets",
+        "QA/core/a.sock,QA/core/b.sock",
+        "--evidence-dir",
+        "E/dual-socket"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/lifecycle.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [
+          "QA/core/a.sock,QA/core/b.sock"
+        ],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "installOnce",
+          "duplicateLaunchZero",
+          "conflictAndOtherIdentity"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "close-reopen",
+      "kind": "regression",
+      "invocation": "bun scripts/qa/tui.ts --scenario close-reopen --sizes 120x40,80x24,120x40 --input \"{Enter}{Escape}\" --evidence-dir E/close-reopen",
+      "observable": "TUI 닫은 뒤 worker+job 유지, reopen same job/state; 3 size xterm screenshots에서 clipping/overlap0·선택 유지·mutation unwilled0",
+      "tasks": [
+        4,
+        28,
+        31
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/tui.ts",
+        "--scenario",
+        "close-reopen",
+        "--sizes",
+        "120x40,80x24,120x40",
+        "--input",
+        "{Enter}{Escape}",
+        "--evidence-dir",
+        "E/close-reopen"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/tui.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json",
+        "screenshot.png"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "workerJobSurvives",
+          "sameReopenedJob",
+          "threeXtermSizes",
+          "unwilledMutationZero"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "cancel-boundaries",
+      "kind": "edge",
+      "invocation": "bun scripts/qa/lifecycle.ts --scenario cancel-boundaries --evidence-dir E/cancel-boundaries",
+      "observable": "before irreversible intent cancel→mutation0, after intent cancel reject/in-progress until observed outcome; held input not lost",
+      "tasks": [
+        23,
+        28
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/lifecycle.ts",
+        "--scenario",
+        "cancel-boundaries",
+        "--evidence-dir",
+        "E/cancel-boundaries"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/lifecycle.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "preIntentCancelMutationZero",
+          "postIntentCancelRejected",
+          "heldInputPreserved"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "recovery-stages",
+      "kind": "adversarial",
+      "invocation": "bun scripts/qa/lifecycle.ts --scenario recovery-stages --barriers after-install,after-exit,after-launch --evidence-dir E/recovery-stages",
+      "observable": "each crash UI known/unknown matches durable receipts; inspect no mutation, reconcile adopts existing0 re-execution; redacted restore exact target only",
+      "tasks": [
+        20,
+        22,
+        25,
+        29
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/lifecycle.ts",
+        "--scenario",
+        "recovery-stages",
+        "--barriers",
+        "after-install,after-exit,after-launch",
+        "--evidence-dir",
+        "E/recovery-stages"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/lifecycle.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json",
+        "screenshot.png"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "threeCrashStages",
+          "receiptKnownUnknownMatches",
+          "inspectMutationZero",
+          "reconcileReexecutionZero",
+          "redactedExactRestore"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "web-desktop-mobile",
+      "kind": "happy",
+      "invocation": "bun scripts/qa/web.ts --scenario web-desktop-mobile --url http://127.0.0.1:17891 --sizes 1440x1000,390x844 --evidence-dir E/web-desktop-mobile",
+      "observable": "real browser shows same service jobId/mode and terminal results; visible selection/wait/recovery state, screenshots blank/overlap0; token not browser exposed",
+      "tasks": [
+        30,
+        33
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/web.ts",
+        "--scenario",
+        "web-desktop-mobile",
+        "--url",
+        "http://127.0.0.1:17891",
+        "--sizes",
+        "1440x1000,390x844",
+        "--evidence-dir",
+        "E/web-desktop-mobile"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/web.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json",
+        "screenshot.png"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "sameServiceJobMode",
+          "twoRealBrowserSizes",
+          "visibleWaitRecovery",
+          "noBlankOverlap",
+          "tokenNotExposed"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "web-existing-regression",
+      "kind": "regression",
+      "invocation": "CHROME_PATH=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" bun run test:ui && bun scripts/qa/web.ts --scenario existing-regression --url http://127.0.0.1:17891 --evidence-dir E/web-existing-regression",
+      "observable": "existing collector resync/completion/prompt queue, ws raw input, draft/sidebar pane choice and app updater remain green; browser retains unsent draft across plugin panel",
+      "tasks": [
+        30,
+        33
+      ],
+      "cwd": "W",
+      "argv": [
+        "scripts/qa/web.ts",
+        "--scenario",
+        "existing-regression",
+        "--url",
+        "http://127.0.0.1:17891",
+        "--evidence-dir",
+        "E/web-existing-regression"
+      ],
+      "prelude": {
+        "argv": [
+          "run",
+          "test:ui"
+        ],
+        "env": {
+          "CHROME_PATH": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        }
+      },
+      "source": {
+        "path": "scripts/qa/web.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [],
+        "webWorktree": "execution-owned-W"
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json",
+        "screenshot.png"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "existingRegressionsGreen",
+          "unsentDraftPreserved"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "installer-source-mismatch",
+      "kind": "edge",
+      "invocation": "bun scripts/qa/adapters.ts --scenario installer-source-mismatch --family agy --installer test/fixtures/agy-install.sh --evidence-dir E/installer-source-mismatch",
+      "observable": "docs --skip-aliases/--skip-path not accepted by fetched source parser→blocked/mutation0; selected reviewed --dir source verifies actual binary ownership/version, never spoof success",
+      "tasks": [
+        5,
+        14
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/adapters.ts",
+        "--scenario",
+        "installer-source-mismatch",
+        "--family",
+        "agy",
+        "--installer",
+        "test/fixtures/agy-install.sh",
+        "--evidence-dir",
+        "E/installer-source-mismatch"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/adapters.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [
+          "test/fixtures/agy-install.sh"
+        ],
+        "build": null,
+        "resources": [],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "sourceParserRejectsUnsupportedFlags",
+          "blockedMutationZero",
+          "actualReviewedOwnershipVersion"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "external-writer",
+      "kind": "adversarial",
+      "invocation": "bun scripts/qa/lifecycle.ts --scenario external-writer --writer test/fixtures/outsider-updater --evidence-dir E/external-writer",
+      "observable": "outside/self-updater artifact change during gate→conflict/recovery, our update/start0 until inspect; plugin exclusive lock claim absent",
+      "tasks": [
+        21,
+        22,
+        25
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/lifecycle.ts",
+        "--scenario",
+        "external-writer",
+        "--writer",
+        "test/fixtures/outsider-updater",
+        "--evidence-dir",
+        "E/external-writer"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/lifecycle.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [
+          "test/fixtures/outsider-updater"
+        ],
+        "build": null,
+        "resources": [],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "outsideWriterDetected",
+          "conflictRecovery",
+          "updateStartZero",
+          "noExclusiveLockClaim"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "private-endpoint",
+      "kind": "edge",
+      "invocation": "bun scripts/qa/lifecycle.ts --scenario private-endpoint --native-peer-helper QA/helpers/uid-peer --evidence-dir E/private-endpoint",
+      "observable": "mode0700/0600, wrong/missing token rejects and mutation0; foreign UID real helper fails connect where configured, secret not response/log. helper unavailable=unverified NOT PASS",
+      "tasks": [
+        3,
+        4,
+        31
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/lifecycle.ts",
+        "--scenario",
+        "private-endpoint",
+        "--native-peer-helper",
+        "QA/helpers/uid-peer",
+        "--evidence-dir",
+        "E/private-endpoint"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/lifecycle.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [
+          "QA/helpers/uid-peer"
+        ],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "privateModes",
+          "wrongTokenRejected",
+          "foreignUidDenied",
+          "secretsAbsent"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "redaction",
+      "kind": "regression",
+      "invocation": "bun scripts/qa/lifecycle.ts --scenario redaction --secret-sentinel ULW_SECRET_REDACTION_6fb9 --evidence-dir E/redaction",
+      "observable": "API/job/db logs/restore args contain no supplied secret/prompt/full transcript; source family/session ID retained without sensitive env",
+      "tasks": [
+        7,
+        25,
+        30,
+        33
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/lifecycle.ts",
+        "--scenario",
+        "redaction",
+        "--secret-sentinel",
+        "ULW_SECRET_REDACTION_6fb9",
+        "--evidence-dir",
+        "E/redaction"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/lifecycle.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "secretPromptTranscriptAbsent",
+          "familyIdentityRetained"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "provenance-gate",
+      "kind": "edge",
+      "invocation": "bun scripts/qa/provenance.ts --registry test/fixtures/provenance.json --core-source QA/core/source --evidence-dir E/provenance-gate",
+      "observable": "immutable revision+toolchain/schema/installer digest match; deliberately mismatched schema/digest rejects capability before effect0",
+      "tasks": [
+        5,
+        8,
+        18,
+        19,
+        20
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/provenance.ts",
+        "--registry",
+        "test/fixtures/provenance.json",
+        "--core-source",
+        "QA/core/source",
+        "--evidence-dir",
+        "E/provenance-gate"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/provenance.ts",
+        "sha256": "5cdad7053216e39729b1e978fac238d306fb3f4249c8fc027abdc7f9fec5d18d"
+      },
+      "prerequisites": {
+        "inputs": [
+          "test/fixtures/provenance.json"
+        ],
+        "build": "owned-source-build-observation",
+        "resources": [
+          "QA/core/source"
+        ],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "immutableSourceBuildAgreement",
+          "mismatchRejectsBeforeEffect"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    },
+    {
+      "id": "ideal-parity",
+      "kind": "final",
+      "invocation": "bun scripts/qa/parity.ts --registry E/registry.json --require-families 8 --require-is 12 --evidence-dir E/ideal-parity",
+      "observable": "12 IS and24 scenario+8 real-family captures PASS, no disabled treated success/no resource leftover/complete digest, nonzero on any missing evidence",
+      "tasks": [
+        34
+      ],
+      "cwd": "P",
+      "argv": [
+        "scripts/qa/parity.ts",
+        "--registry",
+        "E/registry.json",
+        "--require-families",
+        "8",
+        "--require-is",
+        "12",
+        "--evidence-dir",
+        "E/ideal-parity"
+      ],
+      "prelude": null,
+      "source": {
+        "path": "scripts/qa/parity.ts",
+        "sha256": null
+      },
+      "prerequisites": {
+        "inputs": [],
+        "build": null,
+        "resources": [],
+        "webWorktree": null
+      },
+      "artifacts": [
+        "actions.jsonl",
+        "result.json",
+        "cleanup.json"
+      ],
+      "contract": {
+        "status": "PASS",
+        "qualification": "native",
+        "assertions": [
+          "twelveIs",
+          "twentyFourNativeScenarios",
+          "eightRealFamilies",
+          "allCleanupZero",
+          "completeDigests"
+        ],
+        "captures": 1,
+        "sourceBuildDigestAgreement": true,
+        "cleanupResourcesRemaining": 0
+      }
+    }
+  ]
+} as const;
+
+export type Scenario = typeof registry.scenarios[number];
+
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return "[" + value.map(canonical).join(",") + "]";
+  if (typeof value === "object" && value !== null) {
+    return "{" + Object.keys(value).sort().map(key => JSON.stringify(key) + ":" + canonical(Reflect.get(value, key))).join(",") + "}";
+  }
+  return JSON.stringify(value) ?? "undefined";
+}
+
+export function parseDispatchRegistry(value: unknown): typeof registry {
+  if (canonical(value) !== canonical(registry)) {
+    throw new QaError("registry-mismatch", "registration must match all 24 fixed approved invocations and contracts");
+  }
+  return registry;
+}
+
+export function expandInvocation(scenario: Scenario, qa: string, evidence: string): readonly [string, ...string[]] {
+  const [script, ...args] = scenario.argv;
+  return [script, ...args.map(value => value.replaceAll("QA/", qa + "/").replaceAll("E/", evidence + "/"))];
+}
+

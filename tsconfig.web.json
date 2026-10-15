@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["bun", "react", "react-dom"]
+  },
+  "include": ["web/**/*.ts", "web/**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
+}

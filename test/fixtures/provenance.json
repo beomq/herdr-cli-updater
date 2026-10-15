@@ -1,0 +1,666 @@
+{
+  "manifestVersion": 1,
+  "scope": "OBSERVED inventory of existing isolated build and eight acquired source receipts; not qualified readiness",
+  "core": {
+    "sourceRef": "065ef9d6a531c49fb8bee7e818ef837065b21ee9",
+    "releaseTag": "v0.9.1",
+    "version": "0.9.1",
+    "protocol": 22,
+    "schemaVersion": 1,
+    "sourceArchiveSha256": "050b31ce77072c7ddf98e8f43cd261f531ff4fec3d4a0da9adcf9e1f50c56aa7",
+    "toolchain": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+    "binary": null,
+    "schema": {
+      "path": "docs/next/api/herdr-api.schema.json",
+      "sha256": "226d4ecbd128d2e6bc84e4c8ddcec21ba9c7e51a0aafffcf087111ead3f1fa9a"
+    },
+    "buildReceipt": null,
+    "releaseReceipt": null,
+    "observed": {
+      "state": "OBSERVED",
+      "baselineReceipt": "/Users/beomseok/Desktop/portfolio/.omo/ulw-execute/task5-core-baseline.json",
+      "parentVerifyReceipt": "/Users/beomseok/Desktop/portfolio/.omo/ulw-execute/task5-core-parent-verify.json",
+      "source": {
+        "repository": "https://github.com/herdrdev/herdr.git",
+        "releaseTag": "v0.9.1",
+        "ref": "065ef9d6a531c49fb8bee7e818ef837065b21ee9",
+        "tree": "25c7ed13ca34ac9530d27050d679c0e820022e0c",
+        "snapshot": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-source",
+        "archive": {
+          "path": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-source.tar",
+          "sha256": "050b31ce77072c7ddf98e8f43cd261f531ff4fec3d4a0da9adcf9e1f50c56aa7"
+        },
+        "sourceFileHashes": {
+          "Cargo.toml": "b9f7ff94cbbf85499331e615693ec247e4c710f0142285635c2bff237de623d7",
+          "Cargo.lock": "fb140784f1b0cce85199485ecba6e7aa30f40292835c9095890bdb6b03aeeaaf",
+          "rust-toolchain.toml": "0d9298c075817aba62477d23dcda3534cd836b5d5cf1960bd2de54df675ceffd",
+          "build.rs": "616865de50e4c8157a675dc7ec88483881c6ca21df769641543ad1541c4320b3",
+          "docs/next/api/herdr-api.schema.json": "226d4ecbd128d2e6bc84e4c8ddcec21ba9c7e51a0aafffcf087111ead3f1fa9a"
+        }
+      },
+      "toolchain": {
+        "versions": {
+          "cargo": "cargo 1.96.1 (356927216 2026-06-26)",
+          "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+          "rustfmt": "rustfmt 1.9.0-stable (31fca3adb2 2026-06-26)",
+          "clippy": "clippy 0.1.96 (31fca3adb2 2026-06-26)"
+        },
+        "zigVersion": "0.16.0",
+        "artifacts": {
+          "cargo": {
+            "path": "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/cargo",
+            "sha256": "f00ad85ca0a5b0f15b2a7658f15ef3195d9a04d2763921c1f9eaaa51f0136fe8"
+          },
+          "rustc": {
+            "path": "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/rustc",
+            "sha256": "d10051fa870c54067bd21047e9709084141ffff65695537eb2c0c5d2477467d4"
+          },
+          "zig": {
+            "path": "/Users/beomseok/Desktop/herdr-updater-toolchain/zig-aarch64-macos-0.16.0/zig",
+            "sha256": "e6cd688d25664983833aae272f501d4bceeae304875b8f1741209d15fd13a4ec"
+          }
+        },
+        "environment": {
+          "RUSTUP_HOME": "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup",
+          "CARGO_HOME": "/Users/beomseok/Desktop/herdr-updater-toolchain/cargo",
+          "RUSTUP_TOOLCHAIN": "1.96.1-aarch64-apple-darwin",
+          "RUSTUP_AUTO_INSTALL": "0",
+          "RUSTUP_NO_UPDATE_CHECK": "1",
+          "CARGO_TARGET_DIR": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-target",
+          "RUSTC": "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/rustc",
+          "RUSTDOC": "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/rustdoc",
+          "ZIG": "/Users/beomseok/Desktop/herdr-updater-toolchain/zig-aarch64-macos-0.16.0/zig",
+          "ZIG_GLOBAL_CACHE_DIR": "/Users/beomseok/Desktop/herdr-updater-toolchain/zig-cache",
+          "ZIG_LOCAL_CACHE_DIR": "/Users/beomseok/Desktop/herdr-updater-toolchain/zig-local-cache",
+          "PATH": "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin:/Users/beomseok/Desktop/herdr-updater-toolchain/zig-aarch64-macos-0.16.0:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin",
+          "HOME": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/home",
+          "XDG_CONFIG_HOME": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/config",
+          "XDG_STATE_HOME": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/state",
+          "XDG_CACHE_HOME": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/cache",
+          "XDG_RUNTIME_DIR": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/runtime",
+          "TMPDIR": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/tmp",
+          "TMP": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/tmp",
+          "TEMP": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/tmp",
+          "SHELL": "/bin/sh",
+          "LANG": "en_US.UTF-8",
+          "TERM": "xterm-256color",
+          "GIT_CONFIG_GLOBAL": "/dev/null",
+          "GIT_CONFIG_SYSTEM": "/dev/null",
+          "GIT_CONFIG_NOSYSTEM": "1",
+          "GIT_TERMINAL_PROMPT": "0"
+        }
+      },
+      "build": {
+        "argv": [
+          "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/cargo",
+          "build",
+          "--release",
+          "--locked"
+        ],
+        "cwd": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-source",
+        "exitCode": 0,
+        "log": "/Users/beomseok/Desktop/portfolio/.omo/evidence/herdr-core-baseline-task5/release.log",
+        "logSha256": "d87d2ceef5fbad0b0571d5772367889bc337e458212ea864ce3dd57c3429b55d"
+      },
+      "binary": {
+        "path": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-target/release/herdr",
+        "sha256": "2af87370b8a5a3639c05d4725281140961ee272663261d415c67f4704b5558bb",
+        "version": "herdr 0.9.1",
+        "versionArgv": [
+          "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-target/release/herdr",
+          "--version"
+        ],
+        "versionExitCode": 0,
+        "notOfficialDownloadedBinary": true
+      },
+      "schema": {
+        "path": "/Users/beomseok/Desktop/herdr-updater-core/docs/next/api/herdr-api.schema.json",
+        "sha256": "226d4ecbd128d2e6bc84e4c8ddcec21ba9c7e51a0aafffcf087111ead3f1fa9a",
+        "builtOutputArtifact": "/Users/beomseok/Desktop/portfolio/.omo/evidence/herdr-core-baseline-task5/built-schema.json",
+        "protocol": 22,
+        "schemaVersion": 1,
+        "argv": [
+          "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-target/release/herdr",
+          "api",
+          "schema",
+          "--json"
+        ],
+        "exitCode": 0,
+        "matchesInstalled": true
+      },
+      "checks": {
+        "fmtExitCode": 0,
+        "clippyExitCode": 0,
+        "cargoTestExitCode": 101,
+        "unitAbortedBy": "signal13/SIGPIPE",
+        "completedTargetPasses": 125,
+        "reportedFailedNames": 28,
+        "fullBaseline": "FAIL",
+        "rootCause": "unresolved"
+      },
+      "compatibilityBlockers": {
+        "binary": "Actual built binary exists outside C; checkedFile requires C-relative in-root artifacts. No copy or relocation authorized.",
+        "buildReceipt": "Observed baseline runs/logs are not the required C-relative buildReceipt artifact or registered ProofProducer. Actual build argv uses build --release --locked; producer contract currently requires build --locked --release. Do not rewrite the actual observation.",
+        "releaseReceipt": "Official downloaded asset and locally built binary hashes differ; installed asset mapping remains separate. No compatible C-relative releaseReceipt exists.",
+        "producer": "No independently registered task5 ProofProducer supplied by this standalone inventory.",
+        "readiness": "Cargo tests exited101/SIGPIPE, so build/version/schema alignment is not a clean baseline or restart readiness."
+      }
+    }
+  },
+  "installed": {
+    "version": "0.9.1",
+    "protocol": 22,
+    "schemaVersion": 1,
+    "binarySha256": "5fc7a7e7adfaca56fa80aa89dcb025693357268dab8285b9ce2d08a2313c89de",
+    "schemaSha256": "226d4ecbd128d2e6bc84e4c8ddcec21ba9c7e51a0aafffcf087111ead3f1fa9a"
+  },
+  "pendingGates": [
+    "Observed isolated release build exists; core cargo test101/SIGPIPE remains unresolved and baseline FAIL",
+    "Compatible in-root artifact/receipt wiring and genuine independently observed ProofProducer remain unresolved; no relocation authorized",
+    "Eight acquired source inventories do not equal release/owner/channel/parser/runtime qualification",
+    "Actual all-work drain/input fence/receipts/exact-resume and full8 runtime support remain pending"
+  ],
+  "acquisitionReport": "/Users/beomseok/Desktop/portfolio/.omo/ulw-execute/task5-core-baseline.json",
+  "observedUpstreamRef": "65e35a3858b4a9f6cb9bdf712ffb16c474363846",
+  "observedUpstreamCargoVersion": "0.9.3",
+  "observedUpstreamSchemaSha256": "9e2af207e9aa8183d4aeca5fde9cc48e7909bb40cdbd7cf21608a6d3ea78075b",
+  "installers": [
+    {
+      "family": "omo",
+      "owner": {
+        "state": "unknown",
+        "reason": "OBSERVED omo-ai5.1.9 bun wrapper owns pinned Senpi2026.10.1-3; no C-relative identity proof/trusted producer registration."
+      },
+      "channel": {
+        "state": "unknown",
+        "reason": "OBSERVED wrapper latest rule; current5.1.10 parser not acquired and full qualification absent."
+      },
+      "source": null,
+      "parser": null,
+      "historicalDocumentationAndHelp": {
+        "sourceUrl": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/README.md",
+        "observedHttpStatus": 200,
+        "observedSourceSha256": "63a187a3361bc972ba483f72cea76aae7ce72194611bae03020ab11e56e3f2bd",
+        "helpArgv": [
+          "omo",
+          "update",
+          "--help"
+        ],
+        "helpExitCode": 0,
+        "helpSha256": "63892fae4bc1ddb98fdfd95c04c8179248822e8af3dc3a8d2d14c4af0478ddad"
+      },
+      "sourceRef": "bcc854a49eddbaf29ab1487922ff0c544ba2d026",
+      "sourceUrl": "https://registry.npmjs.org/omo-ai/-/omo-ai-5.1.9.tgz",
+      "observedSourceSha256": "8fc5b3ba5ebc7a3d9e4e1ed75b36ddf6f76f77c1595148d184a30681ce234fe7",
+      "observed": {
+        "state": "OBSERVED",
+        "qualificationReceipt": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/omo/qualification.json",
+          "sha256": "0cd2f40ba7d230112a50d01e57c6feff197be3cedf79d7073d296866def0f5ca"
+        },
+        "sourceArtifact": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/omo/boundedsource/omo/bin/lib/self-update.js",
+          "sha256": "8fc5b3ba5ebc7a3d9e4e1ed75b36ddf6f76f77c1595148d184a30681ce234fe7"
+        },
+        "sourceRef": "bcc854a49eddbaf29ab1487922ff0c544ba2d026",
+        "releaseVersion": "5.1.9",
+        "acquiredArchive": {
+          "url": "https://registry.npmjs.org/omo-ai/-/omo-ai-5.1.9.tgz",
+          "status": 200,
+          "path": "acquired/omo-ai-5.1.9.tgz",
+          "sha256": "6140150aacec28ed0a33115fe294ac29e528737b8b0f8dc8f263e1e80d7686f6",
+          "npmIntegrity": "sha512-tgy7PpEaUxkWcAtxrEcWDd+WSLz0qjYXPnjae9U2f/L2FOHcExDpupnJ6GMa2c2+mpUBzBSMJnSPnHQ2xgfkJA==",
+          "npmIntegrityMatches": true,
+          "npmShasum": "f13ad9295c029bf9b90f2403b8ad50935939c084",
+          "sourceRef": "bcc854a49eddbaf29ab1487922ff0c544ba2d026"
+        },
+        "sourceStatus": "acquired bounded implementation/wrapper/installer, not full qualified runtime support",
+        "readiness": "BLOCKED",
+        "supportEnabled": false,
+        "blockers": [
+          "Artifact is under P families, outside C; current checkedFile rejects absolute/out-of-root paths. Do not copy or relocate it.",
+          "Pure source parser observed, not complete isolated executable argv/environment/exit evidence.",
+          "No compatible C-relative parser receipt or genuine registered task5 producer covering identity/channel and every parser option."
+        ],
+        "sourceNullReason": "Observed source bytes exist at observed.sourceArtifact.path, but current validator artifact path must remain inside C; relocation unauthorized.",
+        "parserNullReason": "Pure source parser observed, not complete isolated executable argv/environment/exit evidence."
+      }
+    },
+    {
+      "family": "omp",
+      "owner": {
+        "state": "unknown",
+        "reason": "OBSERVED @oh-my-pi/pi-coding-agent17.1.8 in bun layout; actual manager/resource ownership not runtime-qualified."
+      },
+      "channel": {
+        "state": "unknown",
+        "reason": "Installed channel not qualified; current npm18.4.12 parser not acquired."
+      },
+      "source": null,
+      "parser": null,
+      "historicalDocumentationAndHelp": {
+        "sourceUrl": "https://raw.githubusercontent.com/can1357/oh-my-pi/3b003d878c1c5e260e23b34dac4ceb3c967ecc94/docs/cli-reference.md",
+        "sourceRef": "3b003d878c1c5e260e23b34dac4ceb3c967ecc94",
+        "observedHttpStatus": 200,
+        "observedSourceSha256": "6c269352c5713b3cecda0b1d6c14e29f16ecfab4cd642680862287712e7af7c1",
+        "helpArgv": [
+          "omp",
+          "update",
+          "--help"
+        ],
+        "helpExitCode": 0,
+        "helpSha256": "d90531d12050ea611356da172509a062302d511103a5fb5ae8eaa391073fddf6"
+      },
+      "sourceRef": "f446b8a8193e59b4cbd2cf487ab6fa1915e0b890",
+      "sourceUrl": "https://registry.npmjs.org/@oh-my-pi/pi-coding-agent/-/pi-coding-agent-17.1.8.tgz",
+      "observedSourceSha256": "ca4a417cb654ce6333cc45dbdc58f3f2109eacb68205199ae8f732bce528fd4f",
+      "observed": {
+        "state": "OBSERVED",
+        "qualificationReceipt": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/omp/qualification.json",
+          "sha256": "e65d734d32215fbea56f0f1b5c1ec278295aa54deabf798ce837005016127081"
+        },
+        "sourceArtifact": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/omp/boundedsource/src/cli/update-cli.ts",
+          "sha256": "ca4a417cb654ce6333cc45dbdc58f3f2109eacb68205199ae8f732bce528fd4f"
+        },
+        "sourceRef": "f446b8a8193e59b4cbd2cf487ab6fa1915e0b890",
+        "releaseVersion": "17.1.8",
+        "acquiredArchive": {
+          "url": "https://registry.npmjs.org/@oh-my-pi/pi-coding-agent/-/pi-coding-agent-17.1.8.tgz",
+          "status": 200,
+          "size": 10033229,
+          "sha256": "0dcac21e7157207df33052fcaffe24426e6d2e41c964aa0066ca0c7fe30a52f4",
+          "sha1": "caffc9276a2c4b4f3682200ed9826b89bd22cec8",
+          "integrity": "sha512-v40KXdIwDA/yGwKSYZJC1Ggh2lIgxagU7+PdujPgZfzMlYd+k140SxDrxMoJI4Olrypq/iwsbG/V9yq1uz+JPA==",
+          "path": "acquired/pi-coding-agent-17.1.8.tgz",
+          "integrityMatched": true,
+          "sha1Matched": true
+        },
+        "sourceStatus": "acquired bounded implementation/wrapper/installer, not full qualified runtime support",
+        "readiness": "BLOCKED",
+        "supportEnabled": false,
+        "blockers": [
+          "Artifact is under P families, outside C; current checkedFile rejects absolute/out-of-root paths. Do not copy or relocate it.",
+          "task39 legacy writer unknown; qualified-source-v1 accepted only by task10, not registered as task5 relocation.",
+          "No compatible C-relative parser receipt or genuine registered task5 producer covering identity/channel and every parser option."
+        ],
+        "sourceNullReason": "Observed source bytes exist at observed.sourceArtifact.path, but current validator artifact path must remain inside C; relocation unauthorized.",
+        "parserNullReason": "task39 legacy writer unknown; qualified-source-v1 accepted only by task10, not registered as task5 relocation.",
+        "archiveSourceSha256": "8aed53744df9d0ebf2a5d263ecdf50065f1e3c44683318db9e0e795da4021796",
+        "materialization": "Stored source has an additional final LF; do not equate stored SHA with archive member SHA"
+      }
+    },
+    {
+      "family": "pi",
+      "owner": {
+        "state": "unknown",
+        "reason": "OBSERVED OmO-owned @code-yeongyu/senpi2026.10.1-3 shared pi/senpi engine; no standalone updater qualification."
+      },
+      "channel": {
+        "state": "unknown",
+        "reason": "OBSERVED wrapper latest and CalVer engine pin; no full trusted producer/isolated runtime qualification."
+      },
+      "source": null,
+      "parser": null,
+      "historicalDocumentationAndHelp": {
+        "sourceUrl": "https://raw.githubusercontent.com/code-yeongyu/senpi/b39f9d46f0c1aa49527372d662064ceba717a241/README.md",
+        "sourceRef": "b39f9d46f0c1aa49527372d662064ceba717a241",
+        "observedHttpStatus": 200,
+        "observedSourceSha256": "b6f0722ceb7e15bd8d1749160dc33297525dcbc0f8490e8a1c4abc10c1492414",
+        "helpArgv": [
+          "senpi",
+          "update",
+          "--help"
+        ],
+        "helpExitCode": 0,
+        "helpSha256": "a7ada3111390021ff0c73b8c77afeb2901ffa3418ed7e3bda3039323ceaf5c77"
+      },
+      "sourceRef": "67ff74ad36c9e89f112fa1d997a72d158705f30e",
+      "sourceUrl": "https://registry.npmjs.org/@code-yeongyu/senpi/-/senpi-2026.10.1-3.tgz",
+      "observedSourceSha256": "07076106c1ef6639b180139f54d8ce170b00c2f7533b10fe4c28eaac9e3871ec",
+      "observed": {
+        "state": "OBSERVED",
+        "qualificationReceipt": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/pi/qualification.json",
+          "sha256": "f6231f198e9286a127e13406c20f8d9c9aba39cdd14b45fb5986316d6aea50ee"
+        },
+        "sourceArtifact": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/pi/boundedsource/dist/self-update-bootstrap.js",
+          "sha256": "07076106c1ef6639b180139f54d8ce170b00c2f7533b10fe4c28eaac9e3871ec"
+        },
+        "sourceRef": "67ff74ad36c9e89f112fa1d997a72d158705f30e",
+        "releaseVersion": "2026.10.1-3",
+        "acquiredArchive": {
+          "url": "https://registry.npmjs.org/@code-yeongyu/senpi/-/senpi-2026.10.1-3.tgz",
+          "status": 200,
+          "bytes": 14231519,
+          "sha256": "a807496c7d4a387f28548bfb9fb8d9fc3db389681ac735754df7a391f55dc268",
+          "sha1": "39d3a36e4b7ab42e17b2a5ef54e14fe7dc24b280",
+          "integrity": "sha512-Jy2TL5d/kW0GC1SZq9VxFKdBsfXsfDudDx/upxUaiFzx4lXJl4hCVOdZbAbGkATlZzjQ+smQeql1Gt0zaT5sqA==",
+          "artifact": "senpi-2026.10.1-3.tgz",
+          "expectedIntegrity": "sha512-Jy2TL5d/kW0GC1SZq9VxFKdBsfXsfDudDx/upxUaiFzx4lXJl4hCVOdZbAbGkATlZzjQ+smQeql1Gt0zaT5sqA==",
+          "expectedSha1": "39d3a36e4b7ab42e17b2a5ef54e14fe7dc24b280",
+          "integrityMatches": true,
+          "sha1Matches": true
+        },
+        "sourceStatus": "acquired bounded implementation/wrapper/installer, not full qualified runtime support",
+        "readiness": "BLOCKED",
+        "supportEnabled": false,
+        "blockers": [
+          "Artifact is under P families, outside C; current checkedFile rejects absolute/out-of-root paths. Do not copy or relocate it.",
+          "Installed unbundled rpc-mode differs from official archive; CalVer -3 is not wrapper beta; exact resume/drain not proven.",
+          "No compatible C-relative parser receipt or genuine registered task5 producer covering identity/channel and every parser option."
+        ],
+        "sourceNullReason": "Observed source bytes exist at observed.sourceArtifact.path, but current validator artifact path must remain inside C; relocation unauthorized.",
+        "parserNullReason": "Installed unbundled rpc-mode differs from official archive; CalVer -3 is not wrapper beta; exact resume/drain not proven.",
+        "archiveSourceSha256": "a281256594ed6f4e3a659b5d2c70ad049e8d2963ff785730652ef17923b3ac36",
+        "materialization": "Stored source has an additional final LF; do not equate stored SHA with archive member SHA"
+      }
+    },
+    {
+      "family": "claude",
+      "owner": {
+        "state": "unknown",
+        "reason": "Native layout/hash confirmed; historical installer digest and complete install ownership not observed."
+      },
+      "channel": {
+        "state": "unknown",
+        "reason": "No user config or environment read; selected installed stable/latest policy not determined."
+      },
+      "source": null,
+      "parser": null,
+      "historicalDocumentationAndHelp": {
+        "sourceUrl": "https://code.claude.com/docs/en/cli-reference",
+        "observedHttpStatus": 200,
+        "observedSourceSha256": "ade256d19d37cb500c39091ab68f487412109e0d3f566a92dcc66f4cf83859ab",
+        "helpArgv": [
+          "claude",
+          "--help"
+        ],
+        "helpExitCode": 0,
+        "helpSha256": "71ad650f59e08ae40ede14c534db4f49d8590ee5a4f92f6da2882d3a5560fea6"
+      },
+      "sourceRef": "816ec211a648f17a411f63a45cfd44ddf8db00d9",
+      "sourceUrl": "https://claude.ai/install.sh",
+      "observedSourceSha256": "3a68d3406cf674e17bed1733a4dcf37805e2e47d87417700007d7e1aa766a944",
+      "observed": {
+        "state": "OBSERVED",
+        "qualificationReceipt": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/claude/qualification.json",
+          "sha256": "ed0bf55b66c8a7fc8b3490d97704bec8a3747a79ddd974fdfb78ef54344a98d1"
+        },
+        "sourceArtifact": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/claude/boundedsource/install.sh",
+          "sha256": "3a68d3406cf674e17bed1733a4dcf37805e2e47d87417700007d7e1aa766a944",
+          "sourceUrl": "https://claude.ai/install.sh"
+        },
+        "sourceRef": "816ec211a648f17a411f63a45cfd44ddf8db00d9",
+        "releaseVersion": "2.1.287",
+        "acquiredArchive": {
+          "sha256": "b829179017c73acbc4084b764ca3a8cd9d0f3554ec2107519a272c8ded975efb"
+        },
+        "sourceStatus": "acquired bounded implementation/wrapper/installer, not full qualified runtime support",
+        "readiness": "BLOCKED",
+        "supportEnabled": false,
+        "blockers": [
+          "Artifact is under P families, outside C; current checkedFile rejects absolute/out-of-root paths. Do not copy or relocate it.",
+          "Wrapper/installer acquired, native parser source absent; public tag differs from private native build commit. Installed2.1.247 is distinct from acquired2.1.287.",
+          "No compatible C-relative parser receipt or genuine registered task5 producer covering identity/channel and every parser option."
+        ],
+        "sourceNullReason": "Observed source bytes exist at observed.sourceArtifact.path, but current validator artifact path must remain inside C; relocation unauthorized.",
+        "parserNullReason": "Wrapper/installer acquired, native parser source absent; public tag differs from private native build commit. Installed2.1.247 is distinct from acquired2.1.287."
+      }
+    },
+    {
+      "family": "codex",
+      "owner": {
+        "state": "unknown",
+        "reason": "NVM global npm-shaped layout and byte-identical official package observed; wrapper labels null/unknown manager as NPM. Independent owning-manager registration was not found or proved."
+      },
+      "channel": {
+        "state": "unknown",
+        "reason": "Stable release identity and current npm latest mapping observed; original installed dist-tag/channel selection is absent from package manifest. Do not infer installed channel from version or wrapper default."
+      },
+      "source": null,
+      "parser": null,
+      "historicalDocumentationAndHelp": {
+        "sourceUrl": "https://developers.openai.com/codex/cli",
+        "observedHttpStatus": 200,
+        "observedSourceSha256": "adc988f36b2920ca071896d8065798ea3399df33e9375573179b05be0b71f40e",
+        "helpArgv": [
+          "codex",
+          "resume",
+          "--help"
+        ],
+        "helpExitCode": 0,
+        "helpSha256": "a69d53b274c25b7ca50fad2c5ed62bd538097033fa4092dc0b2587e8f0a50edb",
+        "resolvedUrl": "https://learn.chatgpt.com/docs/codex/cli"
+      },
+      "sourceRef": "fe74a774532af67b5a4a3dec03ce9469e17f89af",
+      "sourceUrl": "https://raw.githubusercontent.com/openai/codex/fe74a774532af67b5a4a3dec03ce9469e17f89af/codex-rs/install-context/src/lib.rs",
+      "observedSourceSha256": "b7305f28586f61f7a3cc7d3c53c95dacabca05529b1ba3aa4b5e42d306db2ae5",
+      "observed": {
+        "state": "OBSERVED",
+        "qualificationReceipt": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/codex/qualification.json",
+          "sha256": "592ea56fe3083ebb4e114b1ca4881bc6f4a66edb6857db4742898c04f61145a2"
+        },
+        "sourceArtifact": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/codex/bounded-source/codex-rs/install-context/src/lib.rs",
+          "sha256": "b7305f28586f61f7a3cc7d3c53c95dacabca05529b1ba3aa4b5e42d306db2ae5",
+          "sourceUrl": "https://raw.githubusercontent.com/openai/codex/fe74a774532af67b5a4a3dec03ce9469e17f89af/codex-rs/install-context/src/lib.rs"
+        },
+        "sourceRef": "fe74a774532af67b5a4a3dec03ce9469e17f89af",
+        "releaseVersion": "0.156.0",
+        "acquiredArchive": {
+          "sha256": "aec40816bf320ff9f7666ca262222992c9617b2ecb60319f8b411dd8eba5c824"
+        },
+        "sourceStatus": "acquired bounded implementation/wrapper/installer, not full qualified runtime support",
+        "readiness": "BLOCKED",
+        "supportEnabled": false,
+        "blockers": [
+          "Artifact is under P families, outside C; current checkedFile rejects absolute/out-of-root paths. Do not copy or relocate it.",
+          "Private readonly parser observed but per-option probes incomplete and no task5 ProofProducer; current0.160.0 parser not acquired.",
+          "No compatible C-relative parser receipt or genuine registered task5 producer covering identity/channel and every parser option."
+        ],
+        "sourceNullReason": "Observed source bytes exist at observed.sourceArtifact.path, but current validator artifact path must remain inside C; relocation unauthorized.",
+        "parserNullReason": "Private readonly parser observed but per-option probes incomplete and no task5 ProofProducer; current0.160.0 parser not acquired."
+      }
+    },
+    {
+      "family": "agy",
+      "owner": {
+        "state": "unknown",
+        "reason": "Executable hash observed but no matching official old-release mapping."
+      },
+      "channel": {
+        "state": "unknown",
+        "reason": "Official darwin_arm64 default manifest has no stable/beta/canary channel field."
+      },
+      "observedParserOptions": [
+        "-d",
+        "--dir",
+        "-h",
+        "--help"
+      ],
+      "rejectedDocsOptions": [
+        "--skip-aliases",
+        "--skip-path"
+      ],
+      "docsUrl": "https://antigravity.google/docs/cli/install",
+      "docsRawHtmlSha256": "ed3f9868b37cccf38a2f968fc5eb7702c2e26d16ef5d959f3581d514c6e887c0",
+      "source": null,
+      "parser": null,
+      "historicalDocumentationAndHelp": {
+        "sourceUrl": "https://antigravity.google/cli/install.sh",
+        "observedHttpStatus": 200,
+        "observedSourceSha256": "62966c07365423bd4dc209355060744058fb30d60f5323e2d360e39de64e5042",
+        "helpArgv": [
+          "agy",
+          "--help"
+        ],
+        "helpExitCode": 0,
+        "helpSha256": "83e3a0c36269f23972ba33d0013b9a6b2933ddb07cde268fa40e0fb1a5f33755"
+      },
+      "sourceRef": "sha256:62966c07365423bd4dc209355060744058fb30d60f5323e2d360e39de64e5042",
+      "sourceUrl": "https://antigravity.google/cli/install.sh",
+      "observedSourceSha256": "62966c07365423bd4dc209355060744058fb30d60f5323e2d360e39de64e5042",
+      "observed": {
+        "state": "OBSERVED",
+        "qualificationReceipt": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/agy/qualification.json",
+          "sha256": "4af629225a593db66cb0efa6b640ae27ff401581ccea4f79695e979d3f4883cf"
+        },
+        "sourceArtifact": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/agy/boundedsource/install.sh",
+          "sha256": "62966c07365423bd4dc209355060744058fb30d60f5323e2d360e39de64e5042"
+        },
+        "sourceRef": "sha256:62966c07365423bd4dc209355060744058fb30d60f5323e2d360e39de64e5042",
+        "releaseVersion": "1.2.15",
+        "acquiredArchive": {
+          "sha256": "66f7e9e8750a506e8a2caaedaadf479f023820f712015c9c55cfb91a2891521b"
+        },
+        "sourceStatus": "acquired bounded implementation/wrapper/installer, not full qualified runtime support",
+        "readiness": "BLOCKED",
+        "supportEnabled": false,
+        "blockers": [
+          "Artifact is under P families, outside C; current checkedFile rejects absolute/out-of-root paths. Do not copy or relocate it.",
+          "Bootstrap source and native artifact acquired; native source/build ref absent. Native install skip flags are not bootstrap accepted flags.",
+          "No compatible C-relative parser receipt or genuine registered task5 producer covering identity/channel and every parser option."
+        ],
+        "sourceNullReason": "Observed source bytes exist at observed.sourceArtifact.path, but current validator artifact path must remain inside C; relocation unauthorized.",
+        "parserNullReason": "Bootstrap source and native artifact acquired; native source/build ref absent. Native install skip flags are not bootstrap accepted flags."
+      }
+    },
+    {
+      "family": "cursor",
+      "owner": {
+        "state": "unknown",
+        "reason": "BLOCKED: historical installer receipt not acquired; installed layout/content is consistent, not origin proof"
+      },
+      "channel": {
+        "state": "unknown",
+        "reason": "BLOCKED: no config/account read or CLI invocation"
+      },
+      "source": null,
+      "parser": null,
+      "historicalDocumentationAndHelp": {
+        "sourceUrl": "https://cursor.com/docs/cli/installation.md",
+        "observedHttpStatus": 200,
+        "observedSourceSha256": "50435bbdfe5f3640484df508440b1c6274d8c57f85c2f91ac78ee15caa5a1d3c",
+        "helpArgv": [
+          "agent",
+          "--version"
+        ],
+        "helpExitCode": 0,
+        "helpSha256": "3c3f1b3575e3504b73dc29949ae5d436e3751389a2c964eee7aa154a299687fc",
+        "observedVersion": "grok 1.0.46 (2765805b9442) [stable]"
+      },
+      "sourceRef": "sha256:bd33acce8516e0b5941e52b0c1ec50447d54cb909cbcddde97acb58d17c109e3",
+      "sourceUrl": "https://downloads.cursor.com/lab/2026.01.23-916f423/darwin/arm64/agent-cli-package.tar.gz",
+      "observedSourceSha256": "c050a858a462ed5b735e5693ed5e8575a0cfa98e9c9c78368e016675d9f84ac0",
+      "observed": {
+        "state": "OBSERVED",
+        "qualificationReceipt": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/cursor/qualification.json",
+          "sha256": "3a33fc20588485af7537cc29ea344b699f6e99790f56c4f15530927051ce27ce"
+        },
+        "sourceArtifact": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/cursor/boundedsource/release-2026.01.23/1517.index.js.txt",
+          "sha256": "c050a858a462ed5b735e5693ed5e8575a0cfa98e9c9c78368e016675d9f84ac0"
+        },
+        "sourceRef": "sha256:bd33acce8516e0b5941e52b0c1ec50447d54cb909cbcddde97acb58d17c109e3",
+        "releaseVersion": "2026.01.23-916f423",
+        "acquiredArchive": {
+          "url": "https://downloads.cursor.com/lab/2026.01.23-916f423/darwin/arm64/agent-cli-package.tar.gz",
+          "version": "2026.01.23-916f423",
+          "sha256": "bd33acce8516e0b5941e52b0c1ec50447d54cb909cbcddde97acb58d17c109e3",
+          "bytes": 50546193,
+          "retained": false,
+          "retention": "bounded text entries and excerpts only; no binary writes permitted by apply_patch-only scope"
+        },
+        "sourceStatus": "acquired bounded implementation/wrapper/installer, not full qualified runtime support",
+        "readiness": "BLOCKED",
+        "supportEnabled": false,
+        "blockers": [
+          "Artifact is under P families, outside C; current checkedFile rejects absolute/out-of-root paths. Do not copy or relocate it.",
+          "Actual cursor-agent standalone located; agent alias is Grok. Current2026.10.01 artifact exceeded acquisition ceiling; old version source cannot qualify it.",
+          "No compatible C-relative parser receipt or genuine registered task5 producer covering identity/channel and every parser option."
+        ],
+        "sourceNullReason": "Observed source bytes exist at observed.sourceArtifact.path, but current validator artifact path must remain inside C; relocation unauthorized.",
+        "parserNullReason": "Actual cursor-agent standalone located; agent alias is Grok. Current2026.10.01 artifact exceeded acquisition ceiling; old version source cannot qualify it."
+      }
+    },
+    {
+      "family": "grok",
+      "owner": {
+        "state": "unknown",
+        "reason": "Layout compatible with internal updater but npm wrapper can use same canonical binary. No non-secret historical manager attestation acquired."
+      },
+      "channel": {
+        "state": "unknown",
+        "reason": "Actual configured installed channel not qualified; display stable is not owning channel."
+      },
+      "source": null,
+      "parser": null,
+      "historicalDocumentationAndHelp": {
+        "sourceUrl": "https://raw.githubusercontent.com/xai-org/grok-build/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/npm/grok/README.md",
+        "sourceRef": "2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8",
+        "observedHttpStatus": 200,
+        "observedSourceSha256": "75d71c9c0839562335ff62a28095266351aab853ad70127aceb990aa58af2b6f",
+        "helpArgv": [
+          "grok",
+          "--help"
+        ],
+        "helpExitCode": 0,
+        "helpSha256": "cda6873e2f90a7d77de94c2e3026794671fac04b2e40ac74e4d91f429f829403"
+      },
+      "sourceRef": "2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8",
+      "sourceUrl": "https://raw.githubusercontent.com/xai-org/grok-build/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-update/src/auto_update.rs",
+      "observedSourceSha256": "43976e24c41d19514eec42cfe521c775692eb383fd5e8237f7de9b060ccbd553",
+      "observed": {
+        "state": "OBSERVED",
+        "qualificationReceipt": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/grok/qualification.json",
+          "sha256": "f940e74b8f8a4bebe959c6cf6fd2b864de85b8eebc4e90a933c0bbb1e4c4bd13"
+        },
+        "sourceArtifact": {
+          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/grok/boundedsource/crates/codegen/xai-grok-update/src/auto_update.rs",
+          "sha256": "43976e24c41d19514eec42cfe521c775692eb383fd5e8237f7de9b060ccbd553",
+          "sourceUrl": "https://raw.githubusercontent.com/xai-org/grok-build/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-update/src/auto_update.rs"
+        },
+        "sourceRef": "2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8",
+        "releaseVersion": "1.0.46",
+        "acquiredArchive": {
+          "sha256": "9fbc80ce4c4c4f8468f9c3caf2c2a0c9620ae0439095690ee9e67b8b38b326a5"
+        },
+        "sourceStatus": "acquired bounded implementation/wrapper/installer, not full qualified runtime support",
+        "readiness": "BLOCKED",
+        "supportEnabled": false,
+        "blockers": [
+          "Artifact is under P families, outside C; current checkedFile rejects absolute/out-of-root paths. Do not copy or relocate it.",
+          "Public ref differs from npm gitHead2765805; release mapping blocked. Update requests shared leader relaunch, so update-only safety not proven.",
+          "No compatible C-relative parser receipt or genuine registered task5 producer covering identity/channel and every parser option."
+        ],
+        "sourceNullReason": "Observed source bytes exist at observed.sourceArtifact.path, but current validator artifact path must remain inside C; relocation unauthorized.",
+        "parserNullReason": "Public ref differs from npm gitHead2765805; release mapping blocked. Update requests shared leader relaunch, so update-only safety not proven."
+      }
+    }
+  ],
+  "supportEnabled": false,
+  "FullDone": false,
+  "sourceTrust": {
+    "task39Legacy": {
+      "retained": true,
+      "writer": "unknown",
+      "qualified": false
+    },
+    "qualifiedSourceV1": {
+      "registration": "/Users/beomseok/Desktop/portfolio/.omo/ulw-execute/task39-alternate-source-registration.json",
+      "acceptedConsumer": "task10 only",
+      "globalTrustGranted": false,
+      "task5ConsumersRelocated": 0
+    }
+  }
+}
