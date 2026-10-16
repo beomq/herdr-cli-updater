@@ -4,9 +4,13 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { AppOperation, AppSnapshot, ExternalSession } from '../src/app/types';
 import { installationSnapshot, lastVerifiedUpdate, parseView, Surface } from './app';
 
-test('saved tabs restore only supported navigation values',()=>{
-  for(const value of ['dashboard','installations','sessions','operations','policies'] as const)expect(parseView(value)).toBe(value);
-  for(const value of [null,'','removed','https://example.com'])expect(parseView(value)).toBe('dashboard');
+test('saved tabs restore current values and migrate legacy keys to their matching views',()=>{
+  for(const value of ['updates','sessions','history','add'] as const)expect(parseView(value)).toBe(value);
+  expect(parseView('dashboard')).toBe('updates');
+  expect(parseView('policies')).toBe('updates');
+  expect(parseView('operations')).toBe('history');
+  expect(parseView('installations')).toBe('add');
+  for(const value of [null,'','removed','https://example.com','toString','__proto__'])expect(parseView(value)).toBe('updates');
 });
 test('internal engine metadata starts collapsed while the launched version remains visible',()=>{
   const snapshot:AppSnapshot={revision:1,service:'ready',failure:null,installations:[],external:[],operations:[],policies:[],managed:[{
@@ -80,7 +84,7 @@ test('dashboard excludes unsupported catalog entries without performing actions'
   const snapshot:AppSnapshot={revision:1,service:'ready',failure:null,installations:[],external:[],managed:[],operations:[],policies:[],observedAt:1,
     catalog:[{id:'codex',name:'Codex',description:{ko:'',en:''},executable:'codex',sourceUrl:'https://example.test',method:'npm',availability:'installable',reason:null,installed:{path:'/codex',version:'3.2.1',managed:false}},
       {id:'grok',name:'Grok',description:{ko:'',en:''},executable:'grok',sourceUrl:'https://example.test',method:'script',availability:'installable',reason:null,installed:{path:'/grok',version:'1.2.3',managed:false},updateSupport:{kind:'unsupported',reason:'update_source_unverified'}}]};
-  const html=renderToStaticMarkup(createElement(Surface,{snapshot,view:'dashboard',onView:()=>{},act:async()=>{calls++;return true;},disabled:false}));
+  const html=renderToStaticMarkup(createElement(Surface,{snapshot,view:'updates',onView:()=>{},act:async()=>{calls++;return true;},disabled:false}));
   expect(calls).toBe(0);
   expect(html.match(/data-catalog-id="[^"]+"/g)).toEqual(['data-catalog-id="codex"']);
   const checks=[...html.matchAll(/<button[^>]*data-action="catalog-check"[^>]*>/g)].map(match=>match[0]);
@@ -94,7 +98,7 @@ test('unsupported herdr sessions remain visible without actionable buttons',()=>
     control:'observation-only',herdrPane:{paneId:'w1:p1',status:'idle',stateChangeSeq:1},
   }]};
   const html=renderToStaticMarkup(createElement(Surface,{snapshot,view:'sessions',onView:()=>{},act:async()=>true,disabled:false}));
-  const card=html.match(/<section class="panel">(?:(?!<\/section>)[\s\S])*unsupported-session[\s\S]*?<\/section>/)?.[0];
+  const card=html.match(/<section class="panel"[^>]*data-session-id="unsupported"[\s\S]*?<\/section>/)?.[0];
   expect(card).toBeDefined();
   expect(card).toContain('/bin/grok');
   expect(card).not.toContain('<button');

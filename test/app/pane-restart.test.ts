@@ -54,7 +54,7 @@ test("parseResumeId takes the last printed resume hint per family and rejects sh
   expect(parseResumeId("omo", "nothing here")).toBeNull();
 });
 
-test.each(['gjc','opencode','qwen','custom-cli'])('observing %s never grants pane restart input',async family=>{
+test.each(['pi','senpi','gjc','opencode','qwen','custom-cli'])('observing %s never grants pane restart input',async family=>{
   const {client,calls}=fakePane({});
   await expect(restartInPane({herdr:client,session:{...session,family},now:()=>0,initialSeq:5,isAlive:()=>true,publish:()=>{}})).rejects.toThrow('pane_restart_unsupported');
   expect(calls).toEqual([]);

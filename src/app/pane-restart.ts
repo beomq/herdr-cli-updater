@@ -72,7 +72,7 @@ export const trustScreenCpuLimit = 5;
  * Nothing is killed; any step that cannot be observed fails the job honestly. */
 export async function restartInPane(options: PaneRestartOptions): Promise<PaneRestartJob> {
   const { herdr, session } = options;
-  if ((session.family!=='omo'&&session.family!=='omp'&&session.family!=='pi'&&session.family!=='claude'&&session.family!=='codex') || !session.herdrPane) throw new AppError("unsupported", "pane_restart_unsupported");
+  if ((session.family!=='omo'&&session.family!=='omp'&&session.family!=='claude'&&session.family!=='codex') || !session.herdrPane) throw new AppError("unsupported", "pane_restart_unsupported");
   const family = session.family;
   const paneId = session.herdrPane.paneId;
   let job: PaneRestartJob = { id: crypto.randomUUID(), sessionId: session.id, paneId, family, stage: "waiting-idle",

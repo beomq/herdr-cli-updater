@@ -13,7 +13,8 @@ import type { Family } from "../../src/protocol";
 import { serveDomainWorker, startWorker, stopWorker } from "../../src/service/worker";
 import { requestPrivateSocket } from "../../src/service/socket";
 import { attachAuthenticatedWorker, isServiceResponse } from "../../src/service/client";
-import { digest as packageDigest, fixture as packageFixture } from "../../.omo/evidence/herdr-cli-updater/task-4/check-runtime-r1/fixture";
+import { digest as packageDigest } from "../../.omo/evidence/herdr-cli-updater/task-4/check-runtime-r1/fixture";
+import { upstreamPiFixture as packageFixture } from "../fixtures/pi-package";
 
 test("explicit production checker retains exact-source lastCheck across provider reconstruction", async () => {
   // Given: actual file refs/registry, HTTP wire and metadata owner.
@@ -31,7 +32,7 @@ test("explicit production checker retains exact-source lastCheck across provider
     // When
     const checked = await provider().check?.(identity);
     // Then
-    expect(checked).toMatchObject({ ok: true, value: { kind: "update-available", installedVersion: "2026.10.1-3", availableVersion: "2026.10.1-4" } });
+    expect(checked).toMatchObject({ ok: true, value: { kind: "update-available", installedVersion: "1.1.0", availableVersion: "1.2.0" } });
     if (!checked?.ok) throw new Error("actual check failed");
     const after = await readCatalog(createCatalogProvider(directory, { request: f.request })());
     expect(after.installations[0]?.lastCheck).toEqual({ checkedAt: checked.value.checkedAt, result: checked.value });
@@ -175,7 +176,7 @@ function input(family: Family, parent: string, name = family): CatalogRegistrati
   const executable = artifact(join(directory, family === "cursor" ? "cursor-agent" : "cli"),
     "#!/usr/bin/env bun\nthrow new Error('must not execute registered binaries');\n", true);
   const packages: Partial<Record<Family, string>> = {
-    omo: "omo-ai", omp: "@oh-my-pi/pi-coding-agent", pi: "@code-yeongyu/senpi",
+    omo: "omo-ai", omp: "@oh-my-pi/pi-coding-agent", pi: "@earendil-works/pi-coding-agent",
     claude: "@anthropic-ai/claude-code", codex: "@openai/codex", grok: "@xai-official/grok",
   };
   if (packages[family]) artifact(join(directory, "package.json"), JSON.stringify({

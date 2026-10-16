@@ -30,7 +30,7 @@ export const catalogDefinitions:readonly Definition[]=[
   entry('omp','Oh My Pi','omp','https://github.com/can1357/oh-my-pi',{kind:'script',url:'https://omp.sh/install',bin:'bin/omp',env:{PI_INSTALL_DIR:'$TARGET/bin'},args:['--binary']}),
   entry('omo','OmO','omo','https://www.npmjs.com/package/omo-ai',npm('omo-ai','omo')),
   entry('opencode','OpenCode','opencode','https://opencode.ai/docs/',npm('opencode-ai','opencode')),
-  entry('pi','Pi','pi','https://github.com/code-yeongyu/senpi',npm('@code-yeongyu/senpi','pi')),
+  entry('pi','Pi','pi','https://github.com/earendil-works/pi',npm('@earendil-works/pi-coding-agent','pi')),
   entry('qodercli','Qoder CLI','qodercli','https://docs.qoder.com/cli/installation',npm('@qoder-ai/qodercli','qodercli')),
   entry('qwen','Qwen Code','qwen','https://github.com/QwenLM/qwen-code',npm('@qwen-code/qwen-code','qwen')),
 ];

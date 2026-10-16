@@ -2,14 +2,47 @@ import { useRef, useState } from 'react';
 import type { AppCommand, AppSnapshot, UpdatePolicy } from '../src/app/types';
 import type { Installation } from '../src/protocol';
 import type { CatalogEntry, CatalogId } from '../src/app/catalog-types';
+import type { CatalogUpdateJob } from '../src/app/catalog-updates';
 import { AgentMark } from './agent-mark';
-import { Badge, Button, Facts, Notice, Panel, SectionHead } from './primitives';
+import { Badge, Button, Dialog, Facts, Notice, Panel, SectionHead } from './primitives';
 import { localeFor, useLanguage } from './i18n';
 import { installationError, versionStatusLabel } from './install-status';
 import { PaneSessionChoice } from './pane-session-choice';
 import './catalog.css';
 type Act=(command:AppCommand)=>Promise<boolean>;
 type Props={readonly snapshot:AppSnapshot;readonly act:Act;readonly disabled:boolean;readonly onOpenCatalog?:((id:CatalogId)=>void)|undefined};
+export function catalogReviewBinding(entry:CatalogEntry|undefined):string {
+  return JSON.stringify([entry?.selectedInstallationId??null,entry?.installed,entry?.inventoryStatus,entry?.sourceUrl,
+    entry?.installations?.find(row=>row.id===entry.selectedInstallationId)]);
+}
+export function catalogUpdateTargetMatches(entry:CatalogEntry|undefined,job:CatalogUpdateJob):boolean {
+  return !!entry?.installed&&(entry.selectedInstallationId??null)===(job.installationId??null)
+    &&[entry.installed.path,entry.installed.identityPath].includes(job.target.executable)
+    &&entry.inventoryStatus!=='checking'&&entry.inventoryStatus!=='failed';
+}
+export function catalogRecoveryBlock(snapshot:AppSnapshot,job:CatalogUpdateJob,action:'reconcile'|'archive-unverified'):string|null {
+  if(snapshot.service!=='ready')return 'service_unavailable';
+  if(job.stage!=='uncertain')return 'stale_update_plan';
+  if(!catalogUpdateTargetMatches(snapshot.catalog?.find(entry=>entry.id===job.catalogId),job))return 'recovery_target_changed';
+  if(snapshot.catalogUpdates?.some(row=>row.stage==='updating')
+    ||snapshot.installJobs?.some(row=>['installing','verifying','uncertain'].includes(row.stage))
+    ||snapshot.removalJobs?.some(row=>row.stage==='removing'||row.catalogId===job.catalogId&&row.stage==='uncertain'))return 'update_in_progress';
+  if(action==='archive-unverified'&&(!job.reconciliation?.identity||!job.reconciliation.fingerprint))return 'reconcile_before_archive';
+  return null;
+}
+
+export function CatalogUpdateReviewFacts({job,checkedAt,action='install'}:{readonly job:CatalogUpdateJob;readonly checkedAt:number|null;readonly action?:'install'|'reconcile'|'archive-unverified'}) {
+  const {language,t}=useLanguage();
+  const source='packageName' in job.target?job.target.packageName:job.target.kind==='official'?job.target.sourceUrl:job.target.target;
+  return <div className="removal-facts" data-update-review-job={job.id} data-review-action={action}>
+    <Facts items={[[t('대상 실행 파일','Target executable'),<span className="path" data-review="target">{job.target.executable}</span>],
+      [t('설치 방식','Installation method'),job.target.kind],[t('출처','Source'),<span className="path" data-review="source">{source}</span>],
+      [t('설치된 버전','Installed version'),<span data-review="installed">{job.beforeVersion??t('미확인','Unknown')}</span>],
+      [t('조회한 최신 버전','Checked latest'),<span data-review="checked-latest">{job.checkedVersion??t('미확인','Unknown')}</span>],
+      [t('조회 시각','Checked at'),<span data-review="checked-at">{checkedAt===null?t('기록 없음','Not recorded'):new Date(checkedAt).toLocaleString(localeFor(language))}</span>]]}/>
+    {action==='install'&&<p className="muted" data-release-policy="then-latest">{t('조회한 버전으로 고정하지 않습니다. 실행 시 공식 배포처가 제공하는 최신 버전을 설치하고 실제 설치 결과를 검증합니다.','The checked version is not pinned. Execution installs the latest release provided by the official source at that time and verifies the actual installed result.')}</p>}
+  </div>;
+}
 export function usesCatalogUpdatePolicy(snapshot:AppSnapshot,installation:Installation):boolean {
   const grouped=snapshot.catalog?.find(entry=>entry.id===installation.family);
   if(grouped?.installations&&(grouped.installations.length>0||snapshot.policies.some(policy=>policy.installationId==='catalog:'+grouped.id&&policy.mode!=='off')))return true;
@@ -22,6 +55,13 @@ export function usesCatalogUpdatePolicy(snapshot:AppSnapshot,installation:Instal
 export function UpdateExplanation({ code }: { readonly code: string }) {
   const { t } = useLanguage();
   const messages: Record<string, string> = {
+    reconcile_before_archive:t('먼저 재설치 없이 결과 재확인을 실행하세요. 대상의 출처와 실행 여부를 확인할 수 있어야 미확인으로 보관할 수 있습니다.','First recheck the result without reinstalling. Archiving requires fresh target evidence and verification that no installer is active.'),
+    recovery_target_changed:t('기록된 설치와 현재 선택한 대상이 다르거나 설치를 확인할 수 없습니다. 원래 대상의 설치 위치와 출처를 확인하세요.','The recorded installation differs from the selected target or cannot be verified. Inspect the original installation location and source.'),
+    recovery_executor_active:t('설치 프로세스가 실행 중일 수 있어 재확인과 보관을 차단했습니다. 실행이 끝난 뒤 다시 검토하세요.','An installer may still be active, so rechecking and archiving are blocked. Review again after it has finished.'),
+    update_in_progress:t('다른 설치 작업이 진행 중이거나 미확정입니다. 그 작업의 상태를 확인한 뒤 다시 검토하세요.','Another installation operation is active or uncertain. Inspect that operation before reviewing again.'),
+    expected_version_unverified:t('실행한 버전이 고정·기록되지 않아 과거 업데이트 성공을 증명할 수 없습니다. 현재 디스크 버전과 별개로 미확정 상태를 유지합니다.','The executed release was not pinned or recorded, so historical success cannot be proven. The outcome stays uncertain independently of the current disk version.'),
+    execution_source_unverified:t('실행 당시 출처 증거가 부족합니다. 현재 버전을 확인해도 과거 실행 성공으로 바꾸지 않습니다.','Execution-source evidence is missing. Checking the current version does not turn the earlier execution into success.'),
+    update_archived_unverified:t('성공을 확인하지 못한 작업으로 보관했습니다. 설치나 세션을 다시 실행하지 않았습니다.','Archived with success unverified. No installer or session was replayed.'),
     check_in_progress:t('이 CLI의 최신 조회가 이미 진행 중입니다. 완료 후 다시 확인하세요.','A latest-version check is already running for this CLI. Wait for its result.'),
     bulk_check_failed:t('최신 조회 중 오류가 발생했습니다. 다른 CLI의 결과와 구분해 다시 확인하세요.','The latest check failed. Review this CLI separately from the other results.'),
     bulk_result_missing:t('업데이트 완료 상태를 확인하지 못했습니다. 실제 버전을 확인하기 전에는 다시 실행하지 마세요.','Update completion could not be verified. Inspect the installed version before retrying.'),
@@ -59,7 +99,7 @@ function CatalogPolicy({entry,policies,act,disabled,blocked}:{readonly entry:Cat
   return <section className="stack">
     <div className="page-head"><h3>{t('자동 업데이트','Automatic updates')}</h3><button type="button" role="switch" aria-checked={enabled} aria-label={entry.name+' '+t('자동 업데이트','Automatic updates')} className="automation-switch" disabled={disabled||pending||(!enabled&&(blocked||entry.updateSupport?.kind==='unsupported'))} onClick={()=>void toggle()}><span aria-hidden="true" className="switch-track"/>{pending?t('저장 중','Saving'):enabled?t('켜짐','On'):t('꺼짐','Off')}</button></div>
     <p className="muted">{!enabled&&entry.updateSupport?.kind==='unsupported'?t('이 설치에서는 자동 업데이트를 켤 수 없습니다. 위의 다음 단계를 확인하세요.','Automatic updates cannot be enabled for this installation. See the next step above.'):t('설치를 먼저 업데이트합니다. 기존 세션은 종료하지 않으며, 새 버전으로 시작하려면 해당 세션을 재시작하세요.','Updates the installation first without stopping existing sessions. Restart a session to launch the new version.')}</p>
-    {entry.updateSupport?.kind!=='unsupported'&&(()=>{const current=policies.find(policy=>policy.installationId==='catalog:'+entry.id);const value=current?.paneSessions??'restart-idle';
+    {entry.updateSupport?.kind!=='unsupported'&&(()=>{const current=policies.find(policy=>policy.installationId==='catalog:'+entry.id);const value=current?.paneSessions??'keep';
       return <PaneSessionChoice name={'pane-sessions-'+entry.id} value={value} disabled={disabled||pending} onChange={next=>void act({kind:'policy',installationId:'catalog:'+entry.id,mode:current?.mode??'off',intervalMinutes:current?.intervalMinutes??60,firstCheck:current?.firstCheck??'now',paneSessions:next})}/>;})()}
     {active.filter(policy=>policy.waitingReason).map(policy=><Notice key={policy.installationId} tone="warning"><UpdateExplanation code={policy.waitingReason??'unavailable'}/></Notice>)}
   </section>;
@@ -93,22 +133,49 @@ export function CatalogUpdates({snapshot,act,disabled,onOpenCatalog}:Props) {
         <CatalogPolicy entry={entry} policies={policies} act={act} disabled={disabled} blocked={blocked}/>
       </Panel>;
     })}
-    <CatalogUpdateHistory snapshot={snapshot}/>
+    <CatalogUpdateHistory snapshot={snapshot} act={act} disabled={disabled}/>
   </div>;
 }
 
 export function catalogHistory(snapshot:AppSnapshot){
   return (snapshot.catalogUpdates??[]).filter(job=>job.stage!=='completed'||job.beforeVersion!==job.installedVersion);
 }
-export function CatalogUpdateHistory({snapshot}:{readonly snapshot:AppSnapshot}){
+export function CatalogUpdateHistory({snapshot,guardSnapshot=snapshot,act,disabled=false,jobIds}:{readonly snapshot:AppSnapshot;readonly guardSnapshot?:AppSnapshot;readonly act?:Act|undefined;readonly disabled?:boolean;readonly jobIds?:readonly string[]}){
   const {language,t}=useLanguage();
-  const history=catalogHistory(snapshot);
+  const [review,setReview]=useState<{readonly job:CatalogUpdateJob;readonly action:'reconcile'|'archive-unverified';readonly server:string|undefined;readonly binding:string}|null>(null);
+  const [pending,setPending]=useState(false);
+  const busy=useRef(false);
+  const history=catalogHistory(snapshot).filter(job=>!jobIds||jobIds.includes(job.id));
+  const current=review&&guardSnapshot.catalogUpdates?.find(job=>job.id===review.job.id);
+  const stale=!!review&&(!current||JSON.stringify(current)!==JSON.stringify(review.job)||guardSnapshot.serverInstance!==review.server
+    ||catalogReviewBinding(guardSnapshot.catalog?.find(entry=>entry.id===review.job.catalogId))!==review.binding);
+  const reason=review?catalogRecoveryBlock(guardSnapshot,review.job,review.action):null;
+  const recover=async()=>{
+    if(!act||!review||stale||reason||disabled||busy.current)return;
+    busy.current=true;setPending(true);
+    try{if(await act({kind:'catalog-update-recover',jobId:review.job.id,revision:review.job.revision,action:review.action}))setReview(null);}
+    finally{busy.current=false;setPending(false);}
+  };
+  const open=(job:CatalogUpdateJob,action:'reconcile'|'archive-unverified')=>{
+    if(disabled||busy.current||catalogRecoveryBlock(guardSnapshot,job,action))return;
+    setReview({job,action,server:guardSnapshot.serverInstance,binding:catalogReviewBinding(guardSnapshot.catalog?.find(entry=>entry.id===job.catalogId))});
+  };
   return <>{!!history.length&&<section className="stack"><SectionHead title={t('업데이트 내역','Update history')} count={history.length}/>{history.map(job=><Panel key={job.id}>
-      <div className="page-head"><h3 className="cli-heading"><AgentMark agent={job.catalogId} size={24}/>{snapshot.catalog?.find(entry=>entry.id===job.catalogId)?.name??job.catalogId}</h3><Badge tone={job.stage==='completed'?'success':job.stage==='updating'||job.stage==='ready'?'neutral':'warning'}>{job.stage==='ready'?t('업데이트 승인 대기','Awaiting update confirmation'):job.stage==='completed'?t('설치 업데이트 완료','Installation updated'):job.stage==='updating'?t('설치 업데이트 중','Updating installation'):job.stage==='failed'?t('설치 업데이트 실패','Installation update failed'):t('결과 확인 필요','Check result')}</Badge></div>
+      <div className="stack" data-update-job={job.id} data-update-stage={job.stage} aria-live="polite"><div className="page-head"><h3 className="cli-heading"><AgentMark agent={job.catalogId} size={24}/>{snapshot.catalog?.find(entry=>entry.id===job.catalogId)?.name??job.catalogId}</h3><Badge tone={job.stage==='completed'?'success':job.stage==='updating'||job.stage==='ready'?'neutral':'warning'}>{job.stage==='ready'?t('업데이트 승인 대기','Awaiting update confirmation'):job.stage==='completed'?t('설치 업데이트 완료','Installation updated'):job.stage==='updating'?t('설치 업데이트 중','Updating installation'):job.stage==='failed'?t('설치 업데이트 실패','Installation update failed'):job.stage==='archived-unverified'?t('성공 미확인으로 보관','Archived · outcome unverified'):t('결과 확인 필요','Check result')}</Badge></div>
       {job.stage==='ready'&&<p className="muted">{t('아직 설치를 변경하지 않았습니다. 대시보드에서 이 CLI의 업데이트 검토를 열어 승인하세요.','The installation has not changed. Open Review update for this CLI in the dashboard to confirm.')}</p>}
       {job.stage==='completed'&&<p className="muted">{t('설치 버전을 확인했습니다. 대화 재개 완료를 의미하지는 않습니다.','The installed version was verified. Conversation resumption is not verified by this result.')}</p>}
+      {job.stage==='updating'&&<Notice>{t('설치를 변경하거나 결과를 검증 중입니다. 세션은 유지되며, 이 작업을 다시 실행하지 않습니다.','The installation is being changed or verified. Sessions are kept; this work is not replayed.')}</Notice>}
+      {(job.stage==='uncertain'||job.stage==='archived-unverified')&&<Notice tone="warning">{t('업데이트 성공 여부는 확인되지 않았습니다. 현재 디스크 버전 확인은 과거 실행의 성공을 증명하지 않습니다. 다시 설치하지 않고 재확인하며, 보관해도 성공으로 바꾸지 않습니다.','Update success is unverified. A current disk version does not prove the earlier execution succeeded. Rechecking never runs an installer, and archiving does not mark success.')}</Notice>}
       <p>{job.beforeVersion??'—'} → {job.installedVersion??'—'}{job.requestId.startsWith('external:')&&<> · {t('이 앱 밖에서 설치됨 · 세션 정책만 적용','Installed outside this app · session policy applied')}</>}</p><p className="muted">{new Date(job.updatedAt).toLocaleString(localeFor(language))}</p>
       <details><summary>{t('업데이트한 설치','Updated installation')}</summary><p>{job.target.kind}</p><p className="path">{job.target.executable}</p></details>
       {job.failure&&<Notice tone="warning"><UpdateExplanation code={job.failure}/></Notice>}
-    </Panel>)}</section>}</>;
+      {job.reconciliation&&<Facts items={[[t('재확인한 디스크 버전','Rechecked disk version'),<span data-reconciled-version="">{job.reconciliation.version??t('미확인','Unknown')}</span>],[t('재확인 시각','Rechecked at'),new Date(job.reconciliation.checkedAt).toLocaleString(localeFor(language))]]}/>}
+      {job.stage==='uncertain'&&act&&<div className="stack">{(['reconcile','archive-unverified'] as const).map(action=>{const block=catalogRecoveryBlock(guardSnapshot,job,action);return <div key={action}><Button data-action={'catalog-update-'+action} data-job-id={job.id} data-reason={block??undefined} aria-haspopup="dialog" disabled={disabled||pending||!!block} onClick={()=>open(job,action)}>{action==='reconcile'?t('재설치 없이 결과 재확인','Recheck without reinstalling'):t('성공 미확인으로 보관 검토','Review archiving as unverified')}</Button>{block&&<p className="muted"><UpdateExplanation code={block}/></p>}</div>;})}</div>}
+      </div></Panel>)}</section>}
+      {review&&<Dialog title={review.action==='reconcile'?t('결과 재확인','Recheck result'):t('성공 미확인으로 보관','Archive as unverified')} onClose={()=>setReview(null)}>
+        <CatalogUpdateReviewFacts job={review.job} checkedAt={null} action={review.action}/>
+        <Notice>{review.action==='reconcile'?t('설치 명령 없이 대상의 출처와 실제 버전만 확인합니다. 실행 근거가 부족하면 미확정 상태를 유지합니다.','Checks only the target source and disk version, without an installation command. Insufficient execution evidence keeps the outcome uncertain.'):t('성공 여부를 확인하지 못했음을 인정하고 작업 잠금을 해제합니다. 설치·세션·과거 결과를 바꾸지 않습니다. 서버가 실행 중인 설치 작업이 없는지 다시 검증합니다.','Acknowledges the unverified outcome and releases this job lock. It does not change installations, sessions or the historical outcome. The server rechecks that no installer is active.')}</Notice>
+        {(stale||reason)&&<Notice tone="warning" data-recovery-stale={stale}>{stale?t('대상, 서비스 또는 기록이 바뀌었습니다. 닫고 다시 검토하세요.','The target, service or record changed. Close and review again.'):<UpdateExplanation code={reason??'stale_update_plan'}/>}</Notice>}
+        <Button data-action="catalog-update-recover-confirm" disabled={disabled||pending||stale||!!reason} onClick={()=>void recover()}>{pending?t('확인 중','Checking'):review.action==='reconcile'?t('재확인 실행','Recheck result'):t('미확인 결과로 보관','Archive unverified outcome')}</Button>
+      </Dialog>}</>;
 }

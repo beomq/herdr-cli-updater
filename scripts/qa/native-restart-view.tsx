@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import type { AppCommand, AppSnapshot } from '../../src/app/types';
 import type { Installation, TargetSelection } from '../../src/protocol';
 import { Surface } from '../../web/app';
+import type { View } from '../../web/app';
 import { LanguageProvider } from '../../web/i18n';
 import '../../web/styles.css';
 const installation: Installation = {
@@ -24,7 +25,7 @@ const snapshot: AppSnapshot = {
       readiness: capability, completion: capability, gracefulExit: capability, resume: capability }] }] },
 };
 function Harness() {
-  const [view, setView] = useState<'dashboard'|'installations'|'sessions'|'operations'|'policies'>('sessions');
+  const [view, setView] = useState<View>('sessions');
   const [command, setCommand] = useState<AppCommand | null>(null);
   return <><Surface snapshot={snapshot} view={view} onView={setView} disabled={false}
     act={async command => { setCommand(command); return true; }}/><output data-testid="command" hidden>{JSON.stringify(command)}</output></>;

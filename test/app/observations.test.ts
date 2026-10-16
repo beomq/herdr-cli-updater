@@ -169,12 +169,13 @@ test('deleted executable and bare command paths do not acquire correlation', () 
 });
 
 test.each([
-  ["omo", "/bin/omo"], ["omp", "/bin/omp"], ["pi", "/bin/pi"], ["pi", "/bin/senpi"],
+  ["omo", "/bin/omo"], ["omp", "/bin/omp"], ["pi", "/bin/pi"], ["senpi", "/bin/senpi"],
   ["claude", "/bin/claude"], ["codex", "/bin/codex"],
   ["omo", `bun ${entry}`],
   ["omp", "bun /modules/@oh-my-pi/pi-coding-agent/dist/cli.js"],
-  ["pi", "node /modules/@code-yeongyu/senpi/dist/bundle/cli.js"],
-  ["pi", "node /modules/@mariozechner/pi-coding-agent/dist/cli.js"],
+  ["senpi", "node /modules/@code-yeongyu/senpi/dist/bundle/cli.js"],
+  ["pi", "node /modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js"],
+  ["legacy-pi", "node /modules/@mariozechner/pi-coding-agent/dist/cli.js"],
   ["claude", "node /modules/@anthropic-ai/claude-code/cli.js"],
   ["codex", "node /modules/@openai/codex/bin/codex.js"],
 ] as const)("detects %s from executable position %s", (family, command) => {
@@ -244,14 +245,14 @@ test("associates an OmO engine by its loaded extension without claiming its vers
 test("does not link standalone senpi to a neighboring OmO installation", () => {
   const sessions = externalSessions([installation], [], [row(101,
     `bun ${senpi}`)]);
-  expect(sessions[0]).toMatchObject({ family: "pi", installationId: null, runningVersion: null });
+  expect(sessions[0]).toMatchObject({ family: "senpi", installationId: null, catalogId: null, runningVersion: null });
 });
 
 test("recognizes unknown OmO installations through launch options but not prompt text", () => {
   const engine = "node /modules/@code-yeongyu/senpi/dist/bundle/cli.js";
   const sessions = externalSessions([], [], [row(101, `${engine} --extension /unknown/omo-ai/plugin`),
     row(102, `${engine} -- --extension /unknown/omo-ai/plugin`)]);
-  expect(sessions.map(session => [session.family, session.installationId])).toEqual([["omo", null], ["pi", null]]);
+  expect(sessions.map(session => [session.family, session.installationId])).toEqual([["omo", null], ["senpi", null]]);
 });
 
 test("keeps stale wrapper and differently bound engine separate", () => {

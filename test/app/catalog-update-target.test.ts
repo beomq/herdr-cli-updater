@@ -149,7 +149,7 @@ for(const duringDownload of [false,true])test(`refuses changed source ${duringDo
   const fetcher=officialScript(`touch "${marker}"`,duringDownload?mutate:undefined);
   try {
     // When the previously proven payload is replaced.
-    await expect(executeUpdate(target,options)).rejects.toThrow('removal_target_changed');
+    await expect(executeUpdate(target,options)).rejects.toMatchObject({detail:'removal_target_changed',mutationStarted:duringDownload});
     // Then the installer never crosses the write boundary.
     expect(existsSync(marker)).toBe(false);
   }finally{fetcher.mockRestore();f.close();}
@@ -163,7 +163,7 @@ for(const action of ['bad-version','redirect','installer-failure'] as const)test
   const fetcher=officialScript(script);
   try {
     // When a script exits successfully without a valid version or replaces the identity.
-    await expect(executeUpdate(target,options,event=>events.push(event))).rejects.toThrow();
+    await expect(executeUpdate(target,options,event=>events.push(event))).rejects.toMatchObject({mutationStarted:true});
     // Then completion is withheld, including for a nonzero installer exit.
     expect(events).not.toContain('update_verified');
   }finally{fetcher.mockRestore();f.close();}

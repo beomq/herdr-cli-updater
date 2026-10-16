@@ -38,6 +38,7 @@ export function CatalogCleanup({entry,snapshot,act,disabled,onInstall}:{readonly
   const [pending,setPending]=useState(false);
   const [failed,setFailed]=useState(false);
   const [current,setCurrent]=useState<{id:string;known:readonly string[]}|null>(null);
+  const [removalReview,setRemovalReview]=useState<{job:RemovalJob;installation:CatalogInstallation}|null>(null);
   const [done,setDone]=useState<readonly string[]>([]);
   const busy=useRef(false);
   const target=entry.installations?.find(row=>row.id===targetId);
@@ -46,6 +47,8 @@ export function CatalogCleanup({entry,snapshot,act,disabled,onInstall}:{readonly
   const selectedDefault=entry.installations?.find(row=>row.id===entry.configuredDefaultInstallationId)??entry.installations?.find(row=>row.isDefault);
   const preview=cleanupRows({...entry,selectedInstallationId:targetId,...(makeDefault?{configuredDefaultInstallationId:targetId}:{})},snapshot);
   const actual=cleanupRows(entry,snapshot);
+  const removalStale=!!removalReview&&(!job||JSON.stringify(job)!==JSON.stringify(removalReview.job)
+    ||!actual.some(row=>row.status==='removable'&&JSON.stringify(row.installation)===JSON.stringify(removalReview.installation)));
   const ready=!!approved&&entry.selectedInstallationId===approved.target.id
     &&entry.installations?.some(row=>row.id===approved.target.id&&row.path===approved.target.path&&row.identityPath===approved.target.identityPath&&row.version===approved.target.version)
     &&(!approved.makeDefault||entry.configuredDefaultInstallationId===approved.target.id)&&snapshot.serverInstance===approved.server;
@@ -54,11 +57,15 @@ export function CatalogCleanup({entry,snapshot,act,disabled,onInstall}:{readonly
   const managers:Record<CatalogInstallation['manager'],string>={bun:'Bun',npm:'npm',brew:'Homebrew',owned:t('앱 전용 설치','App-owned'),unknown:t('독립 설치 / 출처 확인 필요','Standalone / source needs verification')};
   const reason=(row:CleanupRow)=>({removable:t('제거 검토 가능','Can review removal'),'management-target':t('남길 설치','Keep'),'path-default':t('보류 · 현재 기본 실행','Held · current default'),'configured-default':t('보류 · 새 터미널 기본','Held · configured default'),'in-use':t('보류 · 실행 중 세션 있음','Held · sessions running'),'unknown-manager':t('보류 · 삭제 출처 확인 필요','Held · removal source unverified')})[row.status];
   useEffect(()=>{
+    if(job?.stage==='ready'&&!removalReview){
+      const row=actual.find(row=>row.installation.id===job.installationId);
+      if(row&&approved?.removalIds?.includes(row.installation.id))setRemovalReview({job,installation:row.installation});
+    }
     if(!job||!['completed','failed','uncertain'].includes(job.stage))return;
     if(job.stage==='completed')setDone(values=>values.includes(job.id)?values:[...values,job.id]);
     else setFailed(true);
-    setCurrent(null);
-  },[job]);
+    setCurrent(null);setRemovalReview(null);
+  },[job,removalReview]);
   const transition=async()=>{
     if(!review||cleanupReviewStale(entry,snapshot,review)||blocked||busy.current||!review.target.version)return;
     busy.current=true;setPending(true);setFailed(false);
@@ -75,7 +82,7 @@ export function CatalogCleanup({entry,snapshot,act,disabled,onInstall}:{readonly
     catch{setCurrent(null);setFailed(true);}finally{busy.current=false;setPending(false);}
   };
   const remove=async(job:RemovalJob)=>{
-    if(!ready||blocked||failed||busy.current||job.stage!=='ready'||job.references?.length)return;
+    if(!ready||blocked||failed||busy.current||removalStale||!removalReview||job.stage!=='ready'||job.references?.length)return;
     busy.current=true;setPending(true);
     try{if(!await act({kind:'remove-confirm',jobId:job.id,revision:job.revision}))setFailed(true);}
     catch{setFailed(true);}finally{busy.current=false;setPending(false);}
@@ -104,11 +111,23 @@ export function CatalogCleanup({entry,snapshot,act,disabled,onInstall}:{readonly
       {!ready&&<Notice tone="warning">{t('전환 결과 또는 설치가 달라졌습니다. 새 상태를 확인하고 다시 검토하세요. 삭제는 진행하지 않습니다.','Transition or installation changed. Review fresh state; removal is blocked.')}</Notice>}
       <ul className="stack">{actual.map(row=><li key={row.installation.id}><Badge>{reason(row)}</Badge><p className="path">{row.installation.path}</p></li>)}</ul>
       <Notice tone={cleanupComplete(entry,approved.target.id)?'success':'warning'}>{cleanupComplete(entry,approved.target.id)?t('설치 정리 완료 · 남길 설치 하나만 확인됨','Consolidation complete · only the retained installation remains'):t(`정리 진행 / 보류 · 남은 사본 ${Math.max(0,(entry.installations?.length??0)-1)}개 · 이번 정리 ${done.length}개`,`In progress / held · ${Math.max(0,(entry.installations?.length??0)-1)} copies remain · ${done.length} removed this time`)}</Notice>
-      {job?.stage==='ready'&&<section className="stack"><h3>{t('이 사본 제거 검토','Review this copy for removal')}</h3><p className="path">{job.target.executable}</p><p>{job.target.kind==='owned'||job.target.kind==='standalone'?t('실행 경로에서 제거하고 파일은 보관합니다. 디스크 공간을 비우는 완전 삭제가 아닙니다.','Removes the launch path and archives files; disk space is not reclaimed.'):t('패키지 관리자로 이 설치를 제거합니다.','Remove this installation using its package manager.')}</p>{!!job.references?.length&&<Notice tone="warning">{t('이 설치를 참조하는 설정 때문에 보류합니다.','Held because configuration references this installation.')}<ul>{job.references.map(path=><li key={path} className="path">{path}</li>)}</ul></Notice>}<Button data-action="cleanup-remove" tone="danger" disabled={blocked||!ready||failed||!!job.references?.length} onClick={()=>void remove(job)}>{t('이 사본 제거 승인','Approve removal of this copy')}</Button></section>}
+      {removalReview&&<section className="stack"><h3>{t('이 사본 제거 검토','Review this copy for removal')}</h3>
+        <div className="removal-facts"><Facts items={[
+          [t('정확한 실행 파일','Exact executable'),<span className="path">{removalReview.job.target.executable}</span>],
+          [t('버전','Version'),removalReview.installation.version??t('미확인','Unknown')],
+          [t('제거 방법','Removal method'),removalReview.job.target.kind],
+          [t('제거 위치','Removal location'),<span className="path">{removalReview.job.target.target}</span>],
+          [t('보존 경로','Preserved paths'),removalReview.job.target.preserve.map(path=><span key={path} className="path">{path}</span>)],
+        ]}/></div>
+        <p>{t('대화·로그인·사용자 데이터는 보존합니다.','Conversations, login and user data are preserved.')}</p>
+        <p>{removalReview.job.target.kind==='owned'||removalReview.job.target.kind==='standalone'?t('실행 경로에서 제거하고 파일은 보관합니다. 디스크 공간을 비우는 완전 삭제가 아닙니다.','Removes the launch path and archives files; disk space is not reclaimed.'):t('패키지 관리자로 이 설치를 제거합니다.','Remove this installation using its package manager.')}</p>
+        {!!removalReview.job.references?.length&&<Notice tone="warning">{t('이 설치를 참조하는 설정 때문에 보류합니다.','Held because configuration references this installation.')}<ul>{removalReview.job.references.map(path=><li key={path} className="path">{path}</li>)}</ul></Notice>}
+        {removalStale&&<Notice tone="warning">{t('제거 대상 또는 계획이 바뀌었습니다. 선택부터 다시 검토하세요.','Removal target or plan changed. Review from selection again.')}</Notice>}
+        <Button data-action="cleanup-remove" tone="danger" disabled={blocked||!ready||failed||removalStale||!!removalReview.job.references?.length} onClick={()=>void remove(removalReview.job)}>{t('이 사본 제거 승인','Approve removal of this copy')}</Button></section>}
       {current&&!job&&<Notice>{t('제거 계획 확인 중','Preparing removal review')}</Notice>}
       {job?.stage==='removing'&&<Notice>{t('제거 결과 확인 중','Checking removal result')}</Notice>}
       {!current&&<Button data-action="cleanup-next" disabled={blocked||!ready||failed||!actual.some(row=>row.status==='removable'&&approved.removalIds?.includes(row.installation.id))} onClick={()=>void next()}>{t('다음 사본 제거 검토','Review next copy')}</Button>}
-      <Button disabled={pending||job?.stage==='removing'} onClick={()=>{setApproved(null);setCurrent(null);setDone([]);setFailed(false);}}>{t('선택부터 다시 검토','Review from selection')}</Button>
+      <Button disabled={pending||job?.stage==='removing'} onClick={()=>{setApproved(null);setCurrent(null);setRemovalReview(null);setDone([]);setFailed(false);}}>{t('선택부터 다시 검토','Review from selection')}</Button>
     </section>}
     {failed&&<Notice tone="error">{t('작업이 완료되지 않아 정리를 중단했습니다. 기존 사본은 추가로 삭제하지 않습니다. 작업 기록과 현재 경로를 확인하세요.','The operation did not complete. Cleanup stopped without deleting further copies. Inspect job history and current paths.')}</Notice>}
   </section>;

@@ -277,7 +277,7 @@ async function candidateObservation(row: Candidate): Promise<AdapterResult<Catal
     // An ambiguous alias is never classified by its basename or registry hint.
     // Bound package names can disprove a hint even without an owner receipt.
     const packages = {
-      "omo-ai": "omo", "@oh-my-pi/pi-coding-agent": "omp", "@code-yeongyu/senpi": "pi",
+      "omo-ai": "omo", "@oh-my-pi/pi-coding-agent": "omp", "@earendil-works/pi-coding-agent": "pi",
       "@anthropic-ai/claude-code": "claude", "@openai/codex": "codex", "@xai-official/grok": "grok",
     } as const;
     let packageFamily: Family | undefined;
@@ -288,6 +288,8 @@ async function candidateObservation(row: Candidate): Promise<AdapterResult<Catal
       if (!record(manifest)) continue;
       const bin = manifest["bin"], entries = typeof bin === "string" ? [bin] : record(bin) ? Object.values(bin) : [];
       if (!entries.some(entry => typeof entry === "string" && join(dirname(resource.realpath), entry) === verified.physical.path)) continue;
+      if (manifest["name"] === "@code-yeongyu/senpi"
+        && !(install.family === "omo" && install.owner.kind === "wrapper")) return blocked("identity_mismatch");
       const physicalFamily = Object.entries(packages).find(([name]) => name === manifest["name"])?.[1];
       if (physicalFamily && physicalFamily !== row.family
         && !(physicalFamily === "pi" && install.family === "omo" && install.owner.kind === "wrapper"))
@@ -503,7 +505,7 @@ function sourceSnapshot(input: {
   const aliases = new Map(input.aliases.map(edge => [edge.path, edge]));
   let packageManifest = input.packageManifest ?? null, engineManifest = input.engineManifest ?? null;
   const expected = input.installation.family === "omo" ? "omo-ai"
-    : input.installation.family === "pi" ? "@code-yeongyu/senpi" : null;
+    : input.installation.family === "pi" ? "@earendil-works/pi-coding-agent" : null;
   if (expected !== null) {
     for (const pin of pins.values()) {
       if (basename(pin.path) !== "package.json") continue;

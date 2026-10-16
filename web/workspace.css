@@ -9,6 +9,17 @@
 .dashboard-summary button:hover {background:var(--inset)}
 .cli-version {font:600 var(--h2)/var(--leading) var(--mono)}
 .cli-version span {color:var(--muted)}
+.version-evidence {display:grid; grid-template-columns:repeat(2,minmax(0,max-content)); gap:var(--s2) var(--s8); margin:var(--s2) 0 0}
+.version-evidence dt {font-size:var(--caption); color:var(--muted)}
+.version-evidence dd {margin:0; font-size:var(--caption)}
+.version-evidence .version-value {font:600 var(--h3)/var(--leading) var(--mono); color:var(--text); overflow-wrap:anywhere}
+.update-control {display:grid; gap:var(--s1); justify-items:start; max-width:calc(var(--fact)*1.5)}
+.update-control .button[aria-disabled=true] {cursor:not-allowed; background:var(--inset); color:var(--muted)}
+.update-reason {margin:0; font-size:var(--caption); color:var(--muted)}
+.update-target {margin:0; font-size:var(--caption); min-width:0; max-width:100%}
+.update-target .muted,.update-target .path {font-size:var(--caption)}
+.cli-routes {display:grid; gap:var(--s3); padding:var(--s4) var(--s6); border-top:var(--line) solid var(--border); background:var(--canvas)}
+.cli-routes .eyebrow {margin:0}
 .cli-status .status-link {border:0; border-radius:var(--r1); padding:0; min-height:var(--touch); text-align:start; font-weight:500}
 .observation-group {display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:var(--s2); padding-block:var(--s3); border-top:var(--line) solid var(--border)}
 .observation-group p {grid-column:1/-1; display:flex; flex-wrap:wrap; gap:var(--s3)}
@@ -23,7 +34,7 @@
 .cli-status {grid-column:1/-1; grid-row:2; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--s4); margin:0; border-top:var(--line) solid var(--border); padding-top:var(--s3)}
 .cli-status dt {font-size:var(--caption); color:var(--muted); margin-bottom:var(--s2)}
 .cli-status dd {margin:0; font-size:var(--small); display:flex; gap:var(--s2); flex-wrap:wrap; align-items:center; overflow-wrap:anywhere}
-.cli-actions {grid-column:2; grid-row:1; display:flex; flex-wrap:wrap; gap:var(--s2)}
+.cli-actions {grid-column:2; grid-row:1; display:flex; flex-wrap:wrap; gap:var(--s2); align-items:start}
 .cli-detail {border-top:var(--line) solid var(--border); background:var(--canvas)}
 .detail-tabs {display:flex; gap:var(--s1); padding:var(--s3) var(--s4); border-bottom:var(--line) solid var(--border); overflow:auto}
 .detail-tabs button {flex:none; border:0; border-radius:var(--r1); background:transparent; color:var(--muted); padding:var(--s2) var(--s3); font-size:var(--small)}
@@ -56,6 +67,8 @@
   .cli-row {padding:var(--s4); grid-template-columns:minmax(0,1fr)}
   .cli-status {grid-template-columns:repeat(2,minmax(0,1fr)); grid-row:auto; grid-column:1}
   .cli-actions {grid-column:1; grid-row:auto}
+  .update-control {max-width:none; flex-basis:100%}
+  .cli-routes {padding:var(--s3)}
   .detail-tabs {padding-inline:var(--s2)}
   .detail-content {padding:var(--s3)}
   .topbar {flex-wrap:wrap; gap:var(--s2)}

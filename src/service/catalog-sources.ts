@@ -56,11 +56,11 @@ export class CatalogSourceError extends Error {
 }
 const hash = (value: string | Uint8Array) => createHash("sha256").update(value).digest("hex");
 const commands = {
-  omo: "omo", omp: "omp", pi: "pi", senpi: "pi", claude: "claude", codex: "codex",
+  omo: "omo", omp: "omp", pi: "pi", senpi: null, claude: "claude", codex: "codex",
   agy: "agy", antigravity: "agy", "cursor-agent": "cursor", grok: "grok", agent: null,
 } as const satisfies Record<string, Family | null>;
 const packages = {
-  "omo-ai": "omo", "@oh-my-pi/pi-coding-agent": "omp", "@code-yeongyu/senpi": "pi",
+  "omo-ai": "omo", "@oh-my-pi/pi-coding-agent": "omp", "@earendil-works/pi-coding-agent": "pi", "@code-yeongyu/senpi": "pi",
   "@anthropic-ai/claude-code": "claude", "@openai/codex": "codex", "@xai-official/grok": "grok",
 } as const satisfies Record<string, Family>;
 // Display-only inventory is observed without importing wrapper code. Release
@@ -735,6 +735,20 @@ export function createCatalogSourceOwner(directory: string, environment: Catalog
         if (!physical) continue;
         add("omo", wrapper.installation.executableRealpath, physical.pins, physical.aliases, [], null);
         candidates.splice(candidates.indexOf(physical), 1);
+      }
+      // Senpi is collected only to close a proven OmO wrapper's physical alias
+      // set above. Never publish an independent Senpi as upstream Pi.
+      for (const candidate of [...candidates]) {
+        if (candidate.family !== "pi") continue;
+        let senpi = false;
+        for (const pin of candidate.pins) {
+          if (basename(pin.path) !== "package.json") continue;
+          const current = await captured(pin.path, check, true);
+          if (current.sha256 !== pin.sha256) throw new CatalogSourceError("stale_source");
+          const metadata: unknown = JSON.parse(current.body);
+          if (record(metadata) && metadata["name"] === "@code-yeongyu/senpi") senpi = true;
+        }
+        if (senpi) candidates.splice(candidates.indexOf(candidate), 1);
       }
       check();
       scanComplete = true;

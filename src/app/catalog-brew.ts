@@ -21,7 +21,7 @@ export const brewTargetSchema=z.object({
 }).strict();
 export type BrewTarget=Readonly<z.infer<typeof brewTargetSchema>>;
 type Base=Omit<BrewTarget,'fingerprint'>;
-type Options={readonly home:string;readonly path:string};
+type Options={readonly home:string;readonly path:string;readonly beforeMutation?:()=>void};
 const sourceSchema=z.object({tap:tapSchema,path:z.string(),spec:z.string().optional(),
   versions:z.object({stable:versionSchema,version_scheme:z.number().int().nonnegative().optional()}).optional(),version:versionSchema.optional()});
 const artifactsSchema=z.array(z.record(z.string(),z.unknown())).max(128);
@@ -274,11 +274,20 @@ export async function executeBrewRemoval(target:BrewTarget,options:Options):Prom
   environmentGuard(target,options.home);validateBrewTarget(target);
   await runProcess(target.manager,['uninstall',`--${target.packageKind}`,target.packageName],env(options),options.home,60_000);
 }
+export function brewVersionEvidence(target:BrewTarget):{readonly packageVersion:string;readonly releaseVersion:string} {
+  validateBrewTarget(target);
+  const packageVersion=receiptState(target).version;
+  const releaseVersion=target.packageKind==='formula'
+    ?receiptSchema.parse(json(target.receiptPaths[0]??'')).source.versions?.stable:packageVersion.split(',')[0];
+  if(!releaseVersion)changed();
+  return {packageVersion,releaseVersion};
+}
 export async function executeBrewUpdate(target:BrewTarget,options:Options,onProgress:(event:string)=>void=()=>{}):Promise<string> {
   validateBrewTarget(target);await probe(target,options);await installedInfo(target,options);
   const latest=await latestBrewVersion(target),managerProof=snapshot(managerFiles(target)),prefixProof=snapshot([target.target]);
   await probe(target,options);
   onProgress('installer_started');environmentGuard(target,options.home);validateBrewTarget(target);
+  options.beforeMutation?.();
   await runProcess(target.manager,['upgrade',`--${target.packageKind}`,target.packageName],env(options),options.home,900_000,()=>onProgress('installer_output_received'));
   onProgress('verification_started');
   if(snapshot(managerFiles(target))!==managerProof||snapshot([target.target])!==prefixProof)changed();
@@ -296,8 +305,7 @@ export async function executeBrewUpdate(target:BrewTarget,options:Options,onProg
       XDG_CONFIG_HOME:join(work,'.config'),XDG_CACHE_HOME:join(work,'.cache'),XDG_DATA_HOME:join(work,'.local/share'),
       MUSE_NO_AUTO_UPDATE:'1',MUSE_LOGIN:'0'},work,15_000);
     validateBrewTarget(fresh);
-    const expected=fresh.packageKind==='formula'?receiptSchema.parse(json(fresh.receiptPaths[0]??'')).source.versions?.stable:version.split(',')[0];
-    if(parseCliVersion(output)!==expected)throw new AppError('unavailable','brew_updated_version_unverified');
+    if(parseCliVersion(output)!==brewVersionEvidence(fresh).releaseVersion)throw new AppError('unavailable','brew_updated_version_unverified');
   }finally{rmSync(work,{recursive:true,force:true});}
   onProgress('update_verified');return version;
 }

@@ -25,6 +25,17 @@ function fixture() {
   return {root,home,directory,file,link,pkg,noRun,close:()=>rmSync(root,{recursive:true,force:true})};
 }
 
+test('Pi inventory excludes Senpi even when its pi alias wins PATH and keeps upstream distinct',async()=>{
+  const f=fixture();try {
+    const senpi=join(f.root,'senpi'),upstream=join(f.root,'upstream');
+    f.pkg(senpi,'@code-yeongyu/senpi','pi');
+    f.pkg(upstream,'@earendil-works/pi-coding-agent','pi','1.2.0');
+    const rows=await discoverCatalogInstallations({home:f.home,directory:f.directory,path:`${senpi}/bin:${upstream}/bin`,receipts:[]},{run:f.noRun});
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({catalogId:'pi',packageName:'@earendil-works/pi-coding-agent',version:'1.2.0',isDefault:false});
+  }finally{f.close();}
+});
+
 test('collects distinct npm prefixes and nvm versions while collapsing proven PATH aliases',async()=>{
   // Given: two roots share payload, a third nvm installation is not on PATH.
   const f=fixture();try {

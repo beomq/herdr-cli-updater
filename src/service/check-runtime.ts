@@ -47,7 +47,7 @@ const policy = { origin: "https://registry.npmjs.org", tag: "latest", version: 2
 function packageName(source: CheckSource): string | null {
   switch (source.installation.family) {
     case "omo": return "omo-ai";
-    case "pi": return "@code-yeongyu/senpi";
+    case "pi": return "@earendil-works/pi-coding-agent";
     case "claude": return "@anthropic-ai/claude-code";
     case "codex": return "@openai/codex";
     case "omp": return "@oh-my-pi/pi-coding-agent";

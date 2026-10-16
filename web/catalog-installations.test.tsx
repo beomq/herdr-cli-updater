@@ -3,7 +3,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { AppSnapshot } from '../src/app/types';
 import type { CatalogEntry, CatalogInstallation } from '../src/app/catalog-types';
 import type { CatalogDefaultJob } from '../src/app/catalog-default-jobs';
-import { CatalogInstallations, defaultReviewIsStale, installationControlsBlocked } from './catalog-installations';
+import { CatalogInstallations, defaultReviewIsStale, installationControlsBlocked, locationRemovalIsStale } from './catalog-installations';
+import type { RemovalJob } from '../src/app/catalog-removal';
 
 const bun:CatalogInstallation={id:'bun',catalogId:'omo',manager:'bun',root:'/home/.bun/global',packageName:'omo-ai',path:'/home/.bun/bin/omo',identityPath:'/home/.bun/global/omo.js',isDefault:false,receiptId:null,version:'1.0.0'};
 const npm:CatalogInstallation={...bun,id:'npm',manager:'npm',root:'/usr/local/lib',path:'/usr/local/bin/omo',identityPath:'/usr/local/lib/omo.js',isDefault:true};
@@ -91,4 +92,24 @@ test('review binds selection, executable, identity, plan and revision',()=>{
   expect(defaultReviewIsStale(entry,[{...review,revision:2}],review)).toBe(true);
   expect(defaultReviewIsStale(entry,[{...review,stage:'completed'}],review)).toBe(true);
   expect(defaultReviewIsStale(entry,[{...review,plan:{...review.plan,launcher:'/changed'}}],review)).toBe(true);
+});
+
+test('location removal freezes version exact plan target selection and service identity',()=>{
+  const job:RemovalJob={id:'remove',requestId:'request',catalogId:'omo',installationId:null,revision:1,stage:'ready',createdAt:1,updatedAt:1,failure:null,target:{kind:'bun',target:bun.root,executable:bun.path,manager:'/home/.bun/bin/bun',packageName:'omo-ai',fingerprint:'a'.repeat(64),preserve:['/home/.config/omo']}};
+  const model={...snapshot,serverInstance:'server',removalJobs:[job]};
+  expect(locationRemovalIsStale(entry,model,bun,job,'server')).toBe(false);
+  for(const changed of [{...model,serverInstance:'other'},{...model,service:'unavailable' as const},{...model,removalJobs:[{...job,revision:2}]},{...model,removalJobs:[{...job,target:{...job.target,preserve:[]}}]}]){
+    expect(locationRemovalIsStale(entry,changed,bun,job,'server')).toBe(true);
+  }
+  expect(locationRemovalIsStale({...entry,selectedInstallationId:'npm'},model,bun,job,'server')).toBe(true);
+  for(const changed of [{...bun,path:'/changed'},{...bun,identityPath:'/changed'},{...bun,version:'2.0.0'}])expect(locationRemovalIsStale({...entry,installations:[changed]},model,bun,job,'server')).toBe(true);
+});
+
+test('location removal blocks selected consumers defaults and unsupported sources before planning',()=>{
+  const active={id:'consumer',pid:77,family:'omo' as const,installationId:null,executable:bun.identityPath,cwd:null,runningVersion:null,control:'observation-only' as const,processState:'observed' as const};
+  for(const [model,row] of [[{...snapshot,external:[active]},{...entry,installations:[bun]}],[snapshot,{...entry,installations:[{...bun,isDefault:true}]}],[snapshot,{...entry,installations:[{...bun,removalSupport:{kind:'unsupported' as const,reason:'removal_dependency_installation'}}]}],[{...snapshot,policies:[policy]},{...entry,installations:[bun]}]] as const){
+    const markup=render(model,row);
+    expect(action(markup,'location-remove-plan')).toContain('disabled');
+  }
+  expect(action(render(snapshot,{...entry,installations:[bun]}),'location-remove-plan')).not.toContain('disabled');
 });

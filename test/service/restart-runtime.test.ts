@@ -23,7 +23,7 @@ function fixture(family: "codex" | "omp" | "pi" | "omo" | "claude" = "codex") {
       runtimeId: "runtime", profile: "codex", sessionPath: join(root, "session.jsonl"), node: pin, paneId: "pane" } } as const;
   return { root, input };
 }
-test.each(["codex", "omp", "pi", "omo", "claude"] as const)("%s restart preparation registers independently and replaces the same installation profile", async family => {
+test.each(["codex", "omp", "omo", "claude"] as const)("%s restart preparation registers independently and replaces the same installation profile", async family => {
   const { root, input } = fixture(family);
   try {
     const configuration = join(root, "restart.json"), runtime = join(root, "runtime.json");
@@ -36,6 +36,13 @@ test.each(["codex", "omp", "pi", "omo", "claude"] as const)("%s restart preparat
     const nextPin = { path: next, sha256: hash(readFileSync(next, "utf8")) };
     await registerPreparedRuntime(runtime, nextPin);
     expect(JSON.parse(readFileSync(runtime, "utf8"))).toEqual({ schemaVersion: 1, profile: RUNTIME_SET_PROFILE, configurations: [nextPin] });
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+test.each(["@code-yeongyu/senpi", "@earendil-works/pi-coding-agent"])("rejects unqualified Pi restart package %s", packageName => {
+  const { root, input } = fixture("pi");
+  try {
+    expect(() => validateRestartRuntimeInputs({ ...input, installation: { ...input.installation,
+      owner: { ...input.installation.owner, packageName } } })).toThrow("verification_failed");
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 test("restart input cannot carry a serialized binding, update spec or another owner socket", async () => {

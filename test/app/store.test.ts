@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { AppStore } from "../../src/app/store";
 import { AppError } from "../../src/app/types";
 import { parseCommand } from "../../src/app/validation";
+import { Database } from "bun:sqlite";
 
 const roots: string[] = [], stores: AppStore[] = [];
 function fixture() {
@@ -90,4 +91,20 @@ test("automatic timing and verified installation time survive reopening", () => 
   // Then: a later restart failure has not erased or changed the verified installation time.
   expect(reopened.operation("update:a")).toMatchObject({ installedAt: 1500, updatedAt: 2000, stage: "uncertain" });
   expect(reopened.policies()[0]).toMatchObject({ firstCheck: "after-interval", nextCheckAt: 3601000, lastCheckedAt: 1000 });
+});
+
+test.each([undefined,'keep','restart-idle','restart-all'] as const)('stored pane policy %s preserves legacy semantics without rewriting its row',paneSessions=>{
+  // Given: raw persisted data, including a legacy row that never passed the current writer.
+  const {store,root}=fixture();
+  const body=JSON.stringify({installationId:'install:legacy',mode:'update',intervalMinutes:60,firstCheck:'now',
+    lastCheckedAt:null,nextCheckAt:1000,waitingReason:null,...(paneSessions?{paneSessions}:{})});
+  store.close();stores.splice(stores.indexOf(store),1);
+  const db=new Database(join(root,'app.sqlite'));
+  try{db.query('INSERT INTO policies (id,body) VALUES (?,?)').run('install:legacy',body);}finally{db.close();}
+  // When: the service reloads the policy using the real schema.
+  const reopened=new AppStore(root);stores.push(reopened);
+  // Then: explicit intent survives, missing legacy intent remains restart-idle, with no backfill write.
+  expect(reopened.policies()[0]?.paneSessions).toBe(paneSessions??'restart-idle');
+  const raw=new Database(join(root,'app.sqlite'),{readonly:true});
+  try{expect(raw.query<{body:string},[]>('SELECT body FROM policies').get()?.body).toBe(body);}finally{raw.close();}
 });

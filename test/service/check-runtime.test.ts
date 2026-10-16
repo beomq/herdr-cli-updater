@@ -82,9 +82,9 @@ test.each(["", "latest", "^5.1.10", "5.1", "../5.1.10", "5.1.10-", "5.1.10+.", "
 test("private OmO target cannot alter Pi resolution or retained policy", async () => {
   const f = await owned("pi");
   const runtime = createCheckRuntime({ store: f.store, admit: f.admit, request: f.request, omoTargetVersion: "5.1.10" });
-  expect(value(await runtime.check(f.source))).toMatchObject({ kind: "update-available", availableVersion: "2026.10.1-4" });
-  expect(value(await f.runtime().lastCheck(f.source))?.result).toMatchObject({ availableVersion: "2026.10.1-4" });
-  expect(f.requests.at(-1)?.url).toBe("https://registry.npmjs.org/%40code-yeongyu%2Fsenpi/2026.10.1-4");
+  expect(value(await runtime.check(f.source))).toMatchObject({ kind: "update-available", availableVersion: "1.2.0" });
+  expect(value(await f.runtime().lastCheck(f.source))?.result).toMatchObject({ availableVersion: "1.2.0" });
+  expect(f.requests.at(-1)?.url).toBe("https://registry.npmjs.org/%40earendil-works%2Fpi-coding-agent/1.2.0");
 });
 
 test.each(["omo", "pi"] as const)("checks actual %s package bytes, two HTTP responses and committed lastCheck", async family => {
@@ -93,15 +93,15 @@ test.each(["omo", "pi"] as const)("checks actual %s package bytes, two HTTP resp
   // When
   const checked = value(await runtime.check(f.source));
   // Then: values come from independent fixture inputs, not check output.
-  expect(checked).toMatchObject({ kind: "update-available", installedVersion: family === "omo" ? "5.1.9" : "2026.10.1-3",
-    availableVersion: family === "omo" ? "5.1.10" : "2026.10.1-4" });
+  expect(checked).toMatchObject({ kind: "update-available", installedVersion: family === "omo" ? "5.1.9" : "1.1.0",
+    availableVersion: family === "omo" ? "5.1.10" : "1.2.0" });
   expect(checked.checkedAt).toBeGreaterThan(0);
   expect(value(await runtime.lastCheck(f.source))).toEqual({ checkedAt: checked.checkedAt, result: checked });
   expect(f.source.installation).toEqual(before);
-  const name = family === "omo" ? "omo-ai" : "%40code-yeongyu%2Fsenpi";
+  const name = family === "omo" ? "omo-ai" : "%40earendil-works%2Fpi-coding-agent";
   expect(f.requests.map(request => request.url)).toEqual([
     `https://registry.npmjs.org/-/package/${name}/dist-tags`,
-    `https://registry.npmjs.org/${name}/${family === "omo" ? "5.1.10" : "2026.10.1-4"}`,
+    `https://registry.npmjs.org/${name}/${family === "omo" ? "5.1.10" : "1.2.0"}`,
   ]);
   // Bun reflects Request.credentials as include even when constructed with omit;
   // assert the emitted HTTP boundary rather than that inaccurate reflector.
@@ -116,11 +116,11 @@ test.each(["omo", "pi"] as const)("checks actual %s package bytes, two HTTP resp
 
 test("returns an actual up-to-date comparison without rewriting unknown channel", async () => {
   // Given
-  const f = await owned(); f.state.latest = "2026.10.1-3";
+  const f = await owned(); f.state.latest = "1.1.0";
   // When
   const checked = value(await f.runtime().check(f.source));
   // Then
-  expect(checked).toMatchObject({ kind: "up-to-date", installedVersion: "2026.10.1-3" });
+  expect(checked).toMatchObject({ kind: "up-to-date", installedVersion: "1.1.0" });
   expect(f.source.installation.channel).toBe("unknown");
 });
 
@@ -152,12 +152,12 @@ test.each(["absent", "wrong-package", "mismatched-version", "http-error", "overs
     // Given
     const f = await owned();
     if (boundary === "absent") f.state.latest = null;
-    if (boundary === "wrong-package") f.state.name = "@earendil-works/pi-coding-agent";
+    if (boundary === "wrong-package") f.state.name = "@code-yeongyu/senpi";
     if (boundary === "http-error") f.state.status = 503;
     if (boundary === "oversized") f.state.body = " ".repeat(1024 * 1024 + 1);
     const request = boundary === "mismatched-version" ? async (input: Request) =>
       new URL(input.url).pathname.endsWith("/dist-tags") ? f.request(input)
-        : Response.json({ name: "@code-yeongyu/senpi", version: "2026.10.1-99" }) : f.request;
+        : Response.json({ name: "@earendil-works/pi-coding-agent", version: "1.2.99" }) : f.request;
     // When
     const checked = value(await f.runtime({ request }).check(f.source));
     // Then

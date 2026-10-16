@@ -33,6 +33,20 @@ test('catalog cards do not expose removal or terminal controls',()=>{
   expect(markup).not.toContain('data-action="catalog-select"');
 });
 
+test('single location opens independent controls without consolidation and multiple locations opt in',()=>{
+  const one={id:'bun',catalogId:'omo' as const,manager:'bun' as const,root:'/existing',packageName:'omo-ai',path:'/existing/bin/omo',identityPath:'/existing/lib/omo.js',receiptId:null,isDefault:false,version:'1.0.0'};
+  for(const installations of [[one],[one,{...one,id:'npm',manager:'npm' as const,path:'/other/bin/omo',identityPath:'/other/lib/omo.js'}]]){
+    const row={...entry,installations,selectedInstallationId:'bun'};
+    const markup=renderToStaticMarkup(<Catalog snapshot={{...snapshot,catalog:[row]}} act={async()=>true} disabled={false} initialDetailId="omo"/>);
+    expect(markup).toContain('data-catalog-installations="omo"');
+    expect(markup).toContain('data-role="terminal-default"');
+    expect(markup).toContain('data-role="installation-removal"');
+    expect(markup).toContain('data-role="add-installation"');
+    expect(markup.includes('data-role="installation-consolidation"')).toBe(installations.length>1);
+    expect(markup.includes('data-action="cleanup-review"')).toBe(installations.length>1);
+  }
+});
+
 test('missing or empty official methods offer a guide rather than an install action',()=>{
   const {installMethods: omitted,...withoutMethods}=entry;
   for(const row of [withoutMethods,{...entry,installMethods:[]}]){

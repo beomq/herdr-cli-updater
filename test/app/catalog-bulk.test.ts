@@ -1,5 +1,5 @@
 import { expect,test } from 'bun:test';
-import { mkdtempSync,realpathSync,rmSync } from 'node:fs';
+import { mkdirSync,mkdtempSync,realpathSync,rmSync,writeFileSync } from 'node:fs';
 import { createCatalogBulk } from '../../src/app/catalog-bulk';
 import { createCatalogUpdates } from '../../src/app/catalog-updates';
 import { AppStore } from '../../src/app/store';
@@ -23,6 +23,7 @@ test('batch planning omits unsupported installed entries and old ready batches c
 function fixture(){
   const directory=realpathSync(mkdtempSync('/tmp/catalog-bulk-')),store=new AppStore(directory);
   const ids:CatalogId[]=['codex','claude','gjc'];
+  for(const id of ids){mkdirSync(directory+'/'+id+'/bin',{recursive:true});writeFileSync(directory+'/'+id+'/bin/'+id,'#!/bin/sh\necho 1.0.0\n',{mode:0o755});}
   const entries:CatalogEntry[]=ids.map(id=>({id,name:id,
     description:{ko:'',en:''},executable:id,sourceUrl:'https://example.test',method:'script',availability:'installable',reason:null,
     installed:{path:directory+'/'+id+'/bin/'+id,version:'1.0.0',managed:true}}));

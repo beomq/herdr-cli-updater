@@ -8,15 +8,17 @@ export function NativeRestarts({ snapshot, act, disabled }: {
   snapshot: AppSnapshot; act: (command: AppCommand) => Promise<boolean>; disabled: boolean;
 }) {
   const { t } = useLanguage();
-  const [selected, setSelected] = useState<{ installation: InstallSelection; target: TargetSelection } | null>(null);
+  const [selected, setSelected] = useState<{ installation: InstallSelection; target: TargetSelection; server: string | undefined } | null>(null);
   const native = snapshot.native;
   const busy = snapshot.operations.some(operation => !['completed', 'failed', 'cancelled'].includes(operation.stage))
     || native?.jobs.some(job => !['completed', 'failed', 'cancelled'].includes(job.status));
   const version = (value: VersionEvidence) => value.kind === 'known' ? value.version : t('수집되지 않음', 'Not captured');
-  const stale = selected && !native?.selections.some(row =>
+  const stale = selected && (snapshot.serverInstance !== selected.server || !native?.selections.some(row =>
     row.installation.installationId === selected.installation.installationId
     && row.installation.resourcesFingerprint === selected.installation.resourcesFingerprint
-    && row.targets.some(item => JSON.stringify(item.target) === JSON.stringify(selected.target)));
+    && JSON.stringify(row.installation.owner) === JSON.stringify(selected.installation.owner)
+    && JSON.stringify(row.installation.installedVersion) === JSON.stringify(selected.installation.installedVersion)
+    && row.targets.some(item => JSON.stringify(item.target) === JSON.stringify(selected.target))));
   return <Panel>
     <SectionHead title={t('연결된 CLI 세션', 'Connected CLI sessions')}
       count={native?.selections.reduce((count, row) => count + row.targets.length, 0) ?? 0}>
@@ -33,10 +35,13 @@ export function NativeRestarts({ snapshot, act, disabled }: {
       <Facts items={[
         [t('설치된 버전', 'Installed version'), version(row.installation.installedVersion)],
         [t('실행 중인 버전', 'Running version'), version(item.runningVersion)],
-        [t('세션 세대', 'Session generation'), item.target.expectedBinding.paneGeneration],
         [t('대화 ID', 'Conversation ID'), <span className="path">{item.target.expectedBinding.session.fullId}</span>],
       ]}/>
-      <Button disabled={disabled || busy} onClick={() => setSelected({ target: item.target,
+      <details><summary>{t('기술 정보','Technical details')}</summary><Facts items={[
+        [t('설치 ID','Installation ID'), row.installation.installationId],
+        [t('세션 세대','Session generation'), item.target.expectedBinding.paneGeneration],
+      ]}/></details>
+      <Button disabled={disabled || busy} onClick={() => setSelected({ target: item.target, server: snapshot.serverInstance,
         installation: { installationId: row.installation.installationId, resourcesFingerprint: row.installation.resourcesFingerprint,
           owner: row.installation.owner, installedVersion: row.installation.installedVersion } })}>
         {t('세션 재시작 검토', 'Review session restart')}
@@ -62,9 +67,10 @@ export function NativeRestarts({ snapshot, act, disabled }: {
       <p>{t('현재 작업 완료를 기다린 뒤 종료하고, 현재 설치된 버전으로 같은 대화를 다시 엽니다. 설치 업데이트는 실행하지 않습니다.',
         'Wait for current work to finish, stop the session, then open the same conversation using the installed version. No installation update runs.')}</p>
       <p className="path">{selected.target.expectedBinding.session.fullId}</p>
+      <p className="path">{selected.target.expectedBinding.paneId} · {selected.installation.installationId}</p>
       {stale && <Notice tone="warning">{t('선택한 세션이 바뀌었습니다. 닫고 다시 선택하세요.', 'The selected session changed. Close and select again.')}</Notice>}
       <Button tone="primary" disabled={disabled || busy || !!stale}
-        onClick={() => void act({ kind: 'native-restart', ...selected }).then(ok => { if (ok) setSelected(null); })}>
+        onClick={() => { if (disabled || busy || stale) return; void act({ kind: 'native-restart', installation: selected.installation, target: selected.target }).then(ok => { if (ok) setSelected(null); }); }}>
         {t('이 세션 다시 시작', 'Restart this session')}
       </Button>
     </Dialog>}

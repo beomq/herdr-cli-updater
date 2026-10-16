@@ -24,7 +24,7 @@ function artifact(p: string, body: string | Uint8Array, mode = 0o700) {
   return p;
 }
 const names = {
-  omo: "omo-ai", omp: "@oh-my-pi/pi-coding-agent", pi: "@code-yeongyu/senpi",
+  omo: "omo-ai", omp: "@oh-my-pi/pi-coding-agent", pi: "@earendil-works/pi-coding-agent",
   claude: "@anthropic-ai/claude-code", codex: "@openai/codex", grok: "@xai-official/grok",
 } as const;
 function installed(home: string, family: Exclude<Family, "agy" | "cursor">, layout = "packages") {
@@ -35,6 +35,18 @@ function installed(home: string, family: Exclude<Family, "agy" | "cursor">, layo
   symlinkSync(executable, join(home, "bin", family));
   return executable;
 }
+test("standalone Senpi stays unclassified while upstream Pi uses its own package identity", async () => {
+  const home = root();
+  const upstream = installed(home, "pi");
+  const base = join(home, "standalone-senpi"), entry = artifact(join(base, "cli"), "#!/usr/bin/env bun\n");
+  artifact(join(base, "package.json"), JSON.stringify({ name: "@code-yeongyu/senpi", version: "2026.10.1-3", bin: { pi: "cli", senpi: "cli" } }), 0o600);
+  symlinkSync(entry, join(home, "bin/senpi"));
+  const { source } = owner(home);
+  const observed = await source.refresh();
+  expect(observed.state).toBe("complete");
+  expect(observed.candidates.map(row => row.installation.executableRealpath)).toEqual([upstream]);
+  expect(readFileSync(entry, "utf8")).toBe("#!/usr/bin/env bun\n");
+});
 test("isolates a refused known package manifest without hiding independent installations", async () => {
   const home = root(), directory = join(home, "worker"); mkdirSync(directory, { mode: 0o700 });
   const grok = installed(home, "grok");

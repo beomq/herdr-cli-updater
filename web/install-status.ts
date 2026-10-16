@@ -15,6 +15,7 @@ export function installationError(code:string,t:Translate):string|null{
   const removal=removalExplanation(code,t);if(removal)return removal;
   if(code.startsWith('latest_'))return t('최신 버전을 확인하지 못했습니다. 업데이트하지 않았으며 다음 확인 시간에 다시 시도합니다.','Could not check the latest version. Nothing was updated; the next scheduled check will try again.');
   const messages:Record<string,string>={
+    pi_source_changed_senpi:t('기존 자동 업데이트는 Senpi 설치에 연결되어 중지됐습니다. 설치와 기록은 유지됩니다. 원본 Pi를 사용하려면 설치 출처와 관리 대상을 검토한 뒤 자동 업데이트를 다시 설정하세요.','Automation is paused because it is bound to Senpi, not upstream Pi. The installation and history are preserved. Review the upstream Pi source and management target before configuring automation again.'),
     select_management_target_first:t('이 CLI의 다른 설치가 관리 대상으로 선택돼 있습니다. 설치 위치에서 관리 대상을 먼저 바꾸세요.','Another installation is this CLI’s management target. Select the intended installation first.'),
     official_destination_shadows_default:t('새 설치가 현재 명령을 바로 가리는 경로라 전환을 중단했습니다. 기존 기본 실행을 유지할 수 있는 설치 방법을 선택하세요.','The destination would immediately shadow the current command. Choose a method that preserves the existing default.'),
     official_setup_required:t('이 공식 설치 프로그램은 추가 설정이나 앱 실행이 필요합니다. 공식 안내로 설치한 뒤 목록을 새로고침하세요.','This official installer needs additional setup or app launch. Follow the official guide, then refresh the inventory.'),

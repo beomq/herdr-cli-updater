@@ -3,6 +3,82 @@ import { latestCatalogVersion } from '../../src/app/catalog-latest';
 import { catalogDefinitions } from '../../src/app/catalog-registry';
 import type { CatalogId } from '../../src/app/catalog-types';
 import { AppError } from '../../src/app/types';
+import type { OfficialUpdateTarget } from '../../src/app/catalog-official-update';
+
+const opencodeTarget:OfficialUpdateTarget={kind:'official',catalogId:'opencode',target:'/fixture/.opencode/bin',executable:'/fixture/.opencode/bin/opencode',sourceUrl:'https://opencode.ai/install',fingerprint:'a'.repeat(64),preserve:['/fixture']};
+const opencodeRelease={tag_name:'v1.2.3',draft:false,prerelease:false,html_url:'https://github.com/anomalyco/opencode/releases/tag/v1.2.3',assets:
+  ['darwin-arm64.zip','darwin-x64.zip','darwin-x64-baseline.zip','linux-arm64.tar.gz','linux-arm64-musl.tar.gz','linux-x64.tar.gz','linux-x64-baseline.tar.gz','linux-x64-musl.tar.gz','linux-x64-baseline-musl.tar.gz'].map(platform=>({name:`opencode-${platform}`,browser_download_url:`https://github.com/anomalyco/opencode/releases/download/v1.2.3/opencode-${platform}`}))};
+
+test('official OpenCode reads the stable standalone release instead of npm',async()=>{
+  const fetcher=mockFetch(url=>{
+    expect(url).toBe('https://api.github.com/repos/anomalyco/opencode/releases/latest');
+    return Response.json(opencodeRelease);
+  });
+  try{expect(await latestCatalogVersion('opencode',opencodeTarget)).toBe('1.2.3');expect(fetcher).toHaveBeenCalledTimes(1);}
+  finally{fetcher.mockRestore();}
+});
+
+test('OpenCode package installations keep their npm channel',async()=>{
+  const fetcher=mockFetch(url=>{
+    expect(url).toBe('https://registry.npmjs.org/opencode-ai/latest');
+    return Response.json({name:'opencode-ai',version:'9.8.7'});
+  });
+  try{
+    for(const kind of ['npm','bun'] as const)
+      expect(await latestCatalogVersion('opencode',{kind,target:'/fixture/global',executable:'/fixture/bin/opencode',manager:'/fixture/bin/'+kind,packageName:'opencode-ai',fingerprint:'a'.repeat(64),preserve:[]})).toBe('9.8.7');
+  }finally{fetcher.mockRestore();}
+});
+
+test('OpenCode rejects stale target identity and source before requesting metadata',async()=>{
+  const fetcher=mockFetch(()=>Response.json(opencodeRelease));
+  try{
+    for(const target of [{...opencodeTarget,catalogId:'gjc' as const},{...opencodeTarget,sourceUrl:'https://opencode.ai/install?channel=nightly'}])
+      await expect(latestCatalogVersion('opencode',target)).rejects.toMatchObject({code:'unsupported',detail:'latest_source_unverified'});
+    await expect(latestCatalogVersion('gjc',opencodeTarget)).rejects.toMatchObject({code:'unsupported',detail:'latest_source_unverified'});
+    expect(fetcher).not.toHaveBeenCalled();
+  }finally{fetcher.mockRestore();}
+});
+
+test('OpenCode rejects malformed, unstable and unrelated release metadata',async()=>{
+  for(const body of ['{',JSON.stringify({success:true,version:'1.2.3'}),...[
+    {...opencodeRelease,tag_name:'v1.2.3\n'},
+    {...opencodeRelease,tag_name:'v1.2.3-beta.1'},
+    {...opencodeRelease,tag_name:'v01.2.3'},
+    {...opencodeRelease,draft:true},
+    {...opencodeRelease,prerelease:true},
+    {...opencodeRelease,html_url:'https://github.com/other/opencode/releases/tag/v1.2.3'},
+    {...opencodeRelease,assets:null},
+  ].map(value=>JSON.stringify(value))]){
+    const fetcher=mockFetch(()=>new Response(body));
+    try{await expect(latestCatalogVersion('opencode',opencodeTarget)).rejects.toMatchObject({code:'unavailable',detail:'latest_response_invalid'});}
+    finally{fetcher.mockRestore();}
+  }
+});
+
+test('OpenCode requires a unique matching platform artifact from the same release and source',async()=>{
+  for(const assets of [[],opencodeRelease.assets.map(asset=>({...asset,name:'wrong-'+asset.name})),
+    opencodeRelease.assets.map(asset=>({...asset,browser_download_url:asset.browser_download_url.replace('/v1.2.3/','/v1.2.2/')})),
+    opencodeRelease.assets.map(asset=>({...asset,browser_download_url:asset.browser_download_url.replace('github.com','example.com')})),
+    [...opencodeRelease.assets,...opencodeRelease.assets]]){
+    const fetcher=mockFetch(()=>Response.json({...opencodeRelease,assets}));
+    try{await expect(latestCatalogVersion('opencode',opencodeTarget)).rejects.toMatchObject({code:'unavailable',detail:'latest_artifact_unavailable'});}
+    finally{fetcher.mockRestore();}
+  }
+});
+
+test('OpenCode network failures and misleading HTTP success never return a version',async()=>{
+  for(const [response,code,detail] of [[new Response('unavailable',{status:503}),'unavailable','latest_download_failed'],
+    [new Response('installed successfully'),'unavailable','latest_response_invalid'],
+    [new TypeError('network failed'),'unavailable','latest_download_failed'],
+    [new DOMException('timeout','TimeoutError'),'timeout','latest_timeout'],
+    [new Response('{}',{headers:{'content-length':'1000001'}}),'unavailable','latest_response_too_large']] as const){
+    const fetcher=mockFetch(()=>{if(response instanceof Error)throw response;return response;});
+    try{
+      await expect(latestCatalogVersion('opencode',opencodeTarget)).rejects.toMatchObject({code,detail});
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    }finally{fetcher.mockRestore();}
+  }
+});
 
 const sha256='a'.repeat(64);
 const npmRecipes=catalogDefinitions.filter(row=>row.recipe?.kind==='npm');
@@ -19,6 +95,14 @@ const fixtures:readonly Fixture[]=[
   {id:'devin',url:'https://static.devin.ai/cli/current/manifest.json',body:{version:'3000.11.3',platforms:{[devinTarget]:{url:'https://static.devin.ai/cli/3000.11.3/devin.tar.gz',sha256}}},version:'3000.11.3'},
   ...(process.platform==='darwin'?[{id:'kiro' as const,url:'https://prod.download.cli.kiro.dev/stable/latest/manifest.json',body:{version:'2.29.1',packages:[{os:'macos',fileType:'dmg',channel:'stable',download:'2.29.1/Kiro CLI.dmg',sha256}]},version:'2.29.1'}]:[]),
 ];
+test('native Kimi retains its two-component version contract',async()=>{
+  const fetcher=mockFetch(url=>{
+    expect(url).toBe('https://code.kimi.com/kimi-code/latest');
+    return new Response('2.0\n');
+  });
+  try{expect(await latestCatalogVersion('kimi')).toBe('2.0');}
+  finally{fetcher.mockRestore();}
+});
 function mockFetch(respond:(url:string,init:RequestInit|undefined)=>Response|Promise<Response>) {
   const preconnect=fetch.preconnect;
   const fetcher=spyOn(globalThis,'fetch').mockImplementation(Object.assign(async(input:Parameters<typeof fetch>[0],init?:RequestInit)=>
@@ -82,6 +166,16 @@ test('npm refuses HTTP failure, wrong package identity, invalid JSON and arbitra
   for(const body of [{name:'other',version:'1.2.3'},{name:'omo-ai',version:123},{name:'omo-ai',version:'release-v1.2.3'},{name:'omo-ai',version:'v1.2.3'},{name:'omo-ai',version:'1.2.3\nextra'}])
     await refusal('omo',Response.json(body),'latest_response_invalid');
   await refusal('omo',new Response('{'),'latest_response_invalid');
+});
+
+test('latest metadata rejects invalid semver while preserving valid prerelease and build identifiers',async()=>{
+  for(const value of ['2.0.0-..','02.0.0','2.0.0-01','2.0.0+...','2.0.0-alpha_1','2.0','2.0.0\n'])
+    await refusal('opencode',Response.json({name:'opencode-ai',version:value}),'latest_response_invalid');
+  for(const value of ['2.0.0-alpha.1','2.0.0-0','2.0.0+001.build','2.0.0-beta.2+sha.123']){
+    const fetcher=mockFetch(()=>Response.json({name:'opencode-ai',version:value}));
+    try{expect(await latestCatalogVersion('opencode')).toBe(value);}
+    finally{fetcher.mockRestore();}
+  }
 });
 
 test('GitHub tags must identify stable releases, not arbitrary tag prefixes',async()=>{

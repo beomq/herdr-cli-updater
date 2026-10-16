@@ -137,8 +137,13 @@ export function Catalog({ snapshot, act, disabled, initialDetailId = null }: { s
     })}</div></>}
     {detail && <section className="stack catalog-workspace" data-catalog-detail={detail.id}>
       <div className="page-head"><h2 className="cli-heading"><AgentMark agent={detail.id} size={24}/>{detail.name}</h2><Button data-action="catalog-back" onClick={()=>{setDetailId(null);setReturnTo(null);}}>{t('목록으로','Back to list')}</Button></div>
-      {!!detail.installations?.length&&<CatalogCleanup key={detail.id} entry={detail} snapshot={snapshot} act={act} disabled={locked||installationControlsBlocked(detail,snapshot,{automation:false})} onInstall={()=>choose(detail)}/>}
-      <details><summary>{t('개별 설치 관리 및 기술 상세','Individual installation controls and details')}</summary>
+      {!!detail.installations?.length && <CatalogInstallations key={detail.id} entry={detail} snapshot={snapshot} act={act} disabled={locked} />}
+      {(detail.installations?.length??0)>1&&<details data-role="installation-consolidation"><summary>{t('여러 설치를 하나로 정리','Consolidate multiple installations')}</summary><CatalogCleanup key={detail.id} entry={detail} snapshot={snapshot} act={act} disabled={locked||installationControlsBlocked(detail,snapshot,{automation:false})}/></details>}
+      <section className="stack" data-role="add-installation"><h3>{detail.installed||detail.installations?.length?t('다른 위치에 추가 설치','Add another installation'):t('CLI 설치','Install CLI')}</h3>
+        <p className="muted">{t('업데이트와 별개로 새 설치를 추가합니다. 기존 설치와 대화는 보존하며 터미널 기본 실행은 바꾸지 않습니다.','Add an installation separately from updating. Existing installations and conversations are preserved; the terminal default does not change.')}</p>
+        {!!detail.installMethods?.length ? <Button data-action="add-installation" disabled={locked || !!awaiting || installationControlsBlocked(detail, snapshot, { automation: false })} onClick={() => choose(detail)}>{t('공식 설치 방법 선택', 'Choose official installation method')}</Button> : official(detail.sourceUrl)}
+      </section>
+      <details><summary>{t('설치 기술 상세','Installation technical details')}</summary>
       <div className="catalog-detail-body stack">
         <p className="muted">{detail.description[language]}</p>
         <section className="stack"><h3>{t('현재 설치', 'Current installation')}</h3>
@@ -149,7 +154,6 @@ export function Catalog({ snapshot, act, disabled, initialDetailId = null }: { s
           ]} /> : <p className="muted">{t('이 컴퓨터에서 설치를 찾지 못했습니다.', 'No installation was found on this computer.')}</p>}
           {detail.installed?.lastVerifiedVersion && <p className="muted">{t('마지막 설치 검증 버전', 'Last verified installation version') + ': ' + detail.installed.lastVerifiedVersion}</p>}
         </section>
-        {!!detail.installations?.length && <CatalogInstallations entry={detail} snapshot={snapshot} act={act} disabled={locked} onInstall={() => choose(detail)} />}
         {detail.installed && !detail.installations?.length && <section className="stack"><h3>{t('설치 삭제', 'Remove installation')}</h3><RemovalActions snapshot={snapshot} act={act} disabled={locked || installationControlsBlocked(detail, snapshot)} catalogId={detail.id} /></section>}
         <section className="stack"><h3>{t('설치 및 실행', 'Setup and launch')}</h3>
           <Facts items={[
@@ -158,7 +162,6 @@ export function Catalog({ snapshot, act, disabled, initialDetailId = null }: { s
             [t('터미널 실행 명령', 'Terminal launch command'), <code className="path">{detail.installed?.managed ? JSON.stringify(detail.installed.path) : detail.executable}</code>],
           ]} />
           {detail.reason && <p className="muted">{installationError(detail.reason, t) ?? detail.reason}</p>}
-          {!!detail.installMethods?.length && <Button disabled={locked || !!awaiting || installationControlsBlocked(detail, snapshot, { automation: false })} onClick={() => choose(detail)}>{t('공식 설치 방법 선택', 'Choose official installation method')}</Button>}
         </section>
       </div>
       </details>

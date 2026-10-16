@@ -121,12 +121,12 @@ test("dispatches a source-only check and retains metadata despite an unrelated i
       installationId: f.source.installation.installationId }, signal);
     // Then
     expect(response).toMatchObject({ operation: "check", ok: true, result: { result: {
-      kind: "update-available", installedVersion: "2026.10.1-3", availableVersion: "2026.10.1-4",
+      kind: "update-available", installedVersion: "1.1.0", availableVersion: "1.2.0",
     } } });
     expect(coreReads).toBe(0);
     const installations = await domain.handle({ version: 1, token: "a".repeat(64), requestId: "after-check", operation: "installations" }, signal);
     expect(installations).toMatchObject({ ok: true, result: { installations: [{ lastCheck: { result: {
-      kind: "update-available", availableVersion: "2026.10.1-4",
+      kind: "update-available", availableVersion: "1.2.0",
     } }, owner: { kind: "unknown", reason: "unverified_owner" }, channel: "unknown" }] } });
   } finally { domain.close(); await f.cleanup(); }
 });

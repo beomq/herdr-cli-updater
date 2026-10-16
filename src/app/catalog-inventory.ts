@@ -15,7 +15,7 @@ const brewSchema=z.object({
   casks:z.array(z.object({token:z.string(),installed:z.union([z.string(),z.array(z.string()),z.null()]).optional(),artifacts:z.array(z.unknown()).optional()})).default([]),
 });
 const packageAliases:Readonly<Record<string,CatalogId>>={'@xai-official/grok':'grok','@oh-my-pi/pi-coding-agent':'omp'};
-const commandAliases:Readonly<Record<string,CatalogId>>={'cursor-agent':'cursor',antigravity:'agy',senpi:'pi'};
+const commandAliases:Readonly<Record<string,CatalogId>>={'cursor-agent':'cursor',antigravity:'agy'};
 const caskBinarySchema=z.object({binary:z.tuple([z.string()]).rest(z.unknown())});
 function absent(error:unknown):boolean {
   return error instanceof Error&&'code' in error&&['ENOENT','ENOTDIR','EACCES','ELOOP'].includes(String(error.code));

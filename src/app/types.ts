@@ -160,6 +160,7 @@ export type AppCommand =
   | { readonly kind: "catalog-update-all-plan" }
   | { readonly kind: "catalog-update-all-confirm"; readonly batchId:string; readonly revision:number }
   | { readonly kind: "catalog-update-confirm"; readonly jobId:string; readonly revision:number; readonly paneSessions?:PaneSessionPolicy|undefined }
+  | { readonly kind: "catalog-update-recover"; readonly jobId:string; readonly revision:number; readonly action:'reconcile'|'archive-unverified' }
   | { readonly kind: "install-plan"; readonly catalogId: CatalogId;readonly method?:OfficialMethod|undefined;readonly makeDefault?:boolean|undefined }
   | { readonly kind: "install-confirm"; readonly jobId: string; readonly revision: number }
   | { readonly kind: "install-recover"; readonly jobId:string; readonly revision:number; readonly action:'inspect'|'archive' }

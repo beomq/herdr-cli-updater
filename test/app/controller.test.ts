@@ -92,7 +92,7 @@ test("native lost acknowledgement remains uncertain and cannot authorize another
 });
 
 async function catalogUpdateFixture(sharedInstallation=false,targetKind:'owned'|'npm'='owned'){
-  let installedVersion='1.0.0',executions=0,moved=false,blocked=false,latestVersion='2.0.0';
+  let installedVersion:string|null='1.0.0',executions=0,moved=false,blocked=false,latestVersion='2.0.0';
   let rows:CatalogEntry['installations']|undefined;
   let selectedId:string|undefined;
   let latestCalls=0,latestFails=false,holdLatest=false;
@@ -102,7 +102,10 @@ async function catalogUpdateFixture(sharedInstallation=false,targetKind:'owned'|
   let holdDiscovery=false,holdExecution=false;
   const executable=(directory:string)=>sharedInstallation?join(import.meta.dir,'fixtures/managed-rpc.ts'):join(directory,'owned/bin/fixture-cli');
   let sourceStore:AppStore|undefined;
-  const catalog:typeof createCatalog=options=>{sourceStore=options.store;return {
+  const catalog:typeof createCatalog=options=>{sourceStore=options.store;
+    mkdirSync(join(options.directory,'owned/bin'),{recursive:true});
+    if(!sharedInstallation)writeFileSync(executable(options.directory),'#!/bin/sh\necho 1.0.0\n',{mode:0o755});
+    return {
     entries:()=>[{id:'codex',name:'Qwen',description:{ko:'',en:''},executable:'fixture-cli',
       sourceUrl:'https://example.com',method:'npm',availability:'installable',reason:null,
       installed:{path:executable(options.directory),version:installedVersion,managed:true},
@@ -131,7 +134,7 @@ async function catalogUpdateFixture(sharedInstallation=false,targetKind:'owned'|
     holdDiscovery:()=>{holdDiscovery=true;return {entered:discovering.promise,release:discovery.resolve};},
     holdExecution:()=>{holdExecution=true;return {entered:executing.promise,release:execution.resolve};},
     latestCalls:()=>latestCalls,failLatest:()=>{latestFails=true;},
-    setInstalled:(version:string)=>{installedVersion=version;},setLatest:(version:string)=>{latestVersion=version;},
+    setInstalled:(version:string|null)=>{installedVersion=version;},setLatest:(version:string)=>{latestVersion=version;},
     setRows:(value:CatalogEntry['installations'])=>{rows=value;selectedId=value?.[0]?.id;},store:()=>{if(!sourceStore)throw new Error('missing store');return sourceStore;},executable:()=>executable(f.root),
     holdLatest:()=>{holdLatest=true;return {entered:latestEntered.promise,release:latestRelease.resolve};}};
 }
@@ -144,6 +147,23 @@ test('selecting another installation transfers the sole automatic policy without
     expect(f.controller.snapshot().catalog?.[0]?.selectedInstallationId).toBe('second');
     expect(f.controller.snapshot().policies.filter(p=>p.mode!=='off')).toHaveLength(1);
     expect(f.controller.snapshot().policies[0]?.lastInstalledVersion).toBe('1.0.0');
+    expect(f.executions()).toBe(0);expect(f.effects).toEqual({stops:0,restarts:0});
+  }finally{await f.close();}
+});
+test('controller reconciliation and acknowledgement unlock without installer or session effects',async()=>{
+  const f=await catalogUpdateFixture();
+  try{
+    await f.command({kind:'catalog-check',catalogId:'codex'});await f.controller.settled();
+    const planned=await f.command({kind:'catalog-update-plan',catalogId:'codex'});
+    const job=planned.catalogUpdates?.[0];if(!job)throw new Error('missing_job');
+    f.store().putCatalogUpdate({...job,stage:'uncertain',failure:'service_restarted'});
+    await f.command({kind:'catalog-update-recover',jobId:job.id,revision:job.revision,action:'reconcile'});
+    const reconciled=f.store().catalogUpdates()[0];if(!reconciled)throw new Error('missing_job');
+    expect(reconciled).toMatchObject({stage:'uncertain',expectedVersion:null,reconciliation:{version:'1.0.0'}});
+    await expect(f.command({kind:'catalog-update-recover',jobId:job.id,revision:job.revision,action:'archive-unverified'})).rejects.toThrow('stale_update_plan');
+    await f.command({kind:'catalog-update-recover',jobId:job.id,revision:reconciled.revision,action:'archive-unverified'});
+    expect(f.store().catalogUpdates()[0]?.stage).toBe('archived-unverified');
+    await f.command({kind:'catalog-update-plan',catalogId:'codex'});
     expect(f.executions()).toBe(0);expect(f.effects).toEqual({stops:0,restarts:0});
   }finally{await f.close();}
 });
@@ -219,6 +239,61 @@ test('catalog results cannot attach to a changed installation during a pending l
     expect(f.controller.snapshot().catalog?.[0]?.lastCheck).toBeUndefined();
     expect(f.executions()).toBe(0);
   }finally{hold.release();await f.close();}
+});
+test('confirmation without a stored policy keeps pane sessions',async()=>{
+  const f=await fixture();
+  try{
+    f.setObservedPid(456,'2026-10-12T09:00:00.000Z','fixture');f.setPane('idle');f.fire(15000);
+    await f.command({kind:'check',installationId:'fixture'});
+    await f.command({kind:'prepare',installationId:'fixture'});await f.controller.settled();
+    const operation=f.controller.snapshot().operations[0];if(!operation)throw new Error('missing_preparation');
+    await f.command({kind:'confirm',operationId:operation.id,revision:operation.revision,sessions:[],restart:false});
+    await f.controller.settled();
+    expect(f.controller.snapshot().operations[0]).toMatchObject({stage:'completed',paneSessions:'keep'});
+    expect(f.paneCalls).toEqual([]);
+  }finally{await f.close();}
+});
+test.each([
+  ['1.0.0','2.0.0','available',1],
+  ['2.0.0','2.0.0','current',0],
+  ['3.0.0','2.0.0','ahead',0],
+  [null,'2.0.0','unknown',0],
+  ['unverified','2.0.0','unknown',0],
+  ['1.0.0','malformed','unknown',0],
+  ['1.0.0','2.0.0-..','unknown',0],
+  ['1.0.0','02.0.0','unknown',0],
+  ['1.0.0','2.0.0-01','unknown',0],
+  ['1.0.0','2.0.0+..','unknown',0],
+  ['2.0.0-..','3.0.0','unknown',0],
+  ['02.0.0','3.0.0','unknown',0],
+  ['2.0.0-01','3.0.0','unknown',0],
+  ['2.0.0+..','3.0.0','unknown',0],
+  ['2.0.0-..','2.0.0-..','unknown',0],
+  ['02.0.0','02.0.0','unknown',0],
+  ['2.0.0-01','2.0.0-01','unknown',0],
+  ['2.0.0+..','2.0.0+..','unknown',0],
+  ['2.0.0-beta.1','2.0.0','available',1],
+  ['2.0.0','2.0.0-beta.1','ahead',0],
+  ['1.0.0+build.1','1.0.0+build.2','current',0],
+  ['1.0.0','2.0.0-beta.1+build.01','available',1],
+  ['1.0.0','2.0.0-0.alpha-1','available',1],
+] as const)('automatic eligibility for installed %s and latest %s is %s',async(installed,latest,status,count)=>{
+  // Given: real controller/update jobs with fixture discovery and installer effects.
+  const f=await catalogUpdateFixture();
+  const statuses:string[]=[];
+  const dispose=f.controller.subscribe(()=>{const status=f.controller.snapshot().catalog?.[0]?.lastCheck?.status;if(status)statuses.push(status);});
+  try{
+    f.setInstalled(installed);f.setLatest(latest);
+    await f.command({kind:'automation',installationId:'catalog:codex',enabled:true});
+    // When: the injected clock dispatches the scheduled check to completion.
+    f.fire();await f.controller.settled();
+    // Then: only a verified newer version admits an installer and sessions remain untouched.
+    expect(f.executions()).toBe(count);
+    expect(statuses).toContain(status);
+    expect(f.controller.snapshot().policies[0]?.paneSessions).toBe('keep');
+    expect(f.controller.snapshot().catalogUpdates).toHaveLength(count);
+    expect(f.effects).toEqual({stops:0,restarts:0});expect(f.paneCalls).toEqual([]);
+  }finally{dispose();await f.close();}
 });
 test('one-toggle automation checks immediately and hourly without reinstalling the latest version',async()=>{
   const f=await catalogUpdateFixture();
@@ -355,6 +430,17 @@ test('switching off during latest lookup prevents the deferred update',async()=>
     expect(f.executions()).toBe(0);expect(f.controller.snapshot().policies[0]?.mode).toBe('off');
   }finally{gate.release();await f.controller.settled();await f.close();}
 });
+test('automatic latest lookup cannot authorize a changed selection',async()=>{
+  const f=await catalogUpdateFixture(),gate=f.holdLatest();
+  try{
+    await f.command({kind:'automation',installationId:'catalog:codex',enabled:true});
+    f.fire();await gate.entered;
+    f.setInstalled('0.5.0');gate.release();await f.controller.settled();
+    expect(f.executions()).toBe(0);
+    expect(f.controller.snapshot().catalog?.[0]?.lastCheck).toBeUndefined();
+    expect(f.controller.snapshot().policies[0]?.waitingReason).toBe('installation_selection_changed');
+  }finally{gate.release();await f.controller.settled();await f.close();}
+});
 test('an off decision supersedes a pending catalog enable even when the stored off policy is unchanged',async()=>{
   const f=await catalogUpdateFixture();
   const off={kind:'policy',installationId:'catalog:codex',mode:'off',intervalMinutes:5} as const;
@@ -421,7 +507,7 @@ test('running catalog consumers wait rather than being stopped by automatic upda
 test('an install made outside the updater is recorded and restarts idle pane sessions on the next check',async()=>{
   const f=await catalogUpdateFixture();
   try{
-    await f.command({kind:'automation',installationId:'catalog:codex',enabled:true});
+    await f.command({kind:'automation',installationId:'catalog:codex',enabled:true,paneSessions:'restart-idle'});
     f.fire();await f.controller.settled();
     expect(f.executions()).toBe(1);
     expect(f.controller.snapshot().policies[0]).toMatchObject({lastInstalledVersion:'2.0.0'});

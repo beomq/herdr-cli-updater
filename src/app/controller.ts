@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { join } from "node:path";
 import type { Installation, Job } from "../protocol";
 import { createEngine } from "./engine";
@@ -19,7 +19,7 @@ import { AppStore, privateDirectory } from "./store";
 import { externalCatalogId, externalSessions } from "./observations";
 import { readOmoThreads, readOmoState, omoActivity } from "./omo-threads";
 import type { OmoThread } from "./omo-threads";
-import { rebaselineRow } from "./catalog-rebaseline";
+import { parseBinding, rebaselineRow } from "./catalog-rebaseline";
 import { catalogRegistryDirectory } from "../service/catalog-provider";
 import { rename } from "node:fs/promises";
 import type { CurrentConversationContext } from "./observations";
@@ -71,7 +71,21 @@ export async function createController(options: Options, dependencies: {
     },
   };
   const store = new AppStore(options.directory);
+  function senpiPolicy(policy: UpdatePolicy): boolean {
+    if (policy.installationId !== 'catalog:pi' || !policy.catalogBinding) return false;
+    const binding = parseBinding(policy.catalogBinding);
+    if (!binding) return false;
+    if (binding.kind === 'npm' || binding.kind === 'bun') return binding.packageName === '@code-yeongyu/senpi';
+    if (binding.kind !== 'owned') return false;
+    const recipeHash = createHash('sha256').update(JSON.stringify({kind:'npm',package:'@code-yeongyu/senpi',bin:'bin/pi'})).digest('hex');
+    return store.installJobs().some(job => job.catalogId === 'pi' && job.target === binding.target
+      && job.executablePath === binding.executable && job.recipeHash === recipeHash);
+  }
   for(const policy of store.policies()){
+    if (senpiPolicy(policy)) {
+      if (policy.mode !== 'off') store.putPolicy({...policy,nextCheckAt:null,waitingReason:'pi_source_changed_senpi'});
+      continue;
+    }
     if(policy.intervalMinutes===60&&policy.firstCheck==='now'&&(policy.mode==='off'||policy.mode==='update'))continue;
     store.putPolicy({...policy,mode:policy.mode==='off'?'off':'update',intervalMinutes:60,firstCheck:'now',
       nextCheckAt:policy.mode==='off'?null:clock.now()});
@@ -154,9 +168,10 @@ export async function createController(options: Options, dependencies: {
   }
   function latestResult(entry:CatalogEntry,latestVersion:string):CatalogCheck {
     const installed=entry.installed?.version;
-    const comparable=installed&&/^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/.test(installed)&&/^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/.test(latestVersion);
+    const semver=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
+    const comparable=installed&&semver.test(installed)&&semver.test(latestVersion);
     const order=comparable?Bun.semver.order(latestVersion,installed):null;
-    return {status:installed===latestVersion?'current':order===null?'unknown':order>0?'available':order<0?'ahead':'current',latestVersion,checkedAt:clock.now(),failure:null};
+    return {status:order===null?'unknown':order>0?'available':order<0?'ahead':'current',latestVersion,checkedAt:clock.now(),failure:null};
   }
   async function checkCatalog(catalogId:CatalogId):Promise<CatalogCheck> {
     if(!isSupportedCli(catalogId))throw new AppError('unsupported','cli_not_supported');
@@ -239,6 +254,7 @@ export async function createController(options: Options, dependencies: {
       const before=JSON.stringify(store.policies());
       const activePolicies=store.policies().filter(row=>row.mode!=='off'&&policyFamily(row.installationId)===id);
       const previous=activePolicies.find(row=>row.installationId===`catalog:${id}`)??activePolicies[0];
+      if(previous&&senpiPolicy(previous))throw new AppError('source_changed','pi_source_changed_senpi');
       const target=previous?await updates.targetFor(id,installation):null;
       if(!installation.version)throw new AppError('unavailable','installed_version_unverified');
       if(JSON.stringify(store.policies())!==before)throw new AppError('conflict','policy_changed');
@@ -492,7 +508,7 @@ export async function createController(options: Options, dependencies: {
     })());
   }
   function paneSessionPolicy(installationId: string): PaneSessionPolicy {
-    return store.policies().find(row => row.installationId === installationId)?.paneSessions ?? "restart-idle";
+    return store.policies().find(row => row.installationId === installationId)?.paneSessions ?? "keep";
   }
   async function confirm(operation: AppOperation, sessions: readonly { readonly id: string; readonly generation: number }[],
     restart: boolean, automatic = false, paneSessions: PaneSessionPolicy = paneSessionPolicy(operation.installationId)): Promise<void> {
@@ -830,12 +846,17 @@ export async function createController(options: Options, dependencies: {
             if(policy.mode!=='update'||!policy.catalogBinding)throw new AppError('unsupported','catalog_policy_unsupported');
             const target=await updates.targetFor(catalogId);
             if(updateBinding(target)!==policy.catalogBinding)throw new AppError('source_changed','update_target_changed');
+            const entry=catalog.entries().find(row=>row.id===catalogId);
+            const binding=entry?catalogCheckBinding(entry):null;
             const latest=await (dependencies.latest??latestCatalogVersion)(catalogId,target);
             if(closed||closing||!unchanged())continue;
             await catalog.settled();
             const checkedEntry=catalog.entries().find(entry=>entry.id===catalogId);
+            if(!checkedEntry||catalogCheckBinding(checkedEntry)!==binding)
+              throw new AppError('source_changed','installation_selection_changed');
             const installed=checkedEntry?.installed?.version??null;
-            if(checkedEntry){catalogChecks.set(catalogId,{binding:catalogCheckBinding(checkedEntry),result:latestResult(checkedEntry,latest)});changed();}
+            const checkResult=latestResult(checkedEntry,latest);
+            catalogChecks.set(catalogId,{binding:catalogCheckBinding(checkedEntry),result:checkResult});changed();
             // An installed version that differs from the last check means something outside this app
             // installed it. Record it like an update so the pane-session policy runs as it would after ours.
             const previous=policy.lastInstalledVersion??store.catalogUpdates()
@@ -849,7 +870,7 @@ export async function createController(options: Options, dependencies: {
               store.putCatalogUpdate(external);changed();
               background(restartCatalogPaneSessions(external.id));
             }
-            if(installed===latest)continue;
+            if(checkResult.status!=='available')continue;
             if(closed||closing||!unchanged())continue;
             const job=await updates.plan(catalogId,`auto:${randomUUID()}`);
             await updates.confirm(job.id,job.revision,()=>!closed&&!closing&&unchanged()
@@ -932,6 +953,7 @@ export async function createController(options: Options, dependencies: {
         case 'default-plan':await defaults.plan(action.catalogId,action.installationId,request.requestId);break;
         case 'default-confirm':await defaults.confirm(action.jobId,action.revision);break;
         case 'catalog-update-plan':await updates.plan(action.catalogId,request.requestId);break;
+        case 'catalog-update-recover':await updates.recover(action.jobId,action.revision,action.action);break;
         case 'catalog-check':if(!isSupportedCli(action.catalogId))throw new AppError('unsupported','cli_not_supported');background(checkCatalog(action.catalogId).then(()=>{}));break;
         case 'catalog-check-all':background(bulk.plan(false));break;
         case 'catalog-update-all-plan':background(bulk.plan(true));break;
@@ -1026,7 +1048,7 @@ export async function createController(options: Options, dependencies: {
           const sameSchedule = previous !== undefined && previous.mode === action.mode && previous.intervalMinutes === action.intervalMinutes
             && (previous.firstCheck ?? "now") === (action.firstCheck ?? "now") && action.paneSessions !== undefined && action.paneSessions !== previous.paneSessions;
           store.putPolicy({ installationId: action.installationId, mode: action.mode, intervalMinutes: action.intervalMinutes,
-            ...(catalogBinding?{catalogBinding}:{}), paneSessions: action.paneSessions ?? previous?.paneSessions ?? "restart-idle",
+            ...(catalogBinding?{catalogBinding}:{}), paneSessions: action.paneSessions ?? previous?.paneSessions ?? "keep",
             firstCheck: action.firstCheck ?? "now", lastCheckedAt: previous?.lastCheckedAt ?? null,
             nextCheckAt: action.mode === "off" ? null : sameSchedule ? previous.nextCheckAt
               : clock.now() + (action.firstCheck === "after-interval" ? action.intervalMinutes * 60_000 : 0),

@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { AppStore } from '../../src/app/store';
 import { createCatalogUpdates, updateBinding } from '../../src/app/catalog-updates';
 import { AppError } from '../../src/app/types';
@@ -18,6 +18,7 @@ test('unsupported persisted ready updates remain stored but cannot resolve or ex
 
 function fixture() {
   const directory=realpathSync(mkdtempSync('/tmp/catalog-update-'));
+  mkdirSync(directory+'/cli/bin',{recursive:true});writeFileSync(directory+'/cli/bin/codex','#!/bin/sh\necho 1.0.0\n',{mode:0o755});
   const store=new AppStore(directory);
   let executions=0,blocked=false,fingerprint='a'.repeat(64);
   const entered=Promise.withResolvers<void>(),release=Promise.withResolvers<void>();

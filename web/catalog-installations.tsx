@@ -3,7 +3,9 @@ import type { AppCommand, AppSnapshot } from '../src/app/types';
 import type { CatalogEntry, CatalogInstallation } from '../src/app/catalog-types';
 import type { CatalogDefaultJob } from '../src/app/catalog-default-jobs';
 import { AgentMark } from './agent-mark';
-import { RemovalActions } from './catalog-removal';
+import type { RemovalJob } from '../src/app/catalog-removal';
+import { cleanupRows } from './catalog-cleanup';
+import { removalExplanation } from './removal-status';
 import { Badge, Button, Dialog, Facts, Notice } from './primitives';
 import { useLanguage } from './i18n';
 import { versionStatusLabel } from './install-status';
@@ -11,6 +13,70 @@ import { Select } from './select';
 
 type Props={readonly entry:CatalogEntry;readonly snapshot:AppSnapshot;readonly act:(command:AppCommand)=>Promise<boolean>;readonly disabled:boolean;readonly onInstall?:()=>void};
 type Waiting={readonly ids:readonly string[];readonly installation:CatalogInstallation;readonly serverInstance:string|undefined};
+
+export function locationRemovalIsStale(entry:CatalogEntry,snapshot:AppSnapshot,installation:CatalogInstallation,review:RemovalJob,server:string|undefined):boolean {
+  const row=entry.installations?.find(row=>row.id===installation.id);
+  const current=snapshot.removalJobs?.find(job=>job.id===review.id);
+  return snapshot.service!=='ready'||snapshot.serverInstance!==server||!row
+    ||JSON.stringify(row)!==JSON.stringify(installation)||!current||current.stage!=='ready'
+    ||current.revision!==review.revision||JSON.stringify(current)!==JSON.stringify(review)
+    ||(review.installationId??null)!==(installation.id===entry.selectedInstallationId?null:installation.id)
+    ||(review.target.executable!==installation.path&&review.target.executable!==installation.identityPath);
+}
+
+function LocationRemoval({entry,snapshot,act,disabled,installation}:{entry:CatalogEntry;snapshot:AppSnapshot;act:Props['act'];disabled:boolean;installation:CatalogInstallation}) {
+  const {t}=useLanguage();
+  const [waiting,setWaiting]=useState<{known:readonly string[];row:CatalogInstallation;server:string|undefined}|null>(null);
+  const [review,setReview]=useState<{job:RemovalJob;row:CatalogInstallation;server:string|undefined}|null>(null);
+  const [pending,setPending]=useState(false);
+  const [unknown,setUnknown]=useState(false);
+  const busy=useRef(false);
+  const state=cleanupRows(entry,snapshot).find(row=>row.installation.id===installation.id);
+  const defaultHeld=entry.configuredDefaultInstallationId===installation.id||(!entry.configuredDefaultInstallationId&&installation.isDefault);
+  const sourceHeld=installation.removalSupport?.kind==='unsupported'||(installation.manager==='unknown'&&installation.removalSupport?.kind!=='review');
+  const held=!!state?.sessionPids.length||defaultHeld||sourceHeld;
+  const blocked=disabled||!!held||installationControlsBlocked(entry,snapshot)||unknown;
+  const stale=!!review&&locationRemovalIsStale(entry,snapshot,review.row,review.job,review.server);
+  useEffect(()=>{
+    if(!waiting)return;
+    if(snapshot.serverInstance!==waiting.server||JSON.stringify(installation)!==JSON.stringify(waiting.row)){setWaiting(null);setUnknown(true);return;}
+    const job=snapshot.removalJobs?.find(job=>job.catalogId===entry.id&&(job.installationId??null)===(installation.id===entry.selectedInstallationId?null:installation.id)&&!waiting.known.includes(job.id));
+    if(job){setWaiting(null);if(job.stage==='ready')setReview({job,row:waiting.row,server:waiting.server});else setUnknown(true);}
+  },[snapshot.removalJobs,snapshot.serverInstance,installation,entry.selectedInstallationId,waiting]);
+  const plan=async()=>{
+    if(blocked||pending||waiting||busy.current)return;
+    busy.current=true;setPending(true);setWaiting({known:(snapshot.removalJobs??[]).map(job=>job.id),row:installation,server:snapshot.serverInstance});
+    try{if(!await act({kind:'remove-plan',catalogId:entry.id,...(installation.id===entry.selectedInstallationId?{}:{installationId:installation.id})})){setWaiting(null);setUnknown(true);}}
+    catch{setWaiting(null);setUnknown(true);}finally{busy.current=false;setPending(false);}
+  };
+  const confirm=async()=>{
+    if(!review||blocked||stale||pending||busy.current||review.job.references?.length)return;
+    busy.current=true;setPending(true);
+    try{if(await act({kind:'remove-confirm',jobId:review.job.id,revision:review.job.revision}))setReview(null);else setUnknown(true);}
+    catch{setUnknown(true);}finally{busy.current=false;setPending(false);}
+  };
+  return <>
+    {held&&<div data-removal-blocked="true"><Notice tone="warning">{state?.sessionPids.length?t(`실행 중인 세션이 있습니다: ${state.sessionPids.join(', ')}`,`Sessions are running: ${state.sessionPids.join(', ')}`):sourceHeld?removalExplanation(installation.removalSupport?.reason??'removal_source_unverified',t):t('터미널 기본 실행입니다. 다른 설치로 전환한 뒤 다시 검토하세요.','This is the terminal default. Review switching to another installation first.')}</Notice></div>}
+    {installationControlsBlocked(entry,snapshot)&&<p className="muted">{t('자동 업데이트·진행 중이거나 결과 미확인인 작업·설치 목록을 먼저 확인하세요.','Removal is blocked by automation, active or uncertain work, or unverified inventory.')}</p>}
+    <Button data-action="location-remove-plan" disabled={blocked||pending||!!waiting} onClick={()=>void plan()}>{t('이 위치 제거 검토','Review removal at this location')}</Button>
+    {waiting&&<Button onClick={()=>setWaiting(null)}>{t('닫기','Close pending review')}</Button>}
+    {unknown&&<Notice tone="warning">{t('요청 결과가 미확인입니다. 자동 재시도하지 않습니다. 최신 상태를 확인한 뒤 다시 여세요.','Request outcome is unknown. No automatic retry; inspect fresh state and reopen.')}</Notice>}
+    {review&&<Dialog title={t('이 위치 제거 검토','Review removal at this location')} onClose={()=>setReview(null)}>
+      <div className="removal-facts"><Facts items={[
+        [t('정확한 실행 파일','Exact executable'),<span className="path">{review.job.target.executable}</span>],
+        [t('버전','Version'),review.row.version??t('미확인','Unknown')],
+        [t('제거 방법','Removal method'),review.job.target.kind],
+        [t('제거 대상','Removal target'),<span className="path">{review.job.target.kind==='standalone'?review.job.target.payload:review.job.target.kind==='brew'?review.job.target.payloadRoot:review.job.target.kind==='owned'?review.job.target.target:review.job.target.target+'/node_modules/'+review.job.target.packageName}</span>],
+        [t('보존 경로','Preserved paths'),review.job.target.preserve.map(path=><span className="path" key={path}>{path}</span>)],
+      ]}/></div>
+      <Notice>{t('대화·로그인·사용자 데이터를 보존합니다.','Conversations, login and user data are preserved.')}</Notice>
+      {(review.job.target.kind==='owned'||review.job.target.kind==='standalone')&&<Notice>{t('파일을 보관하고 실행 경로에서 제거합니다. 디스크 공간을 비우는 완전 삭제가 아닙니다.','Files are archived and removed from the launch path; this does not reclaim disk space.')}</Notice>}
+      {!!review.job.references?.length&&<Notice tone="warning">{t('이 위치를 참조하는 설정 때문에 제거할 수 없습니다.','Configuration references block removal.')}<ul>{review.job.references.map(path=><li className="path" key={path}>{path}</li>)}</ul></Notice>}
+      {stale&&<Notice tone="warning">{t('위치·버전·계획 또는 서비스가 바뀌었습니다. 닫고 다시 검토하세요.','Location, version, plan or service changed. Close and review again.')}</Notice>}
+      <Button data-action="location-remove-confirm" tone="danger" disabled={blocked||pending||stale||!!review.job.references?.length} onClick={()=>void confirm()}>{t('이 위치 제거 승인','Confirm removal at this location')}</Button>
+    </Dialog>}
+  </>;
+}
 
 export function installationControlsBlocked(entry:CatalogEntry,snapshot:AppSnapshot,options:{readonly automation?:boolean}={}):boolean {
   const core=snapshot.installations.filter(installation=>installation.family===entry.id);
@@ -88,7 +154,7 @@ export function CatalogInstallations({entry,snapshot,act,disabled}:Props) {
   };
   const managers:Record<CatalogInstallation['manager'],string>={owned:t('레거시 앱 전용','Legacy app-owned'),bun:'Bun',npm:'npm',brew:'Homebrew',unknown:t('출처 미확인','Unknown manager')};
   return <section className="stack" data-catalog-installations={entry.id}>
-    <h3 className="cli-heading"><AgentMark agent={entry.id} size={24}/>{t('업데이트할 설치','Installation to update')}</h3>
+    <h3 className="cli-heading"><AgentMark agent={entry.id} size={24}/>{t('설치 위치와 업데이트 대상','Installation locations and update target')}</h3>
     <Facts items={[[t('업데이트 대상','Update target'),selected?`${managers[selected.manager]} · ${selected.version??'—'}`:t('선택되지 않음','Not selected')]]}/>
     <p className="muted">{t('CLI별 자동·일괄 업데이트 대상은 하나입니다. 관리 대상을 바꾸면 기존 자동화도 검증된 대상으로 이전하며 다른 설치는 수동으로 관리합니다. 선택만으로 셸 기본 실행은 바뀌지 않습니다.','Each CLI has one automatic and bulk update target. Selecting a verified target transfers existing automation; other installations remain manual. Selection does not change the shell default.')}</p>
     <p className="muted">{t('출처 미확인 행은 관찰된 실행 경로이며 별개의 설치 패키지로 확인된 수가 아닙니다.','Unknown-manager rows are observed execution paths, not a count of proven distinct installed packages.')}</p>
@@ -115,7 +181,7 @@ export function CatalogInstallations({entry,snapshot,act,disabled}:Props) {
     <p className="muted">{t('승인하면 ~/.zshrc를 수정합니다. 현재 열린 대화는 유지하며 새 대화형 zsh부터 적용됩니다.','Confirmation changes ~/.zshrc for new interactive zsh shells. Existing conversations stay open.')}</p>
     </section>
     <section className="stack" data-role="installation-removal"><h3>{t('설치 삭제','Remove installations')}</h3>
-    {rows.map(row=><details key={row.id} data-removal-installation={row.id}><summary>{t('이 설치 제거','Remove this installation')+' · '+managers[row.manager]+' · '+(row.version??'—')}</summary><div className="stack"><p className="path">{row.path}</p><p className="muted">{t('이 설치만 제거하며 대화·로그인·사용자 데이터는 보존합니다.','Remove only this installation; preserve conversations, login and user data.')}</p><div className="cluster"><RemovalActions snapshot={snapshot} act={act} disabled={locked||(row.id!==entry.selectedInstallationId&&(entry.configuredDefaultInstallationId===row.id||(!entry.configuredDefaultInstallationId&&row.isDefault)))} catalogId={entry.id} installationId={row.id===entry.selectedInstallationId?undefined:row.id}/></div></div></details>)}
+    {rows.map(row=><details key={row.id} data-removal-installation={row.id}><summary>{t('이 설치 제거','Remove this installation')+' · '+managers[row.manager]+' · '+(row.version??'—')}</summary><div className="stack"><p className="path">{row.path}</p><p className="muted">{t('이 설치만 제거하며 대화·로그인·사용자 데이터는 보존합니다.','Remove only this installation; preserve conversations, login and user data.')}</p><LocationRemoval entry={entry} snapshot={snapshot} act={act} disabled={locked} installation={row}/></div></details>)}
     </section>
     {waiting&&<Button onClick={()=>setWaiting(null)}>{t('검토 대기 닫기','Close pending review')}</Button>}
     {unknown&&<Notice tone="warning">{t('요청 결과가 확인되지 않았습니다. 자동으로 재시도하지 않습니다. 최신 작업 상태와 실제 경로를 확인하세요.','The request outcome is unknown. It will not retry automatically. Inspect the latest job state and actual paths.')}<Button disabled={disabled||pending} onClick={()=>void act({kind:'refresh'}).then(ok=>{if(ok){setUnknown(false);setWaiting(null);setReview(null);}})}>{t('최신 상태 확인','Refresh status')}</Button></Notice>}

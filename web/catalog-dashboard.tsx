@@ -1,38 +1,115 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AppCommand, AppSnapshot } from '../src/app/types';
-import type { CatalogEntry } from '../src/app/catalog-types';
+import type { CatalogEntry, CatalogInstallation } from '../src/app/catalog-types';
 import type { CatalogUpdateJob } from '../src/app/catalog-updates';
 import { AgentMark } from './agent-mark';
 import { CatalogInstallations } from './catalog-installations';
-import { UpdateExplanation } from './catalog-updates';
-import { Badge, Button, Dialog, Facts, Notice } from './primitives';
+import { CatalogUpdateReviewFacts, catalogReviewBinding, catalogUpdateTargetMatches, UpdateExplanation } from './catalog-updates';
+import { Badge, Button, Dialog, Notice } from './primitives';
 import { localeFor, useLanguage } from './i18n';
 import { versionStatusLabel } from './install-status';
 
+type Translate=(ko:string,en:string)=>string;
 type Tab='overview'|'sessions'|'history'|'automation';
 type Props={readonly entry:CatalogEntry;readonly snapshot:AppSnapshot;readonly act:(command:AppCommand)=>Promise<boolean>;
-  readonly disabled:boolean;readonly sessions:ReactNode;readonly history:ReactNode;readonly automation:ReactNode};
+  readonly disabled:boolean;readonly sessions:ReactNode;readonly history:ReactNode;readonly automation:ReactNode;
+  readonly routes?:ReactNode};
 
-export function CatalogDashboardRow({entry,snapshot,act,disabled,sessions,history,automation}:Props) {
+/** Machine-consumed through data-reason; never derived from translated prose. */
+export type UpdateBlockReason='not_checked'|'checking'|'current'|'ahead'|'not_comparable'|'check_failed'|'unsupported'
+  |'inventory_checking'|'inventory_failed'|'no_selected_installation'|'owner_unverified'|'service_unavailable';
+export type UpdateAction={readonly kind:'update'|'review'|'progress'|'inspect';readonly reason:UpdateBlockReason|null};
+
+export function catalogUpdateAction(entry:CatalogEntry,jobs:readonly CatalogUpdateJob[]):UpdateAction {
+  if(jobs.some(job=>job.stage==='uncertain'))return {kind:'inspect',reason:null};
+  if(jobs.some(job=>job.stage==='updating'))return {kind:'progress',reason:null};
+  if(entry.updateSupport?.kind==='unsupported'||entry.lastCheck?.status==='unsupported')return {kind:'update',reason:'unsupported'};
+  if(!entry.installed)return {kind:'update',reason:'no_selected_installation'};
+  if(entry.inventoryStatus==='checking')return {kind:'update',reason:'inventory_checking'};
+  if(entry.inventoryStatus==='failed')return {kind:'update',reason:'inventory_failed'};
+  if(jobs.some(job=>job.stage==='ready'))return {kind:'review',reason:null};
+  switch(entry.lastCheck?.status){
+    case 'available':return {kind:'update',reason:null};
+    case 'checking':return {kind:'update',reason:'checking'};
+    case 'current':return {kind:'update',reason:'current'};
+    case 'ahead':return {kind:'update',reason:'ahead'};
+    case 'unknown':return {kind:'update',reason:'not_comparable'};
+    case 'failed':return {kind:'update',reason:'check_failed'};
+    default:return {kind:'update',reason:'not_checked'};
+  }
+}
+
+export function updateActionLabel(kind:UpdateAction['kind'],t:Translate):string {
+  return kind==='review'?t('업데이트 검토','Review update'):kind==='progress'?t('진행 상태 보기','View progress')
+    :kind==='inspect'?t('결과 확인 필요','Inspect result'):t('업데이트','Update');
+}
+export function updateReasonText(reason:UpdateBlockReason,t:Translate):string {
+  switch(reason){
+    case 'not_checked':return t('최신 버전을 아직 확인하지 않았습니다. 먼저 최신 확인을 실행하세요.','The latest version has not been checked. Run Check latest first.');
+    case 'checking':return t('최신 버전을 조회하는 중입니다.','Checking the latest version.');
+    case 'current':return t('설치 버전이 조회한 최신 버전과 같습니다.','The installed version matches the checked latest version.');
+    case 'ahead':return t('설치 버전이 조회한 최신 버전보다 높아 업데이트하지 않습니다.','The installed version is newer than the checked latest version, so it will not be changed.');
+    case 'not_comparable':return t('두 버전을 비교할 수 없어 업데이트하지 않습니다. 최신 확인을 다시 실행하세요.','The versions cannot be compared, so nothing will be updated. Check latest again.');
+    case 'check_failed':return t('최신 조회에 실패했습니다. 최신 버전이라는 뜻이 아닙니다. 최신 확인을 다시 실행하세요.','The latest check failed; this does not mean it is up to date. Check latest again.');
+    case 'unsupported':return t('이 설치 방식은 앱 내 업데이트를 지원하지 않습니다. 상세에서 이유와 공식 안내를 확인하세요.','In-app updates are not supported for this installation method. See Details for the reason and official guide.');
+    case 'inventory_checking':return t('설치 위치를 확인하는 중입니다.','Checking installation locations.');
+    case 'inventory_failed':return t('설치 위치 확인에 실패했습니다. 목록을 새로고침하세요.','Installation discovery failed. Refresh the list.');
+    case 'no_selected_installation':return t('업데이트할 설치가 정해지지 않았습니다. 상세에서 설치 위치를 확인하세요.','No installation is selected for updates. Check installation locations in Details.');
+    case 'owner_unverified':return t('설치 출처를 확인하지 못해 업데이트할 수 없습니다.','The installation source could not be verified, so it cannot be updated.');
+    case 'service_unavailable':return t('서비스 연결이나 진행 중인 요청이 끝난 뒤 사용할 수 있습니다.','Available once the service is connected and pending requests finish.');
+  }
+}
+
+export function UpdateControl({action,blocked,target,onActivate}:{readonly action:UpdateAction;readonly blocked:boolean;readonly target:string|null;readonly onActivate:()=>void}) {
+  const {t}=useLanguage();
+  const id=useId();
+  const targetId=id+'-target';
+  const navigational=action.kind==='progress'||action.kind==='inspect';
+  const reason=action.reason??(blocked&&!navigational?'service_unavailable':null);
+  return <div className="update-control">
+    <Button data-action="update" data-update-kind={action.kind} data-reason={reason??undefined} tone="primary"
+      aria-disabled={reason?true:undefined} aria-describedby={[target?targetId:'',reason?id:''].filter(Boolean).join(' ')||undefined}
+      onClick={()=>{if(!reason)onActivate();}}>{updateActionLabel(action.kind,t)}</Button>
+    <p className="update-target" id={targetId} data-update-target={target??''}><span className="muted">{t('대상','Target')}: </span><span className="path">{target??t('선택된 설치 없음','No selected installation')}</span></p>
+    {reason&&<p className="update-reason" id={id}>{updateReasonText(reason,t)}</p>}
+  </div>;
+}
+
+export function VersionEvidence({installed,latest,checkedAt}:{readonly installed:ReactNode;readonly latest:ReactNode;readonly checkedAt:string}) {
+  const {t}=useLanguage();
+  return <dl className="version-evidence">
+    <div><dt>{t('설치 버전','Installed')}</dt><dd className="version-value" data-evidence="installed">{installed}</dd></div>
+    <div><dt>{t('조회한 최신 버전','Checked latest')}</dt><dd className="version-value" data-evidence="latest">{latest}</dd><dd className="muted">{t('조회','Checked')}: {checkedAt}</dd></div>
+  </dl>;
+}
+
+export function sourceLabel(manager:CatalogInstallation['manager'],t:Translate):string {
+  return manager==='bun'?t('Bun 전역 설치','Bun global'):manager==='npm'?t('npm 전역 설치','npm global'):manager==='brew'?'Homebrew'
+    :manager==='owned'?t('앱 전용 설치','App-owned'):t('출처 미확인','Unknown source');
+}
+
+export function CatalogDashboardRow({entry,snapshot,act,disabled,sessions,history,automation,routes}:Props) {
   const {language,t}=useLanguage();
   const id=useId();
   const [tab,setTab]=useState<Tab|null>(null);
   const [pending,setPending]=useState(false);
-  const [waiting,setWaiting]=useState<readonly string[]|null>(null);
-  const [review,setReview]=useState<{readonly job:CatalogUpdateJob;readonly server:string|undefined}|null>(null);
+  const [waiting,setWaiting]=useState<{readonly ids:readonly string[];readonly server:string|undefined;readonly binding:string}|null>(null);
+  const [review,setReview]=useState<{readonly job:CatalogUpdateJob;readonly server:string|undefined;readonly binding:string;readonly checkedAt:number|null}|null>(null);
   const busy=useRef(false);
-  const jobs=snapshot.catalogUpdates??[];
+  const jobs=(snapshot.catalogUpdates??[]).filter(job=>job.catalogId===entry.id);
   const activeJob=jobs.find(job=>job.stage==='updating'||job.stage==='uncertain');
   const ready=[...jobs].reverse().find(job=>job.stage==='ready');
   const current=review&&jobs.find(job=>job.id===review.job.id);
-  const stale=!!review&&(!current||current.stage!=='ready'||current.revision!==review.job.revision
-    ||review.server!==snapshot.serverInstance||(review.job.installationId??null)!==(entry.selectedInstallationId??null)
-    ||![entry.installed?.path,entry.installed?.identityPath].includes(review.job.target.executable)||!!activeJob);
-  const blocked=disabled||pending||!!waiting||!!activeJob||!entry.installed||entry.inventoryStatus==='checking'||entry.inventoryStatus==='failed';
+  const binding=catalogReviewBinding(entry);
+  const stale=!!review&&(!current||current.stage!=='ready'||JSON.stringify(current)!==JSON.stringify(review.job)
+    ||review.server!==snapshot.serverInstance||review.binding!==binding
+    ||!catalogUpdateTargetMatches(entry,review.job)||entry.installed?.version!==review.job.beforeVersion||!!activeJob);
+  const blocked=disabled||snapshot.service!=='ready'||pending||!!waiting||!!activeJob||!entry.installed||entry.inventoryStatus==='checking'||entry.inventoryStatus==='failed';
   const check=entry.lastCheck;
   const unsupported=entry.updateSupport?.kind==='unsupported'||check?.status==='unsupported';
   const status=check?.status??'unchecked';
+  const action=catalogUpdateAction(entry,jobs);
   const labels={unchecked:t('최신 확인 전','Not checked'),checking:t('최신 조회 중','Checking latest'),available:t('새 버전 있음','New version available'),current:t('최신 버전','Up to date'),ahead:t('설치 버전이 더 높음','Installed version is newer'),unknown:t('버전 비교 불가','Versions not comparable'),unsupported:t('앱 내 조회 미지원','In-app check unavailable'),failed:t('최신 조회 실패','Latest check failed')};
   const policy=snapshot.policies.find(row=>row.mode!=='off');
   const running=snapshot.observedAt==null||snapshot.observationFailure?null:snapshot.external.filter(row=>row.herdrPane&&row.processState!=='exited').length;
@@ -40,15 +117,19 @@ export function CatalogDashboardRow({entry,snapshot,act,disabled,sessions,histor
   const tabs:readonly Tab[]=['overview','sessions','history','automation'];
   const titles={overview:t('개요','Overview'),sessions:t('세션','Sessions'),history:t('기록','History'),automation:t('자동화','Automation')};
   const stamp=(at:number|null|undefined)=>at==null?t('아직 없음','Not yet'):new Date(at).toLocaleString(localeFor(language));
+  const selected=entry.installations?.find(row=>row.id===entry.selectedInstallationId)??null;
+  const latest=check&&['available','current','ahead','unknown'].includes(check.status)&&check.latestVersion?check.latestVersion:'—';
   useEffect(()=>{
     if(!waiting)return;
-    const planned=jobs.find(job=>job.stage==='ready'&&!waiting.includes(job.id));
-    if(planned){setReview({job:planned,server:snapshot.serverInstance});setWaiting(null);}
-  },[jobs,waiting,snapshot.serverInstance]);
+    if(waiting.server!==snapshot.serverInstance||waiting.binding!==binding){setWaiting(null);return;}
+    const planned=jobs.find(job=>!waiting.ids.includes(job.id));
+    if(planned?.stage==='ready'){setReview({job:planned,server:waiting.server,binding:waiting.binding,checkedAt:entry.lastCheck?.checkedAt??null});setWaiting(null);}
+    else if(planned)setWaiting(null);
+  },[jobs,waiting,snapshot.serverInstance,binding,entry.lastCheck?.checkedAt]);
   const plan=async()=>{
     if(blocked||busy.current)return;
-    if(ready){setReview({job:ready,server:snapshot.serverInstance});return;}
-    busy.current=true;setPending(true);setWaiting(jobs.map(job=>job.id));
+    if(ready){setReview({job:ready,server:snapshot.serverInstance,binding,checkedAt:entry.lastCheck&&entry.lastCheck.latestVersion===ready.checkedVersion?entry.lastCheck.checkedAt:null});return;}
+    busy.current=true;setPending(true);setWaiting({ids:jobs.map(job=>job.id),server:snapshot.serverInstance,binding});
     try{if(!await act({kind:'catalog-update-plan',catalogId:entry.id}))setWaiting(null);}
     finally{busy.current=false;setPending(false);}
   };
@@ -61,21 +142,21 @@ export function CatalogDashboardRow({entry,snapshot,act,disabled,sessions,histor
   return <section className="cli-entry" data-catalog-id={entry.id}>
     <div className="cli-row">
       <div className="cli-identity"><h2 className="cli-heading"><AgentMark agent={entry.id} size={24}/>{entry.name}<Badge tone={status==='current'?'success':'neutral'}>{unsupported&&status==='unchecked'?labels.unsupported:labels[status]}</Badge></h2>
-        <p className="cli-version">{entry.installed?.version??versionStatusLabel(entry.installed?.versionStatus,t)}{status==='available'&&check?.latestVersion&&<> <span>→ {check.latestVersion}</span></>}</p>
-        <p className="muted">{t('설치된 버전','Installed version')}{(entry.installations?.length??0)>1&&` · ${entry.installations?.length} ${t('개 설치 위치','installation paths')}`}</p>
+        <p className="muted" data-route="catalog">{t('업데이트 대상','Update target')}: {selected?sourceLabel(selected.manager,t):entry.installed?t('발견된 기본 설치','Discovered installation'):t('선택 안 됨','Not selected')}{(entry.installations?.length??0)>1&&` · ${entry.installations?.length} ${t('개 설치 위치','installation paths')}`}</p>
+        <VersionEvidence installed={entry.installed?.version??versionStatusLabel(entry.installed?.versionStatus,t)} latest={latest} checkedAt={stamp(check?.checkedAt)}/>
       </div>
       <div className="cli-actions">
+        <UpdateControl action={action} blocked={blocked} target={selected?.path??entry.installed?.path??null} onActivate={()=>{if(action.kind==='progress'||action.kind==='inspect')setTab('history');else void plan();}}/>
         <Button data-action="catalog-check" disabled={blocked||entry.updateSupport?.kind==='unsupported'||status==='checking'} onClick={()=>void act({kind:'catalog-check',catalogId:entry.id})}>{t('최신 확인','Check latest')}</Button>
-        {activeJob?<Button onClick={()=>setTab('history')}>{t('진행·결과 보기','View progress / result')}</Button>:(ready||status==='available')&&!unsupported&&<Button data-action="catalog-update-plan" tone="primary" disabled={blocked} onClick={()=>void plan()}>{ready?t('업데이트 검토','Review update'):t('업데이트 준비','Prepare update')}</Button>}
         <Button aria-expanded={tab!==null} aria-controls={id} onClick={()=>setTab(tab?null:'overview')}>{tab?t('상세 닫기','Close details'):t('상세 보기','Details')}</Button>
       </div>
       <dl className="cli-status">
         <div><dt>{t('실행 세션','Active sessions')}</dt><dd><Button className="status-link" onClick={()=>setTab('sessions')}>{t('herdr 창','herdr panes')} {running??'—'}{managed>0&&` · ${t('관리','Managed')} ${managed}`} →</Button></dd></div>
         <div><dt>{t('자동 업데이트','Automatic updates')}</dt><dd><Button className="status-link" onClick={()=>setTab('automation')}>{policy?t('켜짐','On'):unsupported?t('지원 안 됨','Unsupported'):t('꺼짐','Off')} →</Button></dd>{policy&&<dd>{t('다음 확인','Next check')}: {stamp(policy.nextCheckAt)}</dd>}</div>
-        <div><dt>{t('최신 버전 조회','Latest version check')}</dt><dd>{stamp(check?.checkedAt)}</dd><dd>{check?.latestVersion??t('확인 전 / 확인 불가','Not checked / unavailable')}</dd></div>
       </dl>
     </div>
     {waiting&&<Notice>{t('설치 출처와 업데이트 대상을 확인 중입니다.','Checking installation source and update target.')}<Button onClick={()=>setWaiting(null)}>{t('닫기','Close')}</Button></Notice>}
+    {routes&&<div className="cli-routes"><p className="eyebrow">{t('같은 CLI의 다른 업데이트 경로','Other update routes for this CLI')}</p>{routes}</div>}
     {tab&&<div className="cli-detail" id={id}>
       <div className="detail-tabs" role="tablist" aria-label={entry.name+' '+t('상세','details')}>{tabs.map((key,index)=><button key={key} type="button" role="tab" id={id+'-'+key} aria-selected={tab===key} aria-controls={id+'-panel'} tabIndex={tab===key?0:-1} onClick={()=>setTab(key)} onKeyDown={event=>{
         const next=event.key==='ArrowRight'?(index+1)%tabs.length:event.key==='ArrowLeft'?(index+tabs.length-1)%tabs.length:event.key==='Home'?0:event.key==='End'?tabs.length-1:null;
@@ -94,7 +175,7 @@ export function CatalogDashboardRow({entry,snapshot,act,disabled,sessions,histor
     </div>}
     {review&&<Dialog title={entry.name+' · '+t('업데이트 검토','Review update')} onClose={()=>setReview(null)}>
       <Notice>{t('선택한 설치만 업데이트합니다. 실행 중인 세션은 종료하거나 다시 시작하지 않습니다. 실행 시 배포처의 최신 버전을 받아 설치한 뒤 버전을 검증합니다.','Updates only this installation. Running sessions are not stopped or restarted. The latest release is fetched at execution and its installed version is verified.')}</Notice>
-      <div className="removal-facts"><Facts items={[[t('설치된 버전','Installed version'),review.job.beforeVersion??t('미확인','Unknown')],[t('설치 방식','Installation method'),review.job.target.kind],[t('대상 실행 파일','Target executable'),<span className="path">{review.job.target.executable}</span>]]}/></div>
+      <CatalogUpdateReviewFacts job={review.job} checkedAt={review.checkedAt}/>
       {stale&&<Notice tone="warning">{t('설치 또는 계획이 바뀌었습니다. 닫고 다시 검토하세요.','The installation or plan changed. Close and review again.')}</Notice>}
       <div className="cluster"><Button onClick={()=>setReview(null)}>{t('취소','Cancel')}</Button><Button data-action="catalog-update-confirm" tone="primary" disabled={blocked||stale} onClick={()=>void confirm()}>{t('설치 업데이트 실행','Update installation')}</Button></div>
     </Dialog>}

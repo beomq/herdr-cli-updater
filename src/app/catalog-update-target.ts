@@ -18,7 +18,13 @@ export type UpdateTarget=z.infer<typeof updateTargetSchema>;
 type DiscoverOptions = Parameters<typeof discoverRemoval>[0];
 type UpdateOptions = {
   readonly catalogId:CatalogId; readonly directory:string; readonly home:string; readonly path:string;
+  readonly beforeMutation?:()=>void;
 };
+export class UpdateExecutionError extends AppError {
+  constructor(readonly mutationStarted:boolean, error:Error) {
+    super(error instanceof AppError?error.code:'unavailable',error instanceof AppError?error.detail:'update_failed');
+  }
+}
 const packageSchema=z.object({name:z.string(),version:z.string(),bin:z.union([z.string(),z.record(z.string(),z.string())])});
 function changed():never {throw new AppError('source_changed','update_target_changed');}
 function recipeFor(id:CatalogId,target?:RemovalTarget) {
@@ -66,6 +72,15 @@ function validateTree(root:string):void {
 /** Installation-only update: recheck provenance, without stopping or restarting consumers. */
 export async function executeUpdate(target:UpdateTarget,options:UpdateOptions,
   onProgress:(event:string)=>void=()=>{}):Promise<string> {
+  let mutationStarted=false;
+  try {
+    return await execute(target,{...options,beforeMutation:()=>{options.beforeMutation?.();mutationStarted=true;}},onProgress);
+  } catch(error) {
+    if(!(error instanceof Error))throw error;
+    throw new UpdateExecutionError(mutationStarted,error);
+  }
+}
+async function execute(target:UpdateTarget,options:UpdateOptions,onProgress:(event:string)=>void):Promise<string> {
   if(target.kind==='official'){
     if(target.catalogId!==options.catalogId)changed();
     return executeOfficialUpdate(target,options,onProgress);
@@ -124,6 +139,8 @@ export async function executeUpdate(target:UpdateTarget,options:UpdateOptions,
             try{return realpathSync(part)!==dirname(target.executable);}
             catch(error){if(error instanceof Error&&'code' in error&&['ENOENT','ENOTDIR'].includes(String(error.code)))return false;throw error;}
           }).join(':'):options.path;
+        // executeRecipe writes installer scratch files inside the owned target before spawning.
+        guard();options.beforeMutation?.();
         await executeRecipe(recipe,{...options,path,target:target.target,beforeUpdate:guard},onProgress);
         break;
       }
@@ -131,7 +148,7 @@ export async function executeUpdate(target:UpdateTarget,options:UpdateOptions,
         const prefix=dirname(target.target);
         const root=await runProcess(target.manager,['root','--global','--prefix',prefix],env,work,15_000);
         if(root!==join(target.target,'node_modules'))changed();
-        onProgress('installer_started');guard();
+        onProgress('installer_started');guard();options.beforeMutation?.();
         await runProcess(target.manager,['install','--global','--prefix',prefix,
           '--registry=https://registry.npmjs.org','--no-audit','--no-fund',`${target.packageName}@latest`],
         env,work,900_000,()=>onProgress('installer_output_received'));
@@ -140,7 +157,7 @@ export async function executeUpdate(target:UpdateTarget,options:UpdateOptions,
       case 'bun': {
         const bin=await runProcess(target.manager,['pm','bin','--global'],env,work,15_000);
         if(bin!==dirname(target.executable))changed();
-        onProgress('installer_started');guard();
+        onProgress('installer_started');guard();options.beforeMutation?.();
         await runProcess(target.manager,['add','--global','--global-dir',target.target,
           '--global-bin-dir',dirname(target.executable),'--registry','https://registry.npmjs.org',`${target.packageName}@latest`],
         env,work,900_000,()=>onProgress('installer_output_received'));

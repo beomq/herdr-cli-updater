@@ -56,12 +56,14 @@ function privateDirectory(directory: string) {
 function parse(value: unknown) {
   const input = inputSchema.parse(value);
   const family = z.object({ family: z.enum(["codex", "omp", "pi", "omo", "claude"]) }).parse(input.installation).family;
+  // Historical Senpi profiles cannot authorize upstream Pi restart.
+  need(family !== "pi");
   const contract = parseAdapterContract({ version: 1, family, installation: input.installation, runtime: null,
     capabilities: { check: unsupported, update: unsupported, busySafe: unsupported,
       completion: unsupported, resume: unsupported, gracefulExit: unsupported } });
   need(contract.ok && ((contract.value.installation.owner.kind === "package"
     && contract.value.installation.owner.packageName === { codex: "@openai/codex", omp: "@oh-my-pi/pi-coding-agent",
-      pi: "@code-yeongyu/senpi", omo: "omo-ai", claude: "@anthropic-ai/claude-code" }[family])
+      omo: "omo-ai", claude: "@anthropic-ai/claude-code" }[family])
     || (family === "codex" && contract.value.installation.owner.kind === "native")));
   return { ...input, installation: contract.value.installation };
 }

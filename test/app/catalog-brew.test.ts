@@ -3,6 +3,8 @@ import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
 import { basename, dirname, join } from 'node:path';
 import { brewTargetSchema, discoverBrewTarget, executeBrewRemoval, executeBrewUpdate, latestBrewVersion, validateBrewTarget } from '../../src/app/catalog-brew';
 import type { BrewTarget } from '../../src/app/catalog-brew';
+import { AppStore } from '../../src/app/store';
+import { createCatalogUpdates } from '../../src/app/catalog-updates';
 
 function fixture(kind:'formula'|'cask'='formula',splitRepository=false) {
   const directory=realpathSync(mkdtempSync('/tmp/catalog-brew-')),home=join(directory,'home'),prefix=join(directory,'brew');
@@ -299,6 +301,29 @@ test('retains the complete cask build version while verifying the CLI release ve
     // Then inventory/latest compare the unchanged full package version.
     expect(basename(dirname(dirname(realpathSync(f.executable))))).toBe(version);
   }finally{http.close();f.close();}
+});
+for(const kind of ['formula','cask'] as const)test(`catalog jobs preserve the actual ${kind} executor return through interrupted recovery`,async()=>{
+  const f=fixture(kind),version=kind==='formula'?f.latest:'2.0.0,42';
+  const http=latestResponse(kind==='formula'?f.latestData:{...f.latestData,version});
+  const directory=join(f.directory,'state'),store=new AppStore(directory);
+  try{
+    // Given real discovery, SQLite, executor and inert Brew child with distinct package/CLI versions.
+    if(kind==='cask')f.configure({version,binaryVersion:'2.0.0'});
+    const updates=createCatalogUpdates({directory,home:f.home,path:f.options.path,store,guard:()=>{},changed:()=>{},installedChanged:()=>{},
+      entries:()=>[{id:'codex',name:'Codex',description:{ko:'',en:''},executable:'codex',sourceUrl:'https://example.test',method:'brew',availability:'installable',reason:null,
+        installed:{path:f.executable,version:f.initial,managed:false}}]});
+    // When the actual supported executor returns its package version.
+    const plan=await updates.plan('codex','brew-contract');await updates.confirm(plan.id,plan.revision);await updates.settled();
+    const completed=store.catalogUpdates()[0];if(!completed)throw new Error('missing_job');
+    expect(completed).toMatchObject({stage:'completed',installedVersion:version,expectedVersion:version});
+    expect(completed.executionTarget).toEqual(await f.target());
+    expect(completed.executionTarget?.fingerprint).not.toBe(plan.target.fingerprint);
+    // Then losing only the final completion acknowledgement must not lose the package build.
+    store.putCatalogUpdate({...completed,stage:'uncertain',installedVersion:null,failure:'response_lost',revision:completed.revision+1});
+    await updates.recover(completed.id,completed.revision+1,'reconcile');
+    expect(store.catalogUpdates()[0]).toMatchObject({stage:'completed',installedVersion:version,expectedVersion:version,reconciliation:{version:'2.0.0'}});
+    expect(f.commands().filter(row=>row.args[0]==='upgrade')).toHaveLength(1);
+  }finally{store.close();http.close();f.close();}
 });
 test('keeps third-party provider identity and explicitly refuses unsupported latest evidence',async()=>{
   const f=fixture(),http=latestResponse(f.latestData);

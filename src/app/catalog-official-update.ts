@@ -15,7 +15,7 @@ export const officialUpdateTargetSchema=z.object({
   fingerprint:z.string().regex(/^[a-f0-9]{64}$/),preserve:z.array(absolute).readonly(),
 }).strict();
 export type OfficialUpdateTarget=z.infer<typeof officialUpdateTargetSchema>;
-type Context={readonly home:string;readonly path:string;readonly directory:string};
+type Context={readonly home:string;readonly path:string;readonly directory:string;readonly beforeMutation?:()=>void};
 type Dependencies={readonly run?:typeof runProcess;readonly download?:(url:string)=>Promise<string>};
 const contracts={
   gjc:{root:'.local/bin',url:'https://raw.githubusercontent.com/Yeachan-Heo/gajae-code/main/scripts/install.sh',args:['--binary'],env:{GJC_NO_COMMUNITY_APP:'1',GJC_NONINTERACTIVE:'1'}},
@@ -108,6 +108,7 @@ export async function executeOfficialUpdate(input:OfficialUpdateTarget,context:C
     work=realpathSync(mkdtempSync(join(tmpdir(),'official-update-')));
     const script=join(work,'install.sh');writeFileSync(script,text,{mode:0o600,flag:'wx'});
     onProgress('download_complete');await check();onProgress('installer_started');
+    context.beforeMutation?.();
     await run(realpathSync('/bin/bash'),[script,...contracts[target.catalogId].args],{...environment(target.catalogId,context),TMPDIR:work},context.home,900_000,()=>onProgress('installer_output_received'));
     onProgress('verification_started');
     const updated=await discoverOfficialUpdate({...context,catalogId:target.catalogId,executable:target.executable});

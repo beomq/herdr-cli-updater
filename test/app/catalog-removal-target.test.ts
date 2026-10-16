@@ -69,11 +69,18 @@ test('Bun requires known global direct dependency lock and actual bound manager'
 });
 test('a transitive Bun dependency reports its ownership limitation rather than generic discovery failure',async()=>{
   const f=fixture();try{
-    const container=join(f.home,'.bun/install/global'),root=f.pkg(container,'@code-yeongyu/senpi','pi');
+    const container=join(f.home,'.bun/install/global'),root=f.pkg(container,'@earendil-works/pi-coding-agent','pi');
     f.file(join(container,'package.json'),JSON.stringify({dependencies:{'omo-ai':'1.0.0'}}));
     const reasons:string[]=[];
     expect(await discoverRemoval({catalogId:'pi',executable:join(root,'cli.js'),receipt:null,directory:f.home,home:f.home,path:f.path,refusal:value=>{reasons.push(value);}})).toBeNull();
     expect(reasons).toEqual(['removal_dependency_installation']);
+  }finally{f.close();}
+});
+test('historical standalone Senpi removal is never exposed as upstream Pi',async()=>{
+  const f=fixture();try {
+    const root=f.pkg(join(f.home,'.bun/install/global'),'@code-yeongyu/senpi','pi');
+    expect(await discoverRemoval({catalogId:'pi',executable:join(root,'cli.js'),receipt:null,directory:f.home,home:f.home,path:''})).toBeNull();
+    expect(readFileSync(join(root,'package.json'),'utf8')).toContain('@code-yeongyu/senpi');
   }finally{f.close();}
 });
 test('actual isolated Bun removal is bound to BUN_INSTALL and preserves other dependencies',async()=>{

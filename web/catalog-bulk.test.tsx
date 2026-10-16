@@ -71,3 +71,22 @@ test('unknown versions remain distinct from observed empty values',()=>{
   expect(markup).not.toContain('data-version="installed">0');
   expect(markup).not.toContain('data-version="checked-latest">0');
 });
+test('partial bulk results expose per-job recovery without replaying completed items',()=>{
+  const job={id:'job',requestId:'request',catalogId:'omo' as const,revision:8,stage:'uncertain' as const,target:{kind:'owned' as const,target:'/example',executable:'/example/omo',fingerprint:'fingerprint',preserve:[]},createdAt:0,updatedAt:0,beforeVersion:'1.0.0',installedVersion:null,failure:'service_restarted'};
+  let calls=0;
+  const markup=renderToStaticMarkup(<CatalogBulkActions snapshot={{...snapshot,catalogUpdates:[job],catalogBulk:{...batch,stage:'completed',items:[{...item,status:'uncertain'},{...item,catalogId:'codex',name:'Codex',jobId:'completed',status:'completed'}]}}} disabled={false} act={async()=>{calls++;return true;}}/>);
+  expect(calls).toBe(0);
+  expect(markup).toContain('data-bulk-recovery=""');
+  expect(markup).toContain('data-action="catalog-update-reconcile" data-job-id="job"');
+  expect(markup).not.toContain('data-job-id="completed"');
+  expect(markup).not.toContain('data-action="catalog-update-all-confirm"');
+});
+test('partial bulk recovery retains active jobs outside displayed batch members',()=>{
+  const job={id:'job',requestId:'request',catalogId:'omo' as const,revision:8,stage:'uncertain' as const,target:{kind:'owned' as const,target:'/example',executable:'/example/omo',fingerprint:'fingerprint',preserve:[]},createdAt:0,updatedAt:0,beforeVersion:'1.0.0',installedVersion:null,failure:'service_restarted'};
+  const markup=render({...snapshot,catalogUpdates:[job,{...job,id:'outside-active',catalogId:'codex',stage:'updating'}],catalogBulk:{...batch,stage:'completed',items:[{...item,status:'uncertain'}]}});
+  const trigger=action(markup,'catalog-update-reconcile');
+  expect(trigger).toBeDefined();
+  expect(trigger).toContain('disabled=""');
+  expect(trigger).toContain('data-reason="update_in_progress"');
+  expect(markup).not.toContain('data-update-job="outside-active"');
+});

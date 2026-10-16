@@ -188,11 +188,29 @@ export function executablePosition(command: string): string | null {
   return script && !script.startsWith("-") ? unquote(script) : null;
 }
 function cliFamily(executable: string): ExternalSession["family"] | null {
+  if (executable.startsWith('/')) {
+    for (let directory=dirname(executable),depth=0;depth<8;depth++,directory=dirname(directory)) {
+      try {
+        const parsed=z.object({name:z.string(),bin:z.record(z.string(),z.string()).optional()})
+          .safeParse(JSON.parse(readFileSync(join(directory,'package.json'),'utf8')));
+        if(parsed.success&&parsed.data.bin?.['pi']
+          &&resolve(directory,parsed.data.bin['pi'])===executable) {
+          if(parsed.data.name==='@code-yeongyu/senpi')return 'senpi';
+          if(parsed.data.name==='@earendil-works/pi-coding-agent')return 'pi';
+          if(parsed.data.name==='@mariozechner/pi-coding-agent')return 'legacy-pi';
+        }
+      } catch(error) {
+        if(!(error instanceof SyntaxError)&&!(error instanceof Error&&'code' in error&&['ENOENT','ENOTDIR','EACCES'].includes(String(error.code))))throw error;
+      }
+      if(directory===dirname(directory))break;
+    }
+  }
   // Match actual entrypoints, not any file beneath a package directory.
   if (/\/(?:omo-ai\/bin\/omo\.js)$/.test(executable)) return "omo";
-  if (/\/@code-yeongyu\/senpi\/(?:dist\/(?:bundle\/|bun\/)?cli\.js|src\/cli\.ts|bin\/pi\.js)$/.test(executable)) return "pi";
+  if (/\/@code-yeongyu\/senpi\/(?:dist\/(?:bundle\/|bun\/)?cli\.js|src\/cli\.ts|bin\/pi\.js)$/.test(executable)) return "senpi";
+  if (/\/@earendil-works\/pi-coding-agent\/(?:dist\/(?:bundle\/|bun\/)?cli\.js|src\/cli\.ts)$/.test(executable)) return "pi";
   if (/\/@oh-my-pi\/pi-coding-agent\/(?:dist\/(?:bundle\/)?cli\.js|src\/cli\.ts|bin\/omp\.js)$/.test(executable)) return "omp";
-  if (/\/@mariozechner\/pi-coding-agent\/(?:dist\/cli\.js|src\/cli\.ts)$/.test(executable)) return "pi";
+  if (/\/@mariozechner\/pi-coding-agent\/(?:dist\/cli\.js|src\/cli\.ts)$/.test(executable)) return "legacy-pi";
   if (/\/@anthropic-ai\/claude-code\/cli\.js$/.test(executable)) return "claude";
   if (/\/@openai\/codex\/bin\/codex\.js$/.test(executable)) return "codex";
   if (/\/@gajae-code\/coding-agent\/(?:dist\/cli\.js|src\/cli\.ts)$/.test(executable)) return 'gjc';
@@ -200,7 +218,7 @@ function cliFamily(executable: string): ExternalSession["family"] | null {
     case "omo": return "omo";
     case "omp": return "omp";
     case "pi": return "pi";
-    case "senpi": return "pi";
+    case "senpi": return "senpi";
     case "claude": return "claude";
     case "codex": return "codex";
     case "codex.opencodex-real": return "codex";
@@ -319,7 +337,7 @@ export function externalSessions(installations: readonly Installation[], managed
     const executable = executablePosition(row.command);
     if (!executable) return [];
     const canonical = canonicalExecutable(executable);
-    const detectedFamily = cliFamily(executable) ?? (canonical ? cliFamily(canonical) : null)
+    const detectedFamily = (canonical ? cliFamily(canonical) : null) ?? cliFamily(executable)
       ?? (!['sh','bash','zsh','fish','dash'].includes(basename(executable))?context.herdrAgents?.find(agent=>agent.foregroundPids.includes(row.pid))?.agent:null);
     if (!detectedFamily) return [];
     const extension = omoExtension(row.command, executable, canonical);

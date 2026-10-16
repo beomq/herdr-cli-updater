@@ -23,6 +23,11 @@
 .update-next>div {margin:6px 0 0;overflow-wrap:anywhere}
 .catalog summary {cursor:pointer; font-size:var(--small); min-height:var(--touch); display:flex; align-items:center}
 .catalog-workspace {min-width:0}
+.catalog-workspace > section,.catalog-workspace > details {min-width:0; border-top:var(--line) solid var(--border); padding-top:var(--s4)}
+.catalog-workspace [data-catalog-installations] > section {border-top:var(--line) solid var(--border); padding-top:var(--s4)}
+.catalog-workspace .removal-facts .facts {grid-template-columns:minmax(0,1fr)}
+.removal-facts dd > .path {display:block}
+.catalog-workspace .summary-row {min-width:0}
 .consolidation-choice {align-items:flex-start; padding:var(--s3); border:var(--line) solid var(--border); border-radius:var(--r1)}
 .consolidation-choice:has(input:checked) {background:var(--inset)}
 .consolidation-choice > span {min-width:0}
