@@ -1,5 +1,22 @@
 # 지원 CLI 일곱 개로 제한
 
+## 2026-10-15 업데이트 우선 화면 문서 정합성
+
+현재 소스 계약은 아래와 같다. 뒤의 검증·배포 기록은 이전 작업의 역사이며 이번 변경의 실행 증거나 운영 권한이 아니다.
+
+- `supportedCatalogIds`는 `claude`, `codex`, `gjc`, `omp`, `omo`, `opencode`, `pi`를 유지한다. Pi의 현재 패키지는 `@earendil-works/pi-coding-agent`이다.
+- standalone Senpi는 원본 Pi가 아니다. 기존 설치·대화·기록을 보존하고 예전 Senpi 대상의 준비 작업·정책을 upstream에 적용하지 않는다. OmO 소유 Senpi는 OmO 엔진으로 남는다.
+- `web/app.tsx`의 첫 화면은 Updates이며 Terminal sessions, History가 주 탐색이다. CLI 추가는 Updates에서, 설치 관리·자동화는 CLI 상세에서 연다.
+- `catalog-update-target.ts`는 출처별 업데이트 대상을 검증한다. 지원 목록·실행 파일 발견·최신 조회만으로 모든 설치 방식의 업데이트/제거를 허용하지 않는다.
+- `src/adapters/pi.ts`의 `exactResume`와 `bridge`는 unsupported다. `pane-restart.ts`는 Pi를 허용하지 않는다. 따라서 아래 과거의 "다섯 종류" 설명은 현재 원본 Pi 재시작 지원을 뜻하지 않는다. OpenCode/GJC도 동일 대화 재시작을 약속하지 않는다.
+- `catalog-updates.ts`의 recover는 설치 실행 함수를 호출하지 않고 출처·프로세스·디스크 버전을 재확인한다. 실행 근거가 부족하면 uncertain, 별도 보관은 archived-unverified다. 디스크 버전 확인만으로 과거 성공을 만들지 않는다.
+
+선택 이유: 설치 갱신과 세션의 새 버전 적용을 나누면 기존 대화를 유지하면서 정확한 설치 대상으로 업데이트할 수 있다. 대신 화면에 버전 하나만 보여주거나 지원 목록을 재시작 보증으로 읽으면 안 된다. 새 정책은 keep이지만 명시적 기존 정책과 과거 누락값의 restart-idle 의미는 유지한다.
+
+문제 확인 순서: 최신 조회 상태/오류 → 설치 경로·패키지·출처 → 승인 revision과 작업 결과 → 세션 PID·시작/실행 버전 근거. 미확정이면 재설치 대신 History의 재확인을 검토한다. 실패를 최신, 보관을 성공으로 바꾸지 않는다.
+
+직접 검증: `web/QA.md`의 격리 fixture 절차로 다른 활성 작업의 복구 차단, 액션별 정책, 중복 승인 1회, reload 0회 전송을 확인한다. 공개 사이트는 `bun test test/site`가 build:site를 포함해 생성 목록·에셋·설치 경계를 검사한다. 브라우저는 생성된 정적 파일만 제공하는 owned preview를 사용한다. 이번 실행 결과는 portfolio의 `execution/task-9.md`에 별도로 기록한다. 사용자 직접 확인·이해와 운영 준비는 미확인이다.
+
 ## 요청과 구현 범위
 2026-10-15 사용자가 OmO, Pi, OMP, OpenCode, Claude Code, Codex, GJC만 지원하고
 다른 CLI는 터미널 세션에서 아직 지원하지 않음으로 표시하도록 구현을 요청했다.

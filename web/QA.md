@@ -1,5 +1,46 @@
 # Web frontend integration handoff
 
+## Update-first documentation and bounded recovery receipt (2026-10-15)
+
+Current navigation is Updates / Terminal sessions / History, with Add CLI opened
+from Updates and management/automation in CLI details. Earlier dashboard and
+five-tab notes below are historical, not the current navigation contract.
+Pi now means upstream `@earendil-works/pi-coding-agent`, never standalone Senpi.
+The seven supported IDs do not guarantee every source's update/removal support;
+Pi/OpenCode/GJC same-conversation restart is not provided. Installed, checked
+latest, actual verified result and session running/launch evidence remain distinct.
+
+Task6's missing browser receipt was reproduced with the existing owned fixture,
+not an operating API. In the portfolio evidence directory
+`.omo/evidence/update-first-console-ux/execution/`, run:
+
+```sh
+TMPDIR=/tmp bun task-6-final-browser.mjs
+```
+
+The runner bundles `task-6-fixture.tsx` against this worktree and launches its own
+ephemeral loopback server and Chromium profile. It asserts that an OTHER updating
+job outside the displayed batch disables both recovery actions and an already-open
+confirmation with zero sends. Reconcile/archive each send once under double
+activation, their reviews contain no installation policy, archive is not success,
+and reload sends zero commands. It subscribes to DOM changes before mutations.
+Console errors, warnings, page errors and unhandled rejections are captured; browser,
+server and short TMPDIR profile are cleaned before successful exit.
+`task-6-final-qa.md` holds command/output/exit evidence. This does not certify genuine
+backend recovery or installation, and does not repeat the approved full matrix.
+
+Public-site task9 checks use `bun test test/site` (its existing installer suite
+runs `bun run build:site` once) and an owned preview of `site/dist` for home,
+features, supported CLIs and the shared-template guide. Capture desktop/mobile
+under light/dark system preferences and inspect console, title, catalog identities,
+overflow and top/end screenshots. The public site's fixed dark palette is intended;
+Console light/dark behavior is a separate surface. Public metadata must not become
+`Console | herdr-cli-updater`. Do not run or click the installer in the preview.
+
+When a check fails, inspect generated asset requests first, then platform selection,
+registry/source identity, and operation evidence. Fixing copy does not authorize
+operating updates, session stops, commits or deployment. User-run QA remains unverified.
+
 ## Approved charcoal redesign unit (2026-10-11)
 
 This receipt supersedes the historical cyan visual contract below. Changes are

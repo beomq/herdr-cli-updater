@@ -1,5 +1,44 @@
 # CLI updater terminal design
 
+## October 15 update-first Console contract (current)
+This section supersedes conflicting older web/navigation and capability notes
+below; terminal sections 1-8 retain their scope. Reuse the current tokens,
+Panel, Facts, Notice, Badge, Button and revision-bound Dialog; no new visual
+system, dependencies or animation are introduced by the documentation update.
+
+- Primary navigation is Updates, Terminal sessions, History. Add CLI is an
+  explicit Updates entry; target selection, installation management and
+  automation live in CLI details. Stored dashboard/policies map to Updates,
+  operations to History, installations to Add CLI. Unknown views use Updates.
+- Exactly seven management IDs: claude, codex, gjc, omp, omo, opencode, pi.
+  Pi is upstream @earendil-works/pi-coding-agent. Standalone Senpi remains
+  unsupported terminal-only; existing installations, conversations and history
+  are preserved. OmO-owned Senpi remains an OmO engine. Pi, OpenCode and GJC
+  do not offer unproven same-conversation restart.
+- Inclusion in the catalog is not source-specific authority. Installation,
+  latest lookup, update, removal and restart have separate checks. Missing
+  ownership, unsupported OS/method or lookup failure stays explicit, never current.
+- Keep installed, checked latest (with check time), verified update result and
+  session launch/running versions separate. Unknown running evidence stays unknown.
+  Review names the exact target and source. Catalog execution uses then-latest,
+  not a promise to install the previously checked version.
+- New automation policies keep sessions. Preserve stored explicit choices and
+  legacy missing paneSessions as restart-idle, with their actual choice visible.
+  Bulk updates keep sessions and preserve per-item outcomes. Update target and
+  future-shell default are separate; one-copy removal is not consolidation.
+- Recovery review is action-specific: reconcile checks source/disk without an
+  installer; archive-unverified acknowledges uncertainty after fresh checks and
+  never claims success. Both retain all active-operation guards, including jobs
+  outside the displayed bulk subset. Reload/reconnect never repeats a command.
+- Preserve metadata: localhost is Console | herdr-cli-updater; public homepage
+  is herdr-cli-updater — Overview & Download, subpages <Page> | herdr-cli-updater.
+  Public site remains the existing dark mint editorial surface in both system
+  appearance preferences; it does not acquire Console light/dark tokens.
+
+Verification: owned fixture browser evidence, separate desktop/mobile captures
+under light/dark preferences, actual public build and existing site tests.
+Fixtures do not prove operational updates, session adoption or user understanding.
+
 ## October 15 supported CLI scope
 Management supports exactly OmO, Pi, OMP, OpenCode, Claude Code, Codex and GJC.
 This supersedes earlier 24-entry catalog and unsupported installation-card rules.
