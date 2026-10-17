@@ -48,7 +48,7 @@ export type ExternalSession = {
   /** started-after-install: the process started after the package directory was last written, so the
    * disk version is the loaded one. started-before-install: the package changed after launch; the
    * loaded version is older than disk and unknown. unknown: no start time or no package. */
-  readonly runningVersionEvidence?: 'started-after-install' | 'started-before-install' | 'unknown';
+  readonly runningVersionEvidence?: 'launch-environment' | 'started-after-install' | 'started-before-install' | 'unknown';
   readonly diskPackage?: { readonly name: string; readonly version: string; readonly installedAt: number } | null;
   readonly processState?: "observed" | "exited" | "unknown";
   readonly observedAt?: number;

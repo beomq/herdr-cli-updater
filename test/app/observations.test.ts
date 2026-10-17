@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from "bun:test";
-import { captureCurrentConversation, externalSessions, hasProcessConsumer, parseOpenPaths, parseProcesses, readConversationHeader, readProcesses, screenLooksIdle } from "../../src/app/observations";
+import { captureCurrentConversation, externalSessions, hasProcessConsumer, parseLaunchVersion, parseOpenPaths, parseProcesses, readConversationHeader, readProcesses, screenLooksIdle } from "../../src/app/observations";
 import type { Installation } from "../../src/protocol";
 import { mkdtempSync, mkdirSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import type { CatalogEntry } from '../../src/app/catalog-types';
@@ -11,6 +11,18 @@ test('lsof escaped UTF-8 directory names remain readable', () => {
 });
 
 const uid = process.getuid?.() ?? -1;
+test('launch version belongs to the exact process and never comes from prompt text',()=>{
+  const prefix=`101 1 ${uid} ttys001 S Tue Oct 13 15:21:49 2026 `;
+  const command='bun /installed/senpi/cli.js --extension /installed/omo-ai/plugin';
+  const expected=parseProcesses(prefix+command)[0];if(!expected)throw new Error('missing process');
+  const brand=JSON.stringify({name:'OmO',command:'omo',displayVersion:'5.1.32'});
+  expect(parseLaunchVersion(prefix+command+' SENPI_BRAND='+brand+' HOME=/home/user',expected)).toBe('5.1.32');
+  expect(parseLaunchVersion(prefix+command+' SENPI_BRAND='+brand,{...expected,startedAt:'2026-01-01T00:00:00.000Z'})).toBeNull();
+  expect(parseLaunchVersion(prefix+command+' SENPI_BRAND='+brand,{...expected,uid:uid+1})).toBeNull();
+  const prompt=command+' -- SENPI_BRAND='+brand;
+  expect(parseLaunchVersion(prefix+prompt+' HOME=/home/user',{...expected,command:prompt})).toBeNull();
+  expect(parseLaunchVersion(prefix+command+' SENPI_BRAND={invalid}',expected)).toBeNull();
+});
 test('disk package changes do not become a running process version',()=>{
   const root=realpathSync(mkdtempSync('/tmp/observed-version-'));
   const packageRoot=join(root,'node_modules/omo-ai');mkdirSync(join(packageRoot,'bin'),{recursive:true});

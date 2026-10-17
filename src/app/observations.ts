@@ -36,6 +36,33 @@ export function readProcesses(): readonly Process[] {
     env: { PATH: "/usr/bin:/bin", LANG: "C", LC_ALL: "C" },
   }));
 }
+/** Extract only the launch brand from the exact same process; never retain environment output. */
+export function parseLaunchVersion(output: string, expected: Process): string | null {
+  const observed = parseProcesses(output)[0];
+  if (!observed || observed.pid !== expected.pid || observed.uid !== expected.uid
+    || !expected.startedAt || observed.startedAt !== expected.startedAt
+    || !observed.command.startsWith(expected.command + ' ')) return null;
+  const environment = observed.command.slice(expected.command.length);
+  const match = /(?:^|\s)SENPI_BRAND=(\{[^\n]*?\})(?=\s[A-Za-z_][A-Za-z_0-9]*=|\s*$)/.exec(environment);
+  if (!match?.[1]) return null;
+  try {
+    const brand = z.object({ name:z.literal('OmO'), command:z.literal('omo'),
+      displayVersion:z.string().regex(/^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/) }).safeParse(JSON.parse(match[1]));
+    return brand.success ? brand.data.displayVersion : null;
+  } catch (error) { if(error instanceof SyntaxError)return null;throw error; }
+}
+function readLaunchVersion(row: Process): string | null {
+  if(process.platform!=='darwin'||!row.startedAt)return null;
+  try {
+    return parseLaunchVersion(execFileSync('/bin/ps',['eww','-p',String(row.pid),'-o','pid=,ppid=,uid=,tty=,stat=,lstart=,command='],{
+      encoding:'utf8',timeout:2000,maxBuffer:1024*1024,env:{PATH:'/usr/bin:/bin',LANG:'C',LC_ALL:'C'},stdio:['ignore','pipe','pipe'],
+    }),row);
+  } catch(error) {
+    // A disappearing/inaccessible process provides no evidence. Never propagate stdout containing env.
+    if(error instanceof Error)return null;
+    throw error;
+  }
+}
 type OpenPaths = { readonly cwd: string | null; readonly conversations: readonly string[]; readonly sockets: readonly string[] };
 /** lsof field output preserves spaces in names; only cwd or numbered REG descriptors count. */
 export function parseOpenPaths(output: string): ReadonlyMap<number, OpenPaths> {
@@ -477,7 +504,11 @@ export function externalSessions(installations: readonly Installation[], managed
     // Existing core Runtime.runningVersion is copied from installedVersion, and
     // display registry observations carry no version. Neither proves this process's
     // version; authenticated worker reads also require credentials outside this observer.
-    ...runningVersionEvidence(row.startedAt ?? null, disk),
+    ...(() => {
+      const version = family === 'omo' && herdrPane ? readLaunchVersion(row) : null;
+      return version ? {runningVersion:version,runningVersionEvidence:'launch-environment' as const}
+        : runningVersionEvidence(row.startedAt ?? null, disk);
+    })(),
     ...(engineVersion ? { runningEngineVersion: engineVersion } : {}),
     ...(thread && conversation?.id === thread.sessionId ? { omoSocket: thread.socket,
       omoActivity: thread.state ? omoActivity(thread.state) : "unknown" as const } : {}),

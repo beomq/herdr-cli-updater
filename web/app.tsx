@@ -278,7 +278,7 @@ function Sessions({snapshot,act,disabled}:{snapshot:AppSnapshot;act:Act;disabled
         <Facts items={[
           [t('활동','Activity'),activity==='working'?t('작업 중','Working'):activity==='blocked'?t('응답 대기 중','Waiting for your answer'):activity==='idle'||activity==='done'?t('대기 중','Idle'):t('상태 미확인','Unknown')],
           [t('실행 중인 버전','Running version'),<span data-evidence="running-version">{s.runningVersionEvidence==='started-before-install'?t('미확인','Unknown'):s.runningVersion??t('미확인','Unknown')}</span>],
-          [t('버전 근거','Version evidence'),inferred?t('파일 변경 시각과 시작 시각 비교 · 추정','File and process start times · inferred'):s.runningVersion?t('수집된 CLI 버전','Captured CLI version'):t('실행 버전 근거 없음','No running-version evidence')],
+          [t('버전 근거','Version evidence'),s.runningVersionEvidence==='launch-environment'?t('이 프로세스 시작 시 기록된 앱 버전','App version recorded when this process started'):inferred?t('파일 변경 시각과 시작 시각 비교 · 추정','File and process start times · inferred'):s.runningVersion?t('수집된 CLI 버전','Captured CLI version'):t('실행 버전 근거 없음','No running-version evidence')],
           [t('마지막 상태 확인','Last process check'),stamp(s.observedAt??snapshot.observedAt??null)],
         ]}/>
         {updatedSince&&state!=='exited'&&<Notice tone="warning">{t('이 실행 파일과 일치하는 설치의 업데이트 기록이 있습니다. 실행 중인 버전이 바뀌었다는 뜻은 아닙니다.','An update was recorded for this exact installation. This does not prove the running version changed.')}</Notice>}
