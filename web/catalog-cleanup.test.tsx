@@ -31,6 +31,9 @@ test('cleanup comparison exposes retained selection even for one installation',(
   expect(markup.match(/type="radio"/g)).toHaveLength(4);
   expect(markup).toContain('data-action="cleanup-review"');
   expect(markup).not.toContain('data-action="cleanup-remove"');
+  expect(markup).toMatch(/<details class="cleanup-advanced"><summary>[^<]*<\/summary><label class="check"><input type="checkbox"/);
+  expect(markup.match(/type="checkbox"/g)).toHaveLength(1);
+  expect(markup.match(/data-cleanup-status="[^"]+"/g)).toEqual(['data-cleanup-status="removable"','data-cleanup-status="path-default"','data-cleanup-status="unknown-manager"']);
   expect(renderToStaticMarkup(<CatalogCleanup entry={{...entry,installations:[bun]}} snapshot={snapshot} act={async()=>true} disabled={false}/>)).toContain('data-action="cleanup-review"');
 });
 

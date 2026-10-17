@@ -31,6 +31,13 @@
 .consolidation-choice {align-items:flex-start; padding:var(--s3); border:var(--line) solid var(--border); border-radius:var(--r1)}
 .consolidation-choice:has(input:checked) {background:var(--inset)}
 .consolidation-choice > span {min-width:0}
+.cleanup-outcome {list-style:none; margin:0; padding:0; gap:var(--s2)}
+.cleanup-outcome > li {gap:var(--s1) var(--s3); align-items:baseline; min-width:0}
+.cleanup-outcome .badge {flex:none}
+.cleanup-outcome .path {min-width:0}
+.cleanup-preview {gap:var(--s2)}
+.cleanup-preview h3 {font-size:var(--small); color:var(--muted)}
+.cleanup-confirm {padding:var(--s4); border:var(--line) solid var(--border); border-radius:var(--r1)}
 .catalog-workspace fieldset {min-width:0}
 @media(max-width:768px) {
   .catalog-grid {grid-template-columns:minmax(0,1fr)}
