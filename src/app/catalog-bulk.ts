@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { catalogIds, isSupportedCli } from './catalog-types';
 import type { CatalogCheck, CatalogEntry, CatalogId } from './catalog-types';
+import { updateBinding } from './catalog-updates';
 import type { createCatalogUpdates } from './catalog-updates';
 import type { AppStore } from './store';
 import { AppError } from './types';
@@ -94,17 +95,32 @@ export function createCatalogBulk(options:Options){
       for(const item of items){
         try{
           if(item.jobId===null||item.jobRevision===null)throw new AppError('conflict','stale_bulk_plan');
+          let jobId=item.jobId,jobRevision=item.jobRevision;
           const permitted=()=>{
             const selected=options.entries().find(entry=>entry.id===item.catalogId);
-            const planned=options.store.catalogUpdates().find(job=>job.id===item.jobId);
+            const planned=options.store.catalogUpdates().find(job=>job.id===jobId);
             return !!planned&&!!selected&&(selected.selectedInstallationId??null)===(planned.installationId??null)
               &&selected.installed?.version===item.beforeVersion&&selected.installed.path===planned.target.executable;
           };
           if(!permitted())throw new AppError('source_changed','installation_selection_changed');
           changeItem(item.catalogId,{status:'updating'});
-          await options.updates.confirm(item.jobId,item.jobRevision,permitted,'keep');
+          try{await options.updates.confirm(jobId,jobRevision,permitted,'keep');}
+          catch(error){
+            // An earlier item can rewrite a manifest shared by the whole prefix (bun's global
+            // package.json and bun.lock), which changes this item's reviewed fingerprint while
+            // the approved binding and installed version are untouched. Re-plan once; any other
+            // drift still fails the item.
+            if(!(error instanceof AppError)||error.detail!=='update_target_changed')throw error;
+            const stale=options.store.catalogUpdates().find(job=>job.id===jobId);
+            const fresh=await options.updates.targetFor(item.catalogId);
+            if(!stale||updateBinding(fresh)!==updateBinding(stale.target)||!permitted())throw error;
+            const replanned=await options.updates.plan(item.catalogId,`${current?.id}:replan:${item.catalogId}`);
+            options.store.putCatalogUpdate({...stale,stage:'failed',revision:stale.revision+1,failure:'update_target_changed',updatedAt:Date.now()});
+            jobId=replanned.id;jobRevision=replanned.revision;changeItem(item.catalogId,{jobId,jobRevision});
+            await options.updates.confirm(jobId,jobRevision,permitted,'keep');
+          }
           await options.updates.settled();
-          const job=options.store.catalogUpdates().find(job=>job.id===item.jobId);
+          const job=options.store.catalogUpdates().find(job=>job.id===jobId);
           if(!job||!['completed','failed','uncertain'].includes(job.stage))throw new AppError('uncertain','bulk_result_missing');
           changeItem(item.catalogId,{status:job.stage==='completed'?'completed':job.stage==='uncertain'?'uncertain':'failed',reason:job.failure});
           if(job.stage==='completed'&&job.installedVersion)options.updated(item.catalogId,job.installedVersion);
