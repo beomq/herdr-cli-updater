@@ -846,6 +846,51 @@ export function getPackageUpdateIntent(spec: UpdateSpec): AdapterResult<PrivateU
   } catch { return failure(); }
 }
 
+/** Non-system dylibs a Mach-O executable loads, both as spelled and resolved.
+ * Package-manager builds (for example Homebrew node) link libnode, OpenSSL and
+ * ICU from outside the system paths the jail otherwise allows.
+ */
+function linkedLibraries(executable: string): string[] {
+  const allowed = new Set<string>(), visited = new Set<string>(), pending = [realpathSync(executable)];
+  const cpu = process.arch === "arm64" ? 0x0100000c : 0x01000007;
+  while (pending.length && visited.size < 256) {
+    const file = pending.pop()!;
+    if (visited.has(file)) continue;
+    visited.add(file);
+    const fd = openSync(file, constants.O_RDONLY);
+    try {
+      const read = (offset: number, size: number) => { const bytes = Buffer.alloc(size); readSync(fd, bytes, 0, size, offset); return bytes; };
+      let base = 0, head = read(0, 32);
+      const fat = head.readUInt32BE(0);
+      if (fat === 0xcafebabe || fat === 0xcafebabf) {
+        const wide = fat === 0xcafebabf, entry = wide ? 32 : 20, arches = read(8, head.readUInt32BE(4) * entry);
+        const index = Array.from({ length: arches.length / entry }, (_, i) => i * entry).find(at => arches.readInt32BE(at) === cpu);
+        if (index === undefined) continue;
+        base = wide ? Number(arches.readBigUInt64BE(index + 8)) : arches.readUInt32BE(index + 8);
+        head = read(base, 32);
+      }
+      if (head.readUInt32LE(0) !== 0xfeedfacf) continue;
+      const commands = read(base + 32, head.readUInt32LE(20)), rpaths: string[] = [], libraries: string[] = [];
+      const text = (at: number) => { const start = at + commands.readUInt32LE(at + 8); return commands.toString("utf8", start, commands.indexOf(0, start)); };
+      for (let at = 0, n = 0; n < head.readUInt32LE(16); n++, at += commands.readUInt32LE(at + 4)) {
+        const kind = commands.readUInt32LE(at);
+        if (kind === 0x8000001c) rpaths.push(text(at));
+        else if ([0xc, 0x80000018, 0x8000001f, 0x80000023].includes(kind)) libraries.push(text(at));
+      }
+      const expand = (path: string) => path.replace("@loader_path", dirname(file)).replace("@executable_path", dirname(realpathSync(executable)));
+      for (const library of libraries) {
+        if (library.startsWith("/usr/lib/") || library.startsWith("/System/")) continue;
+        const candidates = library.startsWith("@rpath/") ? rpaths.map(path => join(expand(path), library.slice(7))) : [expand(library)];
+        const found = candidates.map(path => normalize(path)).find(path => lstatSync(path, { throwIfNoEntry: false }));
+        if (!found) continue;
+        allowed.add(found).add(realpathSync(found));
+        pending.push(realpathSync(found));
+      }
+    } finally { closeSync(fd); }
+  }
+  return [...allowed].sort();
+}
+
 /** Closed Seatbelt grammar: no supplied profile text, executable override or
  * wrapper callback. The worker retains ps/lsof/journal access outside this jail.
  */
@@ -870,7 +915,7 @@ function confinedCommand(q: PackageUpdateQualification, command: PrivateUpdateCo
     literal("/dev/null"), literal("/dev/random"), literal("/dev/urandom"),
     literal("/bin/sh"), literal("/usr/bin/env"), literal(q.manager.path),
     ...(q.manager.name === "npm" ? [subpath(dirname(dirname(q.manager.path)))] : []),
-    ...(q.manager.node ? [literal(q.manager.node.path)] : []),
+    ...(q.manager.node ? [literal(q.manager.node.path), ...linkedLibraries(q.manager.node.path).map(literal)] : []),
     subpath(r.prefix), subpath(cache), ...(q.home ? [subpath(join(home, ".grok"))] : []),
   ];
   const writes = [subpath(r.prefix), subpath(cache), ...(q.home ? [subpath(join(home, ".grok"))] : [])];
@@ -888,7 +933,8 @@ function confinedCommand(q: PackageUpdateQualification, command: PrivateUpdateCo
   return Object.freeze({
     ...command, executable: scope.system.path,
     args: Object.freeze(["-p", profile, command.executable, ...command.args]),
-    env: Object.freeze({ ...command.env, TMPDIR: join(cache, "tmp") }),
+    // OpenSSL would otherwise read its build-time config from outside the jail.
+    env: Object.freeze({ ...command.env, TMPDIR: join(cache, "tmp"), OPENSSL_CONF: "/dev/null" }),
   });
 }
 
