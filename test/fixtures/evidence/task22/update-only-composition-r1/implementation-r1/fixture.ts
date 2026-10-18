@@ -10,6 +10,7 @@ import { createOmoUpdateSpec, getOmoUpdateIntent, qualifyOmoUpdate } from "../..
 import type { OmoArtifact, OmoUpdateInput } from "../../../../../../src/adapters/update-context";
 import type { AdapterResult, InstallationIdentity } from "../../../../../../src/adapters/types";
 import type { Mode } from "../../../../../../src/protocol";
+import { tmpdir } from "node:os";
 
 export const now = 100_000;
 export const hash = (body: string | Uint8Array): string => createHash("sha256").update(body).digest("hex");
@@ -23,7 +24,7 @@ export type Behavior = "install" | "no-change" | "nonzero" | "corrupt" | "hang" 
  * All writes, listener, child effects and cleanup are task22-owned.
  */
 export async function fixture(behavior: Behavior = "install", managerTail = "", checkBarrier?: { readonly entered: () => void; readonly wait: Promise<void> }) {
-  const root = await realpath(await mkdtemp(join(import.meta.dir, "runtime-")));
+  const root = await realpath(await mkdtemp(join(tmpdir(), "herdr-fixture-runtime-")));
   const controller = createServer();
   let peer: Socket | undefined;
   const ready = Promise.withResolvers<void>();

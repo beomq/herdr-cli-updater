@@ -10,9 +10,10 @@ import { dirname, join, resolve } from "node:path";
 import { createCursorAdapter, CURSOR_INSTALLER_DIGEST, CURSOR_SOURCE_VERSION } from "../../src/adapters/cursor";
 import type { CursorConfiguration } from "../../src/adapters/cursor";
 import type { AdapterResult, InstallationIdentity, RuntimeIdentity } from "../../src/adapters/types";
+import { tmpdir } from "node:os";
 
 const evidence = resolve(import.meta.dir, "../fixtures/evidence/task-15/r4");
-const temporary = realpathSync(mkdtempSync(join(evidence, "test-run-")));
+const temporary = realpathSync(mkdtempSync(join(tmpdir(), "herdr-cursor-test-run-")));
 const hash = (value: Uint8Array | string): string => createHash("sha256").update(value).digest("hex");
 const roots: string[] = [];
 afterEach(() => {

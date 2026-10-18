@@ -5,13 +5,14 @@ import { discoverExecutable } from "../../../../src/discovery";
 import { createPiAdapter } from "../../../../src/adapters/pi";
 import type { PiConfiguration, PiCoreRecord, PiQualification, PiRuntimeRecord, PiUpdateRecord } from "../../../../src/adapters/pi";
 import type { InstallationOwner, Runtime } from "../../../../src/protocol";
+import { tmpdir } from "node:os";
 
 export const hash = (body: string | Uint8Array): string => createHash("sha256").update(body).digest("hex");
 export const ownedRoot = dirname(import.meta.path);
 const sourceRoot = resolve(ownedRoot, "../task-5/families/pi");
 /** Mechanism fixtures only. Not a vendor attestation or genuine identity-eight proof. */
 export async function fixture() {
-  const sandbox = join(ownedRoot, "sandbox");
+  const sandbox = join(tmpdir(), "herdr-fixture-pi-sandbox");
   await mkdir(sandbox, { recursive: true });
   const root = await realpath(await mkdtemp(join(sandbox, "pi-")));
   const executable = join(root, "bin", "engine");

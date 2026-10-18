@@ -23,7 +23,7 @@ async function open(page:Page,kind:'pane'|'native'|'managed'|'history',disabled=
   return button;
 }
 for(const kind of ['pane','native','managed'] as const)for(const change of (kind==='managed'?['server','conversation','activity','both'] as const:['server'] as const))test(kind+' review rejects '+change+' drift',async()=>{
-  const page=await browser.newPage();try{
+  const page=await browser.newPage({locale:'en-US'});try{
     await (await open(page,kind)).click();
     await page.evaluate(change=>new Promise<void>(resolve=>{window.addEventListener('review-render',()=>resolve(),{once:true});window.reviewChange(change);}),change);
     const dialog=page.locator('.app-dialog[open]');
@@ -35,11 +35,11 @@ for(const kind of ['pane','native','managed'] as const)for(const change of (kind
   }finally{await page.close();}
 });
 test('disabled History cannot open recovery or send transport',async()=>{
-  const page=await browser.newPage();try{const button=await open(page,'history',true);expect(await button.isDisabled()).toBe(true);await button.evaluate((button:HTMLButtonElement)=>button.click());expect(await page.locator('.app-dialog[open]').count()).toBe(0);expect(await page.evaluate(()=>window.reviewCommands)).toEqual([]);}finally{await page.close();}
+  const page=await browser.newPage({locale:'en-US'});try{const button=await open(page,'history',true);expect(await button.isDisabled()).toBe(true);await button.evaluate((button:HTMLButtonElement)=>button.click());expect(await page.locator('.app-dialog[open]').count()).toBe(0);expect(await page.evaluate(()=>window.reviewCommands)).toEqual([]);}finally{await page.close();}
 });
 test('History becoming disabled invalidates its open recovery confirmation',async()=>{
-  const page=await browser.newPage();try{await (await open(page,'history')).click();await page.evaluate(()=>new Promise<void>(resolve=>{window.addEventListener('review-render',()=>resolve(),{once:true});window.reviewChange('disabled');}));const button=page.locator('.app-dialog[open] .dialog-body button').last();expect(await button.isDisabled()).toBe(true);await button.evaluate((button:HTMLButtonElement)=>button.click());expect(await page.evaluate(()=>window.reviewCommands)).toEqual([]);}finally{await page.close();}
+  const page=await browser.newPage({locale:'en-US'});try{await (await open(page,'history')).click();await page.evaluate(()=>new Promise<void>(resolve=>{window.addEventListener('review-render',()=>resolve(),{once:true});window.reviewChange('disabled');}));const button=page.locator('.app-dialog[open] .dialog-body button').last();expect(await button.isDisabled()).toBe(true);await button.evaluate((button:HTMLButtonElement)=>button.click());expect(await page.evaluate(()=>window.reviewCommands)).toEqual([]);}finally{await page.close();}
 });
 for(const kind of ['pane','native','managed','history'] as const)test(kind+' unchanged review sends exactly its command',async()=>{
-  const page=await browser.newPage();try{await (await open(page,kind)).click();expect(await page.evaluate(()=>window.reviewCommands)).toEqual([]);await page.locator('.app-dialog[open] .dialog-body button').last().click();const commands=await page.evaluate(()=>window.reviewCommands);expect(commands).toHaveLength(1);expect(commands[0]?.kind).toBe(kind==='pane'?'pane-restart':kind==='native'?'native-restart':kind==='managed'?'restart':'catalog-update-recover');}finally{await page.close();}
+  const page=await browser.newPage({locale:'en-US'});try{await (await open(page,kind)).click();expect(await page.evaluate(()=>window.reviewCommands)).toEqual([]);await page.locator('.app-dialog[open] .dialog-body button').last().click();const commands=await page.evaluate(()=>window.reviewCommands);expect(commands).toHaveLength(1);expect(commands[0]?.kind).toBe(kind==='pane'?'pane-restart':kind==='native'?'native-restart':kind==='managed'?'restart':'catalog-update-recover');}finally{await page.close();}
 });

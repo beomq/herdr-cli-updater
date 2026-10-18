@@ -1,8 +1,7 @@
 import { readdir } from "node:fs/promises";
-import { join } from "node:path";
 import { createAgyAdapter } from "../../../../src/adapters/agy";
 import type { AdapterResult } from "../../../../src/adapters/types";
-import { fixture } from "./fixture";
+import { fixture, ownedNamespace } from "./fixture";
 
 export const throwKinds = ["Error", "object", "string", "null"] as const;
 export const hostileThrowKinds = ["revoked-proxy", "throwing-error-code"] as const;
@@ -97,7 +96,7 @@ if (import.meta.main) {
     results.push({ kind, routes: rows.length, allSettled: rows.every(row => row.settled),
       enumOnly: rows.every(row => row.enumOnly), sentinelAbsent: rows.every(row => row.sentinelAbsent) });
   }
-  const rootsEmpty = (await readdir(join(import.meta.dir, "owned"))).length === 0;
+  const rootsEmpty = (await readdir(ownedNamespace)).length === 0;
   console.log(JSON.stringify({ results, rootsEmpty, PIDs: 0, effects0: true }, null, 2));
   if (!rootsEmpty || results.some(row => !row.allSettled || !row.enumOnly || !row.sentinelAbsent)) process.exitCode = 1;
 }

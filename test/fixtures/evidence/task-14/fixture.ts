@@ -8,12 +8,14 @@ import type { ProvenancePin } from "../../../../src/discovery";
 import type { InstallationIdentity, FamilyAdapter } from "../../../../src/adapters/types";
 import type { InstallationOwner, Runtime } from "../../../../src/protocol";
 import { artifactPath } from "../../artifacts";
+import { tmpdir } from "node:os";
 
+export const ownedNamespace = join(tmpdir(), "herdr-fixture-agy-owned");
 export const sourceRoot = artifactPath("task-5/families/agy");
 export const digest = (body: string | Uint8Array): string => createHash("sha256").update(body).digest("hex");
 // Mechanism-only files. NOT a claim about the proprietary native storage format.
 export async function fixture(factory: (config: AgyConfiguration) => FamilyAdapter = createAgyAdapter) {
-  const owned = join(import.meta.dir, "owned");
+  const owned = ownedNamespace;
   await mkdir(owned, { recursive: true });
   const root = await realpath(await mkdtemp(join(owned, "agy-")));
   const executable = join(root, "native binary ; not-a-command");

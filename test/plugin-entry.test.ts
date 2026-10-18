@@ -36,7 +36,7 @@ function bounded<T>(promise: Promise<T>): Promise<T> {
 }
 function entryEnvironment(directory: string) {
   return { ...process.env, HOME: dirname(directory), PATH: dirname(process.execPath),
-    XDG_CONFIG_HOME: join(dirname(directory), "config"), HERDR_SOCKET: "",
+    XDG_CONFIG_HOME: join(dirname(directory), "config"), HERDR_SOCKET: "", HERDR_SOCKET_PATH: "",
     HERDR_CLI_UPDATER_SOURCE_PREFIXES: "", HERDR_CLI_UPDATER_DIRECTORY: directory };
 }
 async function invoke(command: readonly string[], directory: string, timeout = 5000) {
@@ -236,7 +236,7 @@ test("OmO bootstrap derives only the exact Bun default and original binary witho
 });
 
 test("preparation rejection stays visible and returns to the catalog without a job or installation change", async () => {
-  // Given: an actual plugin PTY and worker, with Node absent from the controlled PATH.
+  // Given: an actual plugin PTY and worker without a herdr socket, so preparation is rejected before any runner exists.
   const container = realpathSync(mkdtempSync(join(tmpdir(), "prepare-recovery-")));
   const directory = join(container, "worker"), prefix = join(container, "prefix");
   const executable = join(prefix, "install/global/node_modules/omo-ai/bin/omo.js");
@@ -276,7 +276,7 @@ test("preparation rejection stays visible and returns to the catalog without a j
         const screen = Bun.stripANSI(raw.slice(raw.lastIndexOf("\x1b[H\x1b[2J")));
         const catalogReady = screen.includes("5.1.21") && screen.includes("Read-only |");
         if (catalogReady) ready.resolve();
-        if (raw.includes("geometry:")) failed.resolve();
+        if (raw.includes("Preparation failed: invalid_command")) failed.resolve();
         if ((raw.match(/\x1b\[\?1049h/g)?.length ?? 0) >= 2 && catalogReady) reopened.resolve();
         if (screen.includes("JOBS 0")) jobs.resolve();
       } },

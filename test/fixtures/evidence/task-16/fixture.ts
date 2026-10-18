@@ -4,12 +4,13 @@ import { join } from "node:path";
 import { createGrokAdapter, GROK_PUBLIC_SOURCE_REF } from "../../../../src/adapters/grok";
 import type { GrokConfiguration } from "../../../../src/adapters/grok";
 import type { InstallationIdentity, RuntimeIdentity } from "../../../../src/adapters/types";
+import { tmpdir } from "node:os";
 
 export const hash = (body: Uint8Array | string): string => createHash("sha256").update(body).digest("hex");
 export const PRIVATE_SENTINEL = "ULW_GROK_PRIVATE_R2_73bd91";
 export async function fixture(factory = createGrokAdapter, owner: "native" | "npm" = "native", privateSentinel?: string) {
   // All files belong to this task; no installed CLI, session or credential read.
-  const root = await realpath(await mkdtemp(join(import.meta.dir, "owned-")));
+  const root = await realpath(await mkdtemp(join(tmpdir(), "herdr-fixture-grok-")));
   const binary = join(root, "grok-native"), launcher = join(root, "grok-bootstrap.js");
   const manifest = join(root, "package.json"), cwd = join(root, privateSentinel ? `workspace-${privateSentinel}` : "workspace");
   const storageRoot = join(root, "saved"), storagePath = join(storageRoot, "opaque.session");
