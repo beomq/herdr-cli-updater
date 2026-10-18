@@ -28,7 +28,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 const args=process.argv.slice(2), kind=${JSON.stringify(kind)};
 const packageName=${JSON.stringify(packageName)};
-const value=(name)=>args[args.indexOf(name)+1];
+const value=(name)=>kind==='bun'?args.find(arg=>arg.startsWith(name+'='))?.slice(name.length+1):args[args.indexOf(name)+1];
+// Real bun treats a separated \`--global-bin-dir <dir>\` as a flag plus a dependency name and exits 1.
+if(kind==='bun'&&(args.includes('--global-dir')||args.includes('--global-bin-dir')))process.exit(1);
 if(args[0]==='root') { console.log(join(value('--prefix'),'lib/node_modules')); process.exit(0); }
 if(args[0]==='pm') { console.log(join(process.env.BUN_INSTALL,'bin')); process.exit(0); }
 if(args[0]!== (kind==='npm'?'install':'add') || !args.includes('--global') || !args.includes(packageName+'@latest'))process.exit(31);
@@ -103,7 +105,7 @@ test('official Bun OmO shim resolves to one package and supports a verified in-p
 import {readFileSync,writeFileSync} from 'node:fs';
 const args=process.argv.slice(2);
 if(args[0]==='pm'){console.log(${JSON.stringify(dirname(launcher))});process.exit(0);}
-if(args[0]!=='add'||!args.includes('omo-ai@latest')||args[args.indexOf('--global-dir')+1]!==${JSON.stringify(container)})process.exit(32);
+if(args[0]!=='add'||!args.includes('omo-ai@latest')||args.includes('--global-dir')||!args.includes('--global-dir='+${JSON.stringify(container)}))process.exit(32);
 writeFileSync(${JSON.stringify(join(root,'package.json'))},${JSON.stringify(metadata('2.0.0'))});
 writeFileSync(${JSON.stringify(entry)},"#!/bin/sh\\necho 2.0.0\\n");
 writeFileSync(${JSON.stringify(join(container,'package.json'))},JSON.stringify({dependencies:{'omo-ai':'2.0.0'}}));

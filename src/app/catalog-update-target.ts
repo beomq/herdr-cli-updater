@@ -159,8 +159,9 @@ async function execute(target:UpdateTarget,options:UpdateOptions,onProgress:(eve
         const bin=await runProcess(target.manager,['pm','bin','--global'],env,work,15_000);
         if(bin!==dirname(target.executable))changed();
         onProgress('installer_started');guard();options.beforeMutation?.();
-        await runProcess(target.manager,['add','--global','--global-dir',target.target,
-          '--global-bin-dir',dirname(target.executable),'--registry','https://registry.npmjs.org',`${target.packageName}@latest`],
+        // bun parses `--global-bin-dir <dir>` as a flag plus a package name; only the `=` form carries the value.
+        await runProcess(target.manager,['add','--global',`--global-dir=${target.target}`,
+          `--global-bin-dir=${dirname(target.executable)}`,'--registry','https://registry.npmjs.org',`${target.packageName}@latest`],
         env,work,900_000,()=>onProgress('installer_output_received'));
         break;
       }
