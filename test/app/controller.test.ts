@@ -611,7 +611,7 @@ async function fixture(holdPreparation = false, catalog?: typeof createCatalog, 
   let observedInstallationId: string | null = null;
   let paneStatus: "idle" | "working" | "blocked" | null = null;
   const paneCalls: string[] = [];
-  let panePid = 0;
+  let panePid = 0, screenReads = 0;
   const paneAgent = (pids: number[]) => paneStatus === null ? null : ({ paneId: "w1:p1", workspaceId: "w1", terminalId: "t", agent: "pi",
     status: paneStatus, stateChangeSeq: 1, cwd: null, title: null, foregroundPids: pids });
   const executableSelections=new Map<string,string>();
@@ -623,7 +623,7 @@ async function fixture(holdPreparation = false, catalog?: typeof createCatalog, 
     agents: async () => { const row = paneAgent([observedPid ?? 0]); return row ? [row] : []; },
     agent: async () => paneAgent(panePid === -1 ? [] : [panePid || (observedPid ?? 0)]),
     foregroundPids: async () => panePid === -1 ? [] : [panePid || (observedPid ?? 0)],
-    read: async () => "To resume this session: omo --session 01a1300b-f131-7cf3-a037-7bf50e61a5f4",
+    read: async () => { screenReads++; return "To resume this session: omo --session 01a1300b-f131-7cf3-a037-7bf50e61a5f4"; },
     sendLine: async (_pane: string, line: string) => { paneCalls.push(line); if (line === "/exit") panePid = -1; else panePid = 999; },
     wait: async (_pane: string, until: readonly string[]) => { paneCalls.push(`wait:${until.join("|")}`); paneStatus = "idle"; return paneAgent([observedPid ?? 0]); },
   };
@@ -740,7 +740,7 @@ async function fixture(holdPreparation = false, catalog?: typeof createCatalog, 
     failHerdrExecutable(error:Error|null){herdrExecutableError=error;},
     setObservedPid(pid: number | null, startedAt: string | null = null, installationId: string | null = null) { observedPid = pid; observedStart = startedAt; observedInstallationId = installationId; observationFails = false; },
     setPane(status: "idle" | "working" | "blocked" | null) { paneStatus = status; panePid = 0; },
-    paneCalls,
+    paneCalls, screenReads: () => screenReads,
     failObservation() { observationFails = true; },
     pause(name: "installations" | "targets" | "preparation" | "activation" | "connection") {
       const entered = Promise.withResolvers<void>(), released = Promise.withResolvers<void>();
@@ -778,6 +778,14 @@ test('explicit concurrent refresh recovers failed initialization with one connec
     expect(f.timerCount()).toBe(2);
     f.fire(300000);await f.controller.settled();
     expect(f.calls.checks).toBe(1);expect(f.timerCount()).toBe(2);
+  }finally{await f.close();}
+});
+test('the periodic observation re-reads pane screens so a pane that appears after startup gets its screen hint',async()=>{
+  const f=await fixture();try{
+    f.setObservedPid(300,'2026-10-13T12:00:00.000Z');f.setPane('idle');
+    const before=f.screenReads();
+    f.fire(15000);await f.controller.settled();
+    expect(f.screenReads()).toBeGreaterThan(before);
   }finally{await f.close();}
 });
 test('another failed reconnect leaves no timers and a later explicit retry still works',async()=>{

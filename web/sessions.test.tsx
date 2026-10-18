@@ -27,6 +27,17 @@ test('unknown activity ambiguous OmO and blocked panes cannot restart',()=>{
     expect(card(html,'a').match(/<button[^>]*data-action="review-pane-restart"[^>]*>/)?.[0]).toContain('disabled');
   }
 });
+test('unknown OmO activity offers only the screen-based restart while herdr, the screen and the cpu are quiet',()=>{
+  const quiet={paneId:'a',status:'idle' as const,stateChangeSeq:1,screenIdle:true,cpuQuiet:true};
+  const html=card(render({...base,external:[external('a','omo',{omoActivity:'unknown',herdrPane:quiet})]}),'a');
+  expect(html.match(/<button[^>]*data-action="review-pane-restart"[^>]*>/)?.[0]).toContain('disabled');
+  const screen=html.match(/<button[^>]*data-action="review-screen-restart"[^>]*>/)?.[0];
+  expect(screen).toBeDefined();expect(screen).not.toContain('disabled');
+  for(const pane of [{...quiet,status:'working' as const},{...quiet,status:'unknown' as const},{...quiet,screenIdle:false},{...quiet,screenIdle:null},{...quiet,cpuQuiet:false}]){
+    const button=card(render({...base,external:[external('a','omo',{omoActivity:'unknown',herdrPane:pane})]}),'a').match(/<button[^>]*data-action="review-screen-restart"[^>]*>/)?.[0];
+    expect(button===undefined||button.includes('disabled')).toBe(true);
+  }
+});
 test('running evidence stays independent of activity and engine details',()=>{
   const html=render({...base,external:[external('a','omo',{omoActivity:'working',runningVersion:'1.2.3',runningVersionEvidence:'started-after-install',runningEngineVersion:'internal-9.9'})]});
   expect(card(html,'a')).toContain('data-activity="working"');

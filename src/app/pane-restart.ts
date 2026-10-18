@@ -64,7 +64,9 @@ export type PaneRestartOptions = {
   readonly omoState?: (session: ExternalSession) => Promise<OmoActivity>;
   readonly observePane?: (paneId: string) => Promise<ExternalSession | null>;
 };
-export const trustScreenCpuLimit = 5;
+// Idle OmO TUIs were measured at 0.4-18.4% over 15s windows (96 samples, 16 panes); real
+// in-process work (streaming, compaction) sits well above this bound.
+export const trustScreenCpuLimit = 20;
 
 /** Restart a CLI that runs inside a herdr pane the updater did not launch, using only
  * what a person would do at the keyboard: wait until the agent is idle, type its exit
@@ -107,7 +109,15 @@ export async function restartInPane(options: PaneRestartOptions): Promise<PaneRe
       activity = await options.omoState(session);
     }
     if (activity === "blocked") return fail("agent_blocked");
-    if (activity !== "idle") return fail("session_activity_unverified");
+    if (activity === "unknown" && options.trustScreen) {
+      // Engines up to senpi 2026.10.16 expose no session-work signal over the TUI socket, so
+      // "unknown" is the normal reading for an idle OmO. A person judged this pane idle from
+      // its screen; honour that only while herdr also reports idle, the screen ends at a
+      // prompt and the pid is not computing. Background monitors stay invisible here.
+      if (agent.status !== "idle" && agent.status !== "done") return fail("session_activity_unverified");
+      const cpu = options.cpuPercent?.(session.pid) ?? null;
+      if (!screenLooksIdle(await herdr.read(paneId)) || cpu === null || cpu > trustScreenCpuLimit) return fail("screen_not_idle");
+    } else if (activity !== "idle") return fail("session_activity_unverified");
   } else if ((agent.status === "working" || agent.status === "unknown") && options.trustScreen) {
     const cpu = options.cpuPercent?.(session.pid) ?? null;
     if (!screenLooksIdle(await herdr.read(paneId)) || cpu === null || cpu > trustScreenCpuLimit) return fail("screen_not_idle");

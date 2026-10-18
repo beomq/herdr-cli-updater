@@ -420,8 +420,12 @@ export async function createController(options: Options, dependencies: {
     cancelObservation = clock.schedule(clock.now() + 15_000, () => {
       if (closed || closing) return;
       observeProcesses(); scheduleObservation();
-      background(refreshHerdrAgents().then(() => {
-        if (!closed && !closing && herdrAgents?.length) observeProcesses();
+      // Pane screens feed the screen-based restart hint, so they must follow the pane list on
+      // every observation; a pane opened after startup otherwise never gets a screen reading.
+      background(refreshHerdrAgents().then(async () => {
+        if (closed || closing || !herdrAgents?.length) return;
+        await refreshPaneScreens();
+        if (!closed && !closing) observeProcesses();
       }));
     });
   }

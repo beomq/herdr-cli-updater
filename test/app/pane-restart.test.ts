@@ -3,6 +3,7 @@ import type { HerdrPaneAgent, HerdrPaneClient } from "../../src/app/herdr-panes"
 import { parseResumeId, restartInPane } from "../../src/app/pane-restart";
 import type { PaneRestartJob } from "../../src/app/pane-restart";
 import type { ExternalSession } from "../../src/app/types";
+import { parseCommand } from "../../src/app/validation";
 
 const session: ExternalSession = { id: "external:300:t", pid: 300, family: "omo", installationId: null, executable: "/bin/omo",
   cwd: "/work", runningVersion: null, control: "herdr-pane", herdrPane: { paneId: "w1:p1", status: "idle", stateChangeSeq: 5 } };
@@ -46,6 +47,13 @@ async function run(script: Parameters<typeof fakePane>[0], overrides: Partial<Ex
     ...(script.trustScreen ? { trustScreen: true } : {}), cpuPercent: () => script.cpuPercent ?? null });
   return { job, calls, stages };
 }
+
+test("pane-restart accepts herdr's real base36 workspace ids and still rejects anything but a pane id", () => {
+  for (const paneId of ["w1R:pF", "wZ:p3", "w22:p1"])
+    expect(parseCommand({ requestId: "r", command: { kind: "pane-restart", sessionId: "external:1:t", paneId, trustScreen: true } }).command).toMatchObject({ paneId, trustScreen: true });
+  for (const paneId of ["w1R:pF;rm", "x1:p1", "w1R", "w1R:pF\n", "w1R:p", "w-1:p1"])
+    expect(() => parseCommand({ requestId: "r", command: { kind: "pane-restart", sessionId: "external:1:t", paneId } })).toThrow();
+});
 
 test("parseResumeId takes the last printed resume hint per family and rejects shell metacharacters", () => {
   expect(parseResumeId("omo", "x\nTo resume this session: omo --session 01a1300b-f131-7cf3-a037-7bf50e61a5f4\n")).toBe("01a1300b-f131-7cf3-a037-7bf50e61a5f4");
@@ -112,13 +120,37 @@ test("a pane whose foreground no longer holds the session pid is refused before 
   expect(calls.some(call => call.startsWith("send:"))).toBe(false);
 });
 
-test("OmO unknown activity refuses exit even when herdr and the screen claim idle", async () => {
+test("OmO unknown activity refuses a normal restart even when herdr and the screen claim idle", async () => {
   const { client, calls } = fakePane({ status: "idle", screen: "❯" });
   const job = await restartInPane({ herdr: client, session, now: () => 0, initialSeq: 5,
-    isAlive: () => true, publish: () => {}, trustScreen: true, cpuPercent: () => 0,
+    isAlive: () => true, publish: () => {}, cpuPercent: () => 0,
     omoState: async () => "unknown" });
   expect(job.failure).toBe("session_activity_unverified");
   expect(calls.some(call => call.startsWith("send:"))).toBe(false);
+});
+
+test("OmO unknown activity restarts when a person trusts the screen and herdr, the prompt and the pid are all quiet", async () => {
+  const { client, calls } = fakePane({ status: "idle", screen: "done\n──\n❯\n──\nstatus", exitPrints: "omo --session 0f0f0f0f-0000-4000-8000-000000000001" });
+  const job = await restartInPane({ herdr: client, session, now: () => 0, initialSeq: 5, exitTimeoutMs: 1_000, resumeTimeoutMs: 1_000,
+    isAlive: pid => pid !== 300, pause: async () => {}, publish: () => {}, trustScreen: true, cpuPercent: () => 0.3,
+    omoState: async () => "unknown" });
+  expect(job).toMatchObject({ stage: "completed", resumedPid: 301 });
+  expect(calls.some(call => call.startsWith("wait"))).toBe(false);
+});
+
+test("OmO unknown activity with a trusted screen still refuses while herdr works, the screen shows work or the pid computes", async () => {
+  const attempt = async (script: Parameters<typeof fakePane>[0], cpu: number | null) => {
+    const { client, calls } = fakePane(script);
+    const job = await restartInPane({ herdr: client, session, now: () => 0, initialSeq: 5,
+      isAlive: () => true, publish: () => {}, trustScreen: true, cpuPercent: () => cpu, omoState: async () => "unknown" });
+    expect(calls.some(call => call.startsWith("send:"))).toBe(false);
+    return job.failure;
+  };
+  expect(await attempt({ status: "working", screen: "❯" }, 0)).toBe("session_activity_unverified");
+  expect(await attempt({ status: "unknown", screen: "❯" }, 0)).toBe("session_activity_unverified");
+  expect(await attempt({ status: "idle", screen: "── ⠋ Working ──\n❯" }, 0)).toBe("screen_not_idle");
+  expect(await attempt({ status: "idle", screen: "❯" }, 42)).toBe("screen_not_idle");
+  expect(await attempt({ status: "idle", screen: "❯" }, null)).toBe("screen_not_idle");
 });
 
 test("OmO completion requires the same conversation on a new validated process", async () => {

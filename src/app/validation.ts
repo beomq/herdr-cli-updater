@@ -48,7 +48,7 @@ const envelope = z.object({
     z.object({ kind: z.literal("cancel"), operationId: id, revision: generation }).strict(),
     z.object({ kind: z.literal("launch"), installationId: id, cwd: path }).strict(),
     z.object({ kind: z.enum(["stop", "restart"]), sessionId: id, generation }).strict(),
-    z.object({ kind: z.literal("pane-restart"), sessionId: z.string().min(1).max(256), paneId: z.string().regex(/^w\d+:p[A-Za-z0-9]+$/), trustScreen: z.boolean().optional() }).strict(),
+    z.object({ kind: z.literal("pane-restart"), sessionId: z.string().min(1).max(256), paneId: z.string().regex(/^w[A-Za-z0-9]+:p[A-Za-z0-9]+$/), trustScreen: z.boolean().optional() }).strict(),
     z.object({ kind: z.literal("send"), sessionId: id, generation, message: z.string().min(1).max(16000) }).strict(),
     z.object({ kind: z.literal("respond"), sessionId: id, generation, approvalId: id,
       value: z.union([z.string().max(16000), z.boolean()]) }).strict(),
