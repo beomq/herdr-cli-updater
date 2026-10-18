@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { AppSnapshot } from '../src/app/types';
+import type { CatalogEntry } from '../src/app/catalog-types';
 import { CatalogUpdateHistory, CatalogUpdateReviewFacts, CatalogUpdates, catalogHistory, catalogRecoveryBlock, catalogReviewBinding, catalogUpdateTargetMatches, usesCatalogUpdatePolicy } from './catalog-updates';
 import type { CatalogUpdateJob } from '../src/app/catalog-updates';
 
@@ -31,14 +32,11 @@ test('automation toggle reflects persisted policy rather than defaulting to enab
   expect(render({...snapshot,policies:[{installationId:'catalog:omo',mode:'update',intervalMinutes:1440,lastCheckedAt:null,nextCheckAt:1000,waitingReason:null}]}))
     .toMatch(/role="switch" aria-checked="true"/);
 });
-test('pane session policy radio reflects saved intent and defaults to keep for absent policies',()=>{
+test('per family automation does not duplicate shared session controls',()=>{
   const render=(model:AppSnapshot)=>renderToStaticMarkup(<CatalogUpdates snapshot={model} act={async()=>true} disabled={false}/>);
-  const checkedIndex=(markup:string)=>[...markup.matchAll(/<input type="radio"[^>]*>/g)].findIndex(match=>match[0].includes('checked=""'));
-  expect(checkedIndex(render(snapshot))).toBe(0);
-  for(const [index,paneSessions] of (['keep','restart-idle','restart-all'] as const).entries())
-    expect(checkedIndex(render({...snapshot,policies:[{installationId:'catalog:omo',mode:'update',intervalMinutes:60,paneSessions,lastCheckedAt:null,nextCheckAt:1000,waitingReason:null}]}))).toBe(index);
-  const unsupported:AppSnapshot={...snapshot,catalog:snapshot.catalog?.map(entry=>({...entry,updateSupport:{kind:'unsupported',reason:'manual_update_required'}}))??[]};
-  expect(render(unsupported)).not.toContain('업데이트 후 herdr 창 세션');
+  expect(render(snapshot)).not.toContain('type="radio"');
+  for(const paneSessions of ['keep','restart-idle','restart-all'] as const)
+    expect(render({...snapshot,policies:[{installationId:'catalog:omo',mode:'update',intervalMinutes:60,paneSessions,lastCheckedAt:null,nextCheckAt:1000,waitingReason:null}]})).not.toContain('type="radio"');
 });
 test('unsupported installations block enabling but retain an enabled shutdown toggle',()=>{
   const model:AppSnapshot={...snapshot,catalog:snapshot.catalog?.map(entry=>({...entry,updateSupport:{kind:'unsupported',reason:'manual_update_required'}}))??[]};
@@ -122,6 +120,31 @@ test('target bindings distinguish selection source and installed version changes
   for(const changed of [{...entry,selectedInstallationId:'other'},{...entry,inventoryStatus:'checking' as const},{...entry,installed:{path:'/other',version:'1.2.3',managed:false}}])expect(catalogUpdateTargetMatches(changed,uncertain)).toBe(false);
   for(const changed of [{...entry,sourceUrl:'https://different.test'},{...entry,installed:{...entry.installed,path:'/example/bin/omo',version:'2.0.0',managed:false}}])expect(catalogReviewBinding(changed)).not.toBe(catalogReviewBinding(entry));
 });
+test('legacy recovery accepts a discovered selection only at the recorded executable',()=>{
+  const entry=snapshot.catalog?.[0];if(!entry)throw new Error('missing fixture');
+  const model={...snapshot,catalog:[{...entry,selectedInstallationId:'discovered'}],catalogUpdates:[uncertain]};
+  expect(catalogRecoveryBlock(model,uncertain,'reconcile')).toBeNull();
+  expect(catalogRecoveryBlock(model,{...uncertain,installationId:'different'},'reconcile')).toBe('recovery_target_changed');
+  expect(catalogRecoveryBlock({...model,catalog:[{...entry,installed:{path:'/other',version:'1.0.0',managed:false}}]},uncertain,'reconcile')).toBe('recovery_target_changed');
+});
+const selectedEntry:CatalogEntry={id:'omo',name:'OmO',description:{ko:'CLI',en:'CLI'},executable:'omo',sourceUrl:'https://example.test',method:'bun',availability:'installable',reason:null,
+  selectedInstallationId:'copy-a',inventoryStatus:'ready',installed:{path:'/example/bin/omo',identityPath:'/example/omo.js',source:'bun-global',version:'1.2.3',managed:false,versionStatus:'known',checkedAt:1000},
+  installations:[{id:'copy-a',catalogId:'omo',manager:'bun',root:'/example',packageName:'omo-ai',path:'/example/bin/omo',identityPath:'/example/omo.js',receiptId:null,isDefault:true,version:'1.2.3',versionStatus:'known',checkedAt:1000}]};
+test('review binding ignores inventory timestamp-only refreshes',()=>{
+  const refreshed:CatalogEntry={...selectedEntry,installed:selectedEntry.installed&&{...selectedEntry.installed,checkedAt:2000},
+    installations:selectedEntry.installations?.map(row=>({...row,checkedAt:2000}))??[]};
+  expect(catalogReviewBinding(refreshed)).toBe(catalogReviewBinding(selectedEntry));
+});
+test('review binding retains identity source version selection and inventory drift',()=>{
+  const changes:readonly CatalogEntry[]=[
+    {...selectedEntry,selectedInstallationId:'copy-b'},
+    {...selectedEntry,sourceUrl:'https://other.test'},
+    {...selectedEntry,inventoryStatus:'checking'},
+    ...[{path:'/other/bin/omo'},{identityPath:'/other/omo.js'},{version:'3.0.0'},{versionStatus:'failed' as const},{managed:true}].map(change=>({...selectedEntry,installed:selectedEntry.installed&&{...selectedEntry.installed,...change}})),
+    ...[{id:'copy-b'},{manager:'npm' as const},{root:'/other'},{packageName:'other-cli'},{path:'/other/bin/omo'},{identityPath:'/other/omo.js'},{receiptId:'other-receipt'},{version:'3.0.0'},{versionStatus:'failed' as const}].map(change=>({...selectedEntry,installations:selectedEntry.installations?.map(row=>({...row,...change}))??[]})),
+  ];
+  for(const changed of changes)expect(catalogReviewBinding(changed)).not.toBe(catalogReviewBinding(selectedEntry));
+});
 test('archived unverified jobs retain a distinct non-success outcome without recovery actions',()=>{
   const markup=renderToStaticMarkup(<CatalogUpdateHistory snapshot={{...snapshot,catalogUpdates:[{...uncertain,stage:'archived-unverified'}]}} act={async()=>true}/>);
   expect(markup).toContain('data-update-stage="archived-unverified"');
@@ -138,13 +161,21 @@ test('review separates observed latest from executable target and unpinned relea
 });
 test('recovery review exposes action-specific evidence without installation execution policy',()=>{
   for(const action of ['reconcile','archive-unverified'] as const){
-    const markup=renderToStaticMarkup(<CatalogUpdateReviewFacts job={uncertain} checkedAt={null} action={action}/>);
+    const markup=renderToStaticMarkup(<CatalogUpdateReviewFacts job={uncertain} currentVersion="1.8.0" action={action}/>);
     expect(markup).toContain(`data-review-action="${action}"`);
     expect(markup).toContain('data-review="target">/example/bin/omo');
+    expect(markup).toContain('data-review="before">1.2.3');
+    expect(markup).toContain('data-review="current">1.8.0');
     expect(markup).toContain('data-review="checked-latest">2.0.0');
+    expect(markup).not.toContain('data-review="checked-at"');
     expect(markup).not.toContain('data-release-policy=');
   }
   const install=renderToStaticMarkup(<CatalogUpdateReviewFacts job={uncertain} checkedAt={1000}/>);
   expect(install).toContain('data-review-action="install"');
   expect(install).toContain('data-release-policy="then-latest"');
+});
+test('recovery review does not substitute the before version for unknown current evidence',()=>{
+  const markup=renderToStaticMarkup(<CatalogUpdateReviewFacts job={uncertain} currentVersion={null} action="reconcile"/>);
+  expect(markup).toContain('data-review="before">1.2.3');
+  expect(markup).not.toContain('data-review="current">1.2.3');
 });

@@ -1,5 +1,44 @@
 # CLI updater terminal design
 
+## October 16 card-first update workspace contract (current)
+This section supersedes conflicting workspace and automation rules below. Keep
+the existing tokens, typography, stack/cluster, cli-entry, Button, Badge, Notice,
+Facts and revision-bound Dialog. No dependencies or decorative motion are added.
+
+- Updates leads with Update check and, only when eligible updates exist, Update
+  all N. Preparation remains an internal read-only step before explicit review.
+  No always-visible Refresh or Prepare control. Checking never enables automation.
+  Summary counts remain compact inline metrics rather than tall tiles, including
+  on mobile, so navigation statistics do not displace the installation cards.
+- Each family card owns its check, progress and latest outcome. Bulk results do
+  not create a second list above the cards. Snapshot events retain card keys,
+  details state and main scroll position; no automatic History expansion or focus.
+  Full job diagnostics stay in History. A compact live status uses text as well
+  as color and separates current disk version from historical update proof.
+- Automatic update toggles are directly on cards. One Automatic update settings
+  dialog edits the shared after-update session policy. Saving applies it to all
+  stored and future automatic policies without enabling, rescheduling or restarting
+  now. Before explicit save, legacy per-policy choices can differ; show that fact.
+  Manual update review retains its separate session confirmation semantics.
+- Multiple installation paths have a prominent count and Organize installations
+  action opening the existing retained-install selection and cleanup flow. Optional
+  general-terminal PATH changes are distinct from herdr launch selection. Do not
+  claim a herdr connection is applied without a supporting server contract.
+- Uncertain jobs show their past failure, date and current selected version; use
+  Check current installation state, not an ambiguous result check. Reuse existing
+  revision-bound recovery; fresh inspection is not historical success and does not
+  unlock retries alone. Cards also expose explicit archive-unverified review after
+  inspection; safe archival releases only the stale lock for a fresh verified plan.
+  Global in-flight guards use the complete snapshot, even when a
+  card or History display is family-scoped.
+
+Accessibility: main remains the scroll owner; existing modal focus containment,
+preventScroll restoration, keyboard switches, wrapping paths and touch targets
+remain. Card live regions do not automatically move focus or open details.
+Verification boundary: focused behavior tests are this implementation unit's
+gate; parent owns desktop/mobile light/dark screenshots and integrated QA. Fixture
+success does not prove operating updates, herdr adoption or user understanding.
+
 ## October 15 update-first Console contract (current)
 This section supersedes conflicting older web/navigation and capability notes
 below; terminal sections 1-8 retain their scope. Reuse the current tokens,

@@ -6,6 +6,9 @@ import { catalogDefinitions } from '../../src/app/catalog-registry';
 import { discoverUpdate, executeUpdate } from '../../src/app/catalog-update-target';
 import type { CatalogId, InstallJob } from '../../src/app/catalog-types';
 import { bunOmoEntry } from '../../src/app/omo-installation';
+import { AppStore } from '../../src/app/store';
+import { createCatalogUpdates } from '../../src/app/catalog-updates';
+import { updateIdentity } from '../../src/app/catalog-update-proof';
 
 function fixture() {
   const home=realpathSync(mkdtempSync('/tmp/catalog-update-'));
@@ -48,6 +51,41 @@ console.log('Authorization: private-fixture-token');
   }
   return {home,file,binary,pkg,manager,close:()=>rmSync(home,{recursive:true,force:true})};
 }
+test.each(['internal','outside'] as const)('verifies a Pi package bin relocation only inside its package (%s)',async(location)=>{
+  const f=fixture(),name='@earendil-works/pi-coding-agent',path=f.manager('npm',name);
+  const container=join(f.home,'prefix/lib'),root=f.pkg(container,name,'pi'),executable=join(f.home,'prefix/bin/pi');
+  mkdirSync(dirname(executable),{recursive:true});symlinkSync(join(root,'cli.js'),executable);
+  const options={catalogId:'pi' as const,directory:join(f.home,'state'),home:f.home,path,executable,receipt:null};
+  try{
+    const target=await discoverUpdate(options);if(!target)throw new Error('missing_target');
+    const manager=join(f.home,'manager/npm/bin/npm-cli.js');
+    const destination=location==='internal'?join(root,'dist/bundle/cli.js'):join(f.home,'outside.js');
+    const script=readFileSync(manager,'utf8');
+    writeFileSync(manager,script+`\nconst fs=await import('node:fs');\nfs.mkdirSync(${JSON.stringify(dirname(destination))},{recursive:true});\nfs.renameSync(join(root,'cli.js'),${JSON.stringify(destination)});\nmetadata.bin.pi=${JSON.stringify(location==='internal'?'dist/bundle/cli.js':'../../../../outside.js')};\nfs.writeFileSync(join(root,'package.json'),JSON.stringify(metadata));\nfs.unlinkSync(${JSON.stringify(executable)});\nfs.symlinkSync(${JSON.stringify(destination)},${JSON.stringify(executable)});\n`);
+    // Rediscover after preparing the manager, then exercise the real executor boundary.
+    const prepared=await discoverUpdate(options);if(!prepared)throw new Error('missing_target');
+    if(location==='internal'){
+      const identity=updateIdentity(prepared,f.home);
+      expect(await executeUpdate(prepared,options)).toBe('2.0.0');
+      const store=new AppStore(options.directory);
+      try{
+        const jobId='11111111-1111-4111-8111-111111111111';
+        store.putCatalogUpdate({id:jobId,requestId:'fixture',catalogId:'pi',revision:1,stage:'uncertain',target:prepared,
+          identity,execution:'started',executionTarget:null,expectedVersion:null,checkedVersion:'2.0.0',
+          createdAt:1,updatedAt:2,beforeVersion:'1.0.0',installedVersion:null,failure:'update_target_changed'});
+        const updates=createCatalogUpdates({...options,store,entries:()=>[],changed:()=>{},installedChanged:()=>{},guard:()=>{}},{processes:()=>[]});
+        await updates.recover(jobId,1,'reconcile');
+        const checked=store.catalogUpdates()[0];
+        expect(checked).toMatchObject({stage:'uncertain',reconciliation:{version:'2.0.0'},installedVersion:null});
+        if(!checked)throw new Error('missing_job');
+        await updates.recover(jobId,checked.revision,'archive-unverified');
+        expect(store.catalogUpdates()[0]?.stage).toBe('archived-unverified');
+      }finally{store.close();}
+    }
+    else await expect(executeUpdate(prepared,options)).rejects.toMatchObject({mutationStarted:true});
+  }finally{f.close();}
+});
+
 test('official Bun OmO shim resolves to one package and supports a verified in-place update',async()=>{
   const f=fixture();
   const container=join(f.home,'.bun/install/global'),root=join(container,'node_modules/omo-ai');

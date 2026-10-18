@@ -7,10 +7,11 @@ import { parseCliVersion, runProcess } from './catalog-runner';
 import type { CatalogId } from './catalog-types';
 import { AppError } from './types';
 import { removalFingerprint } from './removal-fingerprint';
+import { discoverClaudeUpdate, executeClaudeUpdate } from './catalog-claude-update';
 
 const absolute=z.string().startsWith('/').max(4096).regex(/^[^\x00-\x1f\x7f:]+$/).refine(p=>normalize(p)===p&&p!=='/');
 export const officialUpdateTargetSchema=z.object({
-  kind:z.literal('official'),catalogId:z.enum(['gjc','omp','maki','kimi','opencode']),
+  kind:z.literal('official'),catalogId:z.enum(['gjc','omp','maki','kimi','opencode','claude']),
   target:absolute,executable:absolute,sourceUrl:z.url().startsWith('https://'),
   fingerprint:z.string().regex(/^[a-f0-9]{64}$/),preserve:z.array(absolute).readonly(),
 }).strict();
@@ -24,7 +25,7 @@ const contracts={
   kimi:{root:'.kimi-code/bin',url:'https://code.kimi.com/kimi-code/install.sh',args:[],env:{KIMI_NO_MODIFY_PATH:'1'}},
   opencode:{root:'.opencode/bin',url:'https://opencode.ai/install',args:['--no-modify-path'],env:{}},
 } as const;
-export function officialUpdateSupported(id:CatalogId):id is OfficialUpdateTarget['catalogId'] {return Object.hasOwn(contracts,id);}
+export function officialUpdateSupported(id:CatalogId):id is OfficialUpdateTarget['catalogId'] {return id==='claude'||Object.hasOwn(contracts,id);}
 function changed():never {throw new AppError('source_changed','official_update_target_changed');}
 function physicalDirectory(path:string):void {
   absolute.parse(path);
@@ -41,6 +42,7 @@ function native(executable:string,id:OfficialUpdateTarget['catalogId']):void {
   if(!formats.includes(magic)||!bytes.includes(Buffer.from(id)))changed();
 }
 function environment(id:OfficialUpdateTarget['catalogId'],context:Context):Record<string,string> {
+  if(id==='claude')changed();
   let path=context.path;
   if(id==='kimi'){
     const own=join(context.home,contracts.kimi.root);
@@ -56,6 +58,7 @@ function stamp(path:string):unknown {
   return [path,stat.dev,stat.ino,stat.mode,stat.uid,stat.isSymbolicLink()?readlinkSync(path):null];
 }
 function proof(base:Omit<OfficialUpdateTarget,'fingerprint'>,context:Context):string {
+  if(base.catalogId==='claude')changed();
   physicalDirectory(context.home);physicalDirectory(base.target);
   native(base.executable,base.catalogId);
   if(realpathSync(base.executable)!==base.executable||base.target===context.directory||base.target.startsWith(context.directory+'/'))changed();
@@ -74,6 +77,7 @@ async function identify(target:OfficialUpdateTarget,context:Context,run:typeof r
 export async function discoverOfficialUpdate(options:Context&Dependencies&{readonly catalogId:CatalogId;readonly executable:string}):Promise<OfficialUpdateTarget|null> {
   if(!officialUpdateSupported(options.catalogId)||!['darwin','linux'].includes(process.platform)||!['arm64','x64'].includes(process.arch))return null;
   try {
+    if(options.catalogId==='claude')return await discoverClaudeUpdate(options);
     const id=options.catalogId,contract=contracts[id],target=join(options.home,contract.root);
     const executable=join(target,catalogDefinitions.find(row=>row.id===id)!.executable);
     if(options.executable!==executable)return null;
@@ -95,6 +99,7 @@ async function download(url:string):Promise<string> {
 }
 export async function executeOfficialUpdate(input:OfficialUpdateTarget,context:Context&Dependencies,onProgress:(event:string)=>void=()=>{}):Promise<string> {
   const parsed=officialUpdateTargetSchema.safeParse(input);if(!parsed.success)changed();const target=parsed.data;
+  if(target.catalogId==='claude')return executeClaudeUpdate(target,context,onProgress);
   const run=context.run??runProcess;
   const check=async()=>{
     const current=await discoverOfficialUpdate({...context,catalogId:target.catalogId,executable:target.executable});

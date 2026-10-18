@@ -7,6 +7,7 @@ import type { CatalogId } from './catalog-types';
 import { AppError } from './types';
 import type { UpdateTarget } from './catalog-update-target';
 import { latestBrewVersion } from './catalog-brew';
+import { claudeNativeVersion, claudeReleaseBase, claudeReleaseChannel } from './catalog-claude-update';
 
 // SemVer numeric components cannot have leading zeros; prerelease identifiers
 // cannot be empty or zero-padded numbers. Build identifiers may be numeric.
@@ -79,6 +80,21 @@ export async function latestCatalogVersion(catalogId:CatalogId,target?:UpdateTar
     return data.version;
   }
   switch(catalogId) {
+    case 'claude': {
+      if(target?.kind!=='official')throw new AppError('unsupported','latest_source_unverified');
+      const channel=claudeReleaseChannel(target.sourceUrl);
+      const parsed=claudeNativeVersion.safeParse((await document(`${claudeReleaseBase}/${channel}`)).trim());
+      if(!parsed.success)throw new AppError('unavailable','latest_response_invalid');
+      const report=process.platform==='linux'?process.report.getReport():null;
+      const glibc=report&&typeof report==='object'&&'header' in report&&report.header&&typeof report.header==='object'&&'glibcVersionRuntime' in report.header;
+      const musl=process.platform==='linux'&&(existsSync('/etc/alpine-release')||!glibc);
+      const platform=`${process.platform}-${process.arch}${musl?'-musl':''}`;
+      const manifest=await json(`${claudeReleaseBase}/${parsed.data}/manifest.json`,z.object({
+        version:z.literal(parsed.data),platforms:z.record(z.string(),z.object({binary:z.string().max(64),checksum,size:z.number().int().positive()})),
+      }));
+      if(manifest.platforms[platform]?.binary!=='claude')throw new AppError('unavailable','latest_artifact_unavailable');
+      return parsed.data;
+    }
     case 'opencode': {
       // The official installer selects stable anomalyco releases, not opencode-ai on npm.
       let arch:string=process.arch,baseline=false;

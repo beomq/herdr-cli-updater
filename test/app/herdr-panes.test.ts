@@ -34,6 +34,26 @@ const agentRow = (paneId: string, status: string, extra: Record<string, unknown>
   agent_status: status, state_change_seq: 7, cwd: "/work/project", title: "task", ...extra,
 });
 
+test('selected executable uses server persistence without pane input',async()=>{
+  let selected:string|null=null;
+  const {socketPath,calls}=await fakeHerdr((method,params)=>{
+    if(method==='server.agent_executable.set')selected=String(params['executable']);
+    return {type:'agent_executable',kind:'codex',executable:selected,effective_executable:selected??'codex',config_path:'/server/config.toml'};
+  });
+  const client=createHerdrPaneClient(socketPath);
+  expect(await client.executable?.('codex')).toBeNull();
+  await client.selectExecutable?.('codex','/stable/bin/codex');
+  expect(await client.executable?.('codex')).toBe('/stable/bin/codex');
+  expect(calls.map(row=>row.method)).toEqual(['server.agent_executable.get','server.agent_executable.set','server.agent_executable.get']);
+});
+
+test('old herdr and mismatched selection replies never report success',async()=>{
+  const old=await fakeHerdr(()=>new Error('unknown_method'));
+  await expect(createHerdrPaneClient(old.socketPath).selectExecutable?.('codex','/stable/codex')).rejects.toMatchObject({detail:'herdr_unknown_method'});
+  const wrong=await fakeHerdr(()=>({type:'agent_executable',kind:'pi',executable:'/stable/codex'}));
+  await expect(createHerdrPaneClient(wrong.socketPath).selectExecutable?.('codex','/stable/codex')).rejects.toMatchObject({detail:'herdr_executable_reply_invalid'});
+});
+
 test("agents() joins agent.list rows with each pane's foreground PIDs", async () => {
   // Given
   const { socketPath, calls } = await fakeHerdr((method, params) => {

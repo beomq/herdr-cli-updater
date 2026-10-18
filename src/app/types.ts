@@ -137,6 +137,7 @@ export type AppSnapshot = {
   readonly observationFailure?: string | null;
   readonly operations: readonly AppOperation[];
   readonly policies: readonly UpdatePolicy[];
+  readonly automationSettings?: { readonly paneSessions: PaneSessionPolicy };
   readonly catalog?: readonly CatalogEntry[];
   readonly installJobs?: readonly InstallJob[];
   readonly removalJobs?: readonly RemovalJob[];
@@ -147,6 +148,7 @@ export type AppSnapshot = {
   readonly failure: string | null;
 };
 export type AppCommand =
+  | { readonly kind: 'automation-settings'; readonly paneSessions: PaneSessionPolicy }
   | { readonly kind: "refresh" }
   | { readonly kind: "native-restart"; readonly installation: InstallSelection; readonly target: TargetSelection }
   | { readonly kind:'automation'; readonly installationId:string; readonly enabled:boolean; readonly paneSessions?:PaneSessionPolicy|undefined }

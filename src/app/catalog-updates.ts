@@ -145,7 +145,7 @@ export function createCatalogUpdates(options:Options,dependencies:{
       let processes:ReturnType<typeof readProcesses>;
       try{processes=(dependencies.processes??readProcesses)();}
       catch(error){if(!(error instanceof Error))throw error;throw new AppError('unavailable','process_observation_unavailable');}
-      if(processes.some(row=>row.pid===job.executorPid||row.command.includes(job.target.target)
+      if(processes.some(row=>row.pid===job.executorPid
         ||/^(?:\S*\/)?(?:npm|bun|brew)\s+(?:install|add|upgrade)\b|^(?:\S*\/)?node\s+\S*\/npm-cli\.js\s+(?:install|add|upgrade)\b|^(?:\S*\/)?(?:ba)?sh\s+\S*\/install\.sh\b/.test(row.command)))
         throw new AppError('busy','recovery_executor_active');
       if(JSON.stringify(get(id))!==JSON.stringify(job))throw new AppError('conflict','stale_update_plan');
@@ -156,15 +156,13 @@ export function createCatalogUpdates(options:Options,dependencies:{
       const receipt=options.store.installJobs().find(row=>row.catalogId===job.catalogId&&row.stage==='completed'&&row.executablePath===job.target.executable)??null;
       const discover=()=> (dependencies.discover??discoverUpdate)({...options,catalogId:job.catalogId,executable:job.target.executable,receipt});
       const before=(dependencies.identity??updateIdentity)(job.target,options.home);
-      const recorded=job.identity??job.reconciliation?.identity;
-      if(recorded&&!sameUpdateIdentity(recorded,before))throw new AppError('source_changed','recovery_target_changed');
+      // Historical identity is completion evidence, not a prerequisite for
+      // observing today's installation. Archiving still requires a second,
+      // unchanged file-bound observation and the same verified source binding.
       if(action==='archive-unverified'&&(!job.reconciliation?.identity||JSON.stringify(job.reconciliation.identity)!==JSON.stringify(before)))
         throw new AppError('conflict','reconcile_before_archive');
       const target=await discover();
       if(!target||updateBinding(target)!==updateBinding(job.target))throw new AppError('source_changed','recovery_source_changed');
-      if(job.executionTarget&&JSON.stringify(updateTargetSchema.parse(target))!==JSON.stringify(job.executionTarget))
-        throw new AppError('source_changed','recovery_execution_source_changed');
-      if(!recorded&&target.fingerprint!==job.target.fingerprint)throw new AppError('source_changed','recovery_target_changed');
       if(action==='archive-unverified'&&target.fingerprint!==job.reconciliation?.fingerprint)
         throw new AppError('source_changed','recovery_source_changed');
       await guard();
@@ -183,9 +181,10 @@ export function createCatalogUpdates(options:Options,dependencies:{
       const brew=target.kind==='brew'?brewVersionEvidence(target):null;
       const expected=job.expectedVersion??null;
       const proven=job.execution==='verified'&&job.executionTarget!=null&&expected!==null
+        &&JSON.stringify(updateTargetSchema.parse(target))===JSON.stringify(job.executionTarget)
         &&(brew?brew.packageVersion===expected&&observed===brew.releaseVersion:observed===expected)
         &&JSON.stringify(job.identity)===JSON.stringify(after);
-      const reason=proven?null:!job.identity?'recovery_identity_missing':!job.executionTarget?'execution_source_unverified':job.expectedVersion==null?'expected_version_unverified':'executed_version_unverified';
+      const reason=proven?null:!job.identity?'recovery_identity_missing':!sameUpdateIdentity(job.identity,after)?'recovery_target_changed':!job.executionTarget?'execution_source_unverified':job.expectedVersion==null?'expected_version_unverified':'executed_version_unverified';
       options.store.putCatalogUpdate({...job,revision:revision+1,updatedAt:Date.now(),
         stage:action==='archive-unverified'?'archived-unverified':proven?'completed':'uncertain',
         installedVersion:proven&&action==='reconcile'?expected:null,failure:action==='archive-unverified'?'update_archived_unverified':reason,

@@ -3,8 +3,8 @@ import { createHash } from "node:crypto";
 import { chmodSync, lstatSync, mkdirSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { AppError } from "./types";
-import type { AppOperation, CommandEnvelope, UpdatePolicy } from "./types";
-import { operationSchema, policySchema, installJobSchema } from "./validation";
+import type { AppOperation, CommandEnvelope, UpdatePolicy, PaneSessionPolicy } from "./types";
+import { operationSchema, policySchema, installJobSchema, paneSessionPolicy } from "./validation";
 import type { InstallJob } from "./catalog-types";
 import { z } from "zod";
 import { removalJobSchema } from './catalog-removal';
@@ -51,6 +51,7 @@ export class AppStore {
       CREATE TABLE IF NOT EXISTS commands (id TEXT PRIMARY KEY, body TEXT NOT NULL, outcome TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS operations (id TEXT PRIMARY KEY, body TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS policies (id TEXT PRIMARY KEY, body TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS automation_settings (id INTEGER PRIMARY KEY CHECK(id=1), pane_sessions TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS install_jobs (id TEXT PRIMARY KEY, body TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS removal_jobs (id TEXT PRIMARY KEY, body TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS catalog_updates (id TEXT PRIMARY KEY, body TEXT NOT NULL);
@@ -64,6 +65,17 @@ export class AppStore {
       const sidecar = `${file}${suffix}`;
       if (lstatSync(sidecar, { throwIfNoEntry: false })) chmodSync(sidecar, 0o600);
     }
+  }
+  automationSettings():{readonly paneSessions:PaneSessionPolicy} {
+    const row=this.#db.query<{pane_sessions:string},[]>("SELECT pane_sessions FROM automation_settings WHERE id=1").get();
+    return {paneSessions:row?paneSessionPolicy.parse(row.pane_sessions):'keep'};
+  }
+  putAutomationSettings(value:PaneSessionPolicy):void {
+    const parsed=paneSessionPolicy.parse(value);
+    this.#db.transaction(()=>{
+      this.#db.query("INSERT INTO automation_settings (id,pane_sessions) VALUES (1,?) ON CONFLICT(id) DO UPDATE SET pane_sessions=excluded.pane_sessions").run(parsed);
+      this.putPolicies(this.policies().map(policy=>({...policy,paneSessions:parsed})));
+    }).immediate();
   }
   accept(request: CommandEnvelope): boolean {
     return this.#db.transaction(() => {

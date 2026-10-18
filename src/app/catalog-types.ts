@@ -41,6 +41,7 @@ export type CatalogEntry = {
   readonly installations?:readonly CatalogInstallation[];
   readonly selectedInstallationId?:string|null;
   readonly configuredDefaultInstallationId?:string|null;
+  readonly herdrLaunch?:{readonly status:'applied'|'unsupported'|'unavailable';readonly executable:string|null};
   readonly inventoryStatus?:'checking'|'ready'|'failed';
   readonly lastCheck?:CatalogCheck;
   readonly installed: { readonly path: string; readonly version: string | null; readonly managed: boolean;

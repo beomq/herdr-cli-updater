@@ -20,6 +20,17 @@ afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true });
 });
 
+test('shared automation settings persist without enabling or rescheduling policies',()=>{
+  const {store,root}=fixture();
+  const policy={installationId:'catalog:pi',mode:'off' as const,intervalMinutes:60,lastCheckedAt:12,nextCheckAt:null,waitingReason:null,paneSessions:'keep' as const};
+  store.putPolicy(policy);
+  store.putAutomationSettings('restart-idle');
+  expect(store.policies()[0]).toMatchObject({...policy,paneSessions:'restart-idle'});
+  store.close();stores.splice(stores.indexOf(store),1);
+  const reopened=new AppStore(root);stores.push(reopened);
+  expect(reopened.automationSettings()).toEqual({paneSessions:'restart-idle'});
+});
+
 test("a persisted request cannot create another effect after reconnect", () => {
   // Given: one accepted user intent in the real store.
   const { store, root } = fixture();

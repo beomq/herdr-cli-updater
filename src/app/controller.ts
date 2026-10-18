@@ -260,12 +260,27 @@ export async function createController(options: Options, dependencies: {
       if(JSON.stringify(store.policies())!==before)throw new AppError('conflict','policy_changed');
       const next=previous&&target?{...previous,installationId:`catalog:${id}`,mode:'update' as const,catalogBinding:updateBinding(target),
         lastInstalledVersion:installation.version,lastCheckedAt:null,waitingReason:null,nextCheckAt:clock.now()+previous.intervalMinutes*60_000}:null;
-      if(makeDefault){
+      const connectHerdr=herdr&&isSupportedCli(id);
+      if(connectHerdr){
+        if(!herdr.executable||!herdr.selectExecutable)throw new AppError('unsupported','herdr_executable_selection_unsupported');
+      }
+      const previousHerdr=connectHerdr&&herdr.executable?await herdr.executable(id):null;
+      if(connectHerdr&&herdr.selectExecutable)await herdr.selectExecutable(id,installation.path);
+      try{if(makeDefault){
         const plan=planDefaultSwitch({...options,shell:options.shell??process.env['SHELL']??'/bin/zsh',installation});
         const result=await applyDefaultSwitch(plan,{home:options.home,path:options.path,guard:()=>{
           if(JSON.stringify(store.policies())!==before)throw new AppError('conflict','policy_changed');
         }});
         store.putDefaultJob({id:plan.id,requestId:plan.id,catalogId:id,installationId:installation.id,revision:1,stage:'completed',plan,result,createdAt:clock.now(),updatedAt:clock.now(),failure:null});
+      }}catch(error){
+        if(connectHerdr&&herdr.selectExecutable){
+          try{await herdr.selectExecutable(id,previousHerdr);}
+          catch{throw new AppError('uncertain','herdr_selection_rollback_unverified');}
+        }
+        throw error;
+      }
+      if(connectHerdr&&herdr.selectExecutable){
+        herdrLaunches.set(id,installation.path);
       }
       store.switchCatalogPolicy(id,installation.id,[...activePolicies.filter(row=>row.installationId!==next?.installationId)
         .map(row=>({...row,mode:'off' as const,nextCheckAt:null,waitingReason:null})),...(next?[next]:[])]);
@@ -293,15 +308,16 @@ export async function createController(options: Options, dependencies: {
     return { revision, service, installations, native: native.snapshot(), managed: managed.list(),
       host:{platform:process.platform,arch:process.arch,wsl:process.platform==='linux'&&!!(process.env['WSL_DISTRO_NAME']||process.env['WSL_INTEROP'])},
       external: external.map(row => ({ ...row, catalogId: externalCatalogId(row.executable, row.family, entries)??(!isSupportedCli(row.family)?row.catalogId??null:null) })),
-      catalog: entries, installJobs: store.installJobs(), removalJobs:store.removalJobs(),
+      catalog: entries.map(entry=>({...entry,herdrLaunch:{status:herdrLaunches.has(entry.id)?'applied' as const:!isSupportedCli(entry.id)?'unsupported' as const:'unavailable' as const,executable:herdrLaunches.get(entry.id)??null}})), installJobs: store.installJobs(), removalJobs:store.removalJobs(),
       catalogUpdates:store.catalogUpdates(),
       catalogBulk:bulk.snapshot(),
       defaultJobs:store.defaultJobs(), paneRestarts: [...paneRestarts.values()],
-      observedAt, observationFailure, operations: store.operations(), policies: store.policies(), failure };
+      observedAt, observationFailure, operations: store.operations(), policies: store.policies(), automationSettings:store.automationSettings(), failure };
   }
   const paneRestarts = new Map<string, PaneRestartJob>();
   let currentConversation = options.currentConversation ?? null;
   const herdr = dependencies.herdr ?? (options.herdrSocket ? createHerdrPaneClient(options.herdrSocket) : null);
+  const herdrLaunches=new Map<CatalogId,string>();
   let herdrAgents: readonly HerdrPaneAgent[] | null = null;
   let omoThreads: readonly OmoThread[] = [];
   async function refreshHerdrAgents(): Promise<void> {
@@ -310,6 +326,18 @@ export async function createController(options: Options, dependencies: {
     catch (error) {
       if (!(error instanceof AppError)) throw error;
       herdrAgents = null;
+    }
+    herdrLaunches.clear();
+    if(herdrAgents&&herdr.executable){
+      for(const entry of catalog.entries().filter(row=>isSupportedCli(row.id)&&row.installed)){
+        try{
+          const selected=await herdr.executable(entry.id);
+          if(selected&&selected===entry.installed?.path)herdrLaunches.set(entry.id,selected);
+        }catch(error){
+          if(!(error instanceof AppError))throw error;
+          // An old or unavailable server is not evidence of an applied selection.
+        }
+      }
     }
     omoThreads = [];
     const executable = catalog.entries().find(entry => entry.id === "omo")?.installed?.path;
@@ -906,7 +934,7 @@ export async function createController(options: Options, dependencies: {
     }
     const action: Exclude<AppCommand,{kind:'automation'}> = request.command.kind==='automation'
       ?{kind:'policy',installationId:request.command.installationId,mode:request.command.enabled?'update':'off',intervalMinutes:60,firstCheck:'now',
-        ...(request.command.paneSessions?{paneSessions:request.command.paneSessions}:{})}
+        paneSessions:store.automationSettings().paneSessions}
       :request.command;
     try {
       if(switchingCatalog&&!['refresh','send','respond'].includes(action.kind))throw new AppError('busy','operation_in_progress');
@@ -922,6 +950,10 @@ export async function createController(options: Options, dependencies: {
       if(removal.busy()&&!['refresh','send','respond'].includes(action.kind)
         &&!(action.kind==='policy'&&action.mode==='off'))throw new AppError('busy','removal_in_progress');
       switch (action.kind) {
+        case 'automation-settings': {
+          if(ticking||store.operations().some(active))throw new AppError('busy','operation_in_progress');
+          store.putAutomationSettings(action.paneSessions);changed();break;
+        }
         case "native-restart": {
           if(catalog.busy()||store.operations().some(active))throw new AppError("busy","operation_in_progress");
           const metadata=native.snapshot().selections.find(row=>row.installation.installationId===action.installation.installationId);

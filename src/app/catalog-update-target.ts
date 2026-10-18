@@ -104,7 +104,8 @@ async function execute(target:UpdateTarget,options:UpdateOptions,onProgress:(eve
   }
   const executableIdentity=()=>options.catalogId==='omo'&&target.kind==='bun'
     ?bunOmoEntry(target.executable,options.home)??realpathSync(target.executable):realpathSync(target.executable);
-  const canonical=executableIdentity(),rootInfo=lstatSync(target.target);
+  let canonical=executableIdentity();
+  const rootInfo=lstatSync(target.target);
   const manager=target.kind==='owned'
     ?recipe.kind==='npm'?findExecutable('npm',options.path):null
     :target.manager;
@@ -171,7 +172,6 @@ async function execute(target:UpdateTarget,options:UpdateOptions,onProgress:(eve
         current.dev!==rootInfo.dev||current.ino!==rootInfo.ino||
         executableIdentity()!==canonical||!lstatSync(canonical).isFile())changed();
     };
-    assertLocation();
     const updated=target.kind==='owned'?null:await discoverRemoval({
       ...options,executable:target.executable,receipt:null,
     });
@@ -184,9 +184,13 @@ async function execute(target:UpdateTarget,options:UpdateOptions,onProgress:(eve
       const metadata=packageSchema.parse(JSON.parse(readFileSync(join(packageRoot,'package.json'),'utf8')));
       const bin=typeof metadata.bin==='string'?metadata.bin:metadata.bin[definition.executable];
       if(metadata.name!==recipe.package||!bin||bin.startsWith('/')||bin.split('/').includes('..')||
-        !(lstatSync(target.executable).isSymbolicLink()||(target.kind==='bun'&&options.catalogId==='omo'&&bunOmoEntry(target.executable,options.home)===canonical))||realpathSync(join(packageRoot,bin))!==canonical)changed();
+        !(lstatSync(target.executable).isSymbolicLink()||(target.kind==='bun'&&options.catalogId==='omo'&&bunOmoEntry(target.executable,options.home)===canonical)))changed();
+      const nextCanonical=realpathSync(join(packageRoot,bin));
+      if(!nextCanonical.startsWith(packageRoot+'/')||executableIdentity()!==nextCanonical)changed();
+      canonical=nextCanonical;
       packageVersion=metadata.version;
     }
+    assertLocation();
     const versionInfo=lstatSync(canonical);
     const output=await runProcess(canonical,['--version'],
       {...env,MUSE_NO_AUTO_UPDATE:'1',MUSE_LOGIN:'0'},work,15_000);

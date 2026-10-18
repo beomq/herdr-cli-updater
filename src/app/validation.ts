@@ -18,6 +18,7 @@ const firstCheck = z.enum(["now", "after-interval"]);
 const envelope = z.object({
   requestId: id,
   command: z.discriminatedUnion("kind", [
+    z.object({kind:z.literal('automation-settings'),paneSessions:paneSessionPolicy}).strict(),
     z.object({ kind: z.literal("refresh") }).strict(),
     z.object({ kind: z.literal("native-restart"), installation: z.custom<InstallSelection>(isInstallSelection),
       target: z.custom<TargetSelection>(isTargetSelection) }).strict(),

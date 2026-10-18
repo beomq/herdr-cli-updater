@@ -20,6 +20,8 @@ export type HerdrPaneAgent = {
   readonly foregroundPids: readonly number[];
 };
 export type HerdrPaneClient = {
+  readonly executable?: (kind:string) => Promise<string|null>;
+  readonly selectExecutable?: (kind:string,executable:string|null) => Promise<void>;
   readonly socketPath: string;
   readonly agents: () => Promise<readonly HerdrPaneAgent[]>;
   readonly agent: (paneId: string) => Promise<HerdrPaneAgent | null>;
@@ -89,6 +91,17 @@ export function createHerdrPaneClient(socketPath: string): HerdrPaneClient {
   }
   return {
     socketPath,
+    async executable(kind) {
+      const result=await call('server.agent_executable.get',{kind});
+      if(!record(result)||result['type']!=='agent_executable'||result['kind']!==kind
+        ||!(result['executable']===null||text(result['executable'])))throw new AppError('protocol','herdr_executable_reply_invalid');
+      return result['executable'];
+    },
+    async selectExecutable(kind,executable) {
+      const result=await call('server.agent_executable.set',{kind,executable});
+      if(!record(result)||result['type']!=='agent_executable'||result['kind']!==kind||result['executable']!==executable)
+        throw new AppError('protocol','herdr_executable_reply_invalid');
+    },
     async agents() {
       const result = await call("agent.list", {});
       if (!record(result) || !Array.isArray(result["agents"])) throw new AppError("protocol", "herdr_agent_list_invalid");

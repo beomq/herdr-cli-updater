@@ -53,6 +53,44 @@ test('legacy verified rows without execution source evidence cannot claim histor
     expect(f.executions()).toBe(0);
   }finally{f.close();}
 });
+test.each(['missing-identity','replaced-payload','old-execution-source'] as const)('stale %s evidence can be inspected and archived without claiming success',async(mode)=>{
+  const f=fixture();try{
+    const job=f.seed({execution:mode==='old-execution-source'?'verified':'unknown',expectedVersion:'2.0.0',
+      ...(mode==='missing-identity'?{identity:null}:{})});
+    if(mode==='replaced-payload'){
+      renameSync(f.target.executable,f.target.executable+'.old');writeFileSync(f.target.executable,'new payload');
+    }
+    f.source({...f.target,fingerprint:'b'.repeat(64)});
+    await f.updates.recover(job.id,job.revision,'reconcile');
+    expect(f.current()).toMatchObject({stage:'uncertain',installedVersion:null,reconciliation:{version:'2.0.0',fingerprint:'b'.repeat(64)}});
+    await expect(f.updates.plan('codex','before-archive')).rejects.toMatchObject({detail:'inspect_interrupted_update'});
+    await f.updates.recover(job.id,f.current().revision,'archive-unverified');
+    const archived=f.current();
+    expect(archived).toMatchObject({stage:'archived-unverified',installedVersion:null,execution:job.execution});
+    const fresh=await f.updates.plan('codex','fresh');
+    expect(fresh.target.fingerprint).toBe('b'.repeat(64));expect(fresh.expectedVersion).toBeNull();
+    expect(f.executions()).toBe(0);
+  }finally{f.close();}
+});
+test('a proven installer rejection does not block a fresh plan',async()=>{
+  const f=fixture();try{
+    f.seed({stage:'failed',execution:'not-started',failure:'installer_exit_1'});
+    expect((await f.updates.plan('codex','fresh')).stage).toBe('ready');expect(f.executions()).toBe(0);
+  }finally{f.close();}
+});
+test('legacy missing identity cannot archive a changed source or an active installer',async()=>{
+  const f=fixture();try{
+    const job=f.seed({identity:null,execution:'unknown',failure:'installer_exit_1'});
+    await f.updates.recover(job.id,job.revision,'reconcile');
+    f.source({...f.target,target:f.directory});
+    await expect(f.updates.recover(job.id,f.current().revision,'archive-unverified')).rejects.toMatchObject({detail:'recovery_source_changed'});
+    expect(f.current().stage).toBe('uncertain');
+    f.source(f.target);await f.updates.recover(job.id,f.current().revision,'reconcile');
+    f.processes([{pid:999,parent:1,uid:0,command:'bun add --global @openai/codex'}]);
+    await expect(f.updates.recover(job.id,f.current().revision,'archive-unverified')).rejects.toMatchObject({detail:'recovery_executor_active'});
+    expect(f.current().stage).toBe('uncertain');expect(f.executions()).toBe(0);
+  }finally{f.close();}
+});
 test.each([false,true])('reconcile never treats disk or checked latest as execution provenance (%s)',async(legacy)=>{
   const f=fixture();try{
     const job=f.seed({checkedVersion:'2.0.0',...(legacy?{identity:null}:{})});
@@ -89,6 +127,17 @@ test.each(['missing','replaced','source','path','dirty','malformed','before-vers
     if(mode==='missing')expect(f.current().failure).toBe('recovery_target_missing');
   }finally{f.close();}
 });
+test('a running CLI inside the installation is not an installer',async()=>{
+  const f=fixture();try{
+    const job=f.seed();
+    f.processes([{pid:999,parent:1,uid:0,command:f.target.executable+' --session conversation'}]);
+    await f.updates.recover(job.id,job.revision,'reconcile');
+    expect(f.current().reconciliation?.version).toBe('2.0.0');
+    expect(f.current().failure).not.toBe('recovery_executor_active');
+    expect(f.executions()).toBe(0);
+  }finally{f.close();}
+});
+
 test('stale revisions and active executor cannot archive or unlock a job',async()=>{
   const f=fixture();try{
     const job=f.seed();

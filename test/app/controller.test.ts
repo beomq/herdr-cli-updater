@@ -48,6 +48,18 @@ async function nativeControllerFixture(uncertain = false) {
   return { ...await fixture(false, undefined, "OmO", 0, undefined, undefined, undefined, native),
     nativeSelection: selection, target, entered: entered.promise, release: release.resolve };
 }
+test('shared session choice applies to existing and newly enabled automation without restarting sessions',async()=>{
+  const f=await fixture();try{
+    await f.command({kind:'policy',installationId:'fixture',mode:'off',intervalMinutes:60,paneSessions:'keep'});
+    await f.command({kind:'automation-settings',paneSessions:'restart-all'});
+    expect(f.controller.snapshot().automationSettings).toEqual({paneSessions:'restart-all'});
+    expect(f.controller.snapshot().policies.find(row=>row.installationId==='fixture')?.paneSessions).toBe('restart-all');
+    await f.command({kind:'automation',installationId:'fixture',enabled:true});
+    expect(f.controller.snapshot().policies.find(row=>row.installationId==='fixture')).toMatchObject({mode:'update',paneSessions:'restart-all'});
+    expect(f.effects).toEqual({stops:0,restarts:0});
+  }finally{await f.close();}
+});
+
 test('unsupported persisted automation cannot fire and engine commands reject its family',async()=>{
   const saved:UpdatePolicy={installationId:'catalog:qwen',mode:'update',intervalMinutes:60,firstCheck:'now',lastCheckedAt:null,nextCheckAt:1000,waitingReason:null,catalogBinding:'old'};
   const f=await fixture(false,undefined,'OmO',0,undefined,undefined,saved);
@@ -145,6 +157,9 @@ test('selecting another installation transfers the sole automatic policy without
     await f.command({kind:'automation',installationId:'catalog:codex',enabled:true,paneSessions:'keep'});
     await f.command({kind:'catalog-select',catalogId:'codex',installationId:'second'});
     expect(f.controller.snapshot().catalog?.[0]?.selectedInstallationId).toBe('second');
+    expect(f.executableSelections.get('codex')).toBe(f.executable());
+    await f.command({kind:'refresh'});
+    expect(f.controller.snapshot().catalog?.[0]?.herdrLaunch).toEqual({status:'applied',executable:f.executable()});
     expect(f.controller.snapshot().policies.filter(p=>p.mode!=='off')).toHaveLength(1);
     expect(f.controller.snapshot().policies[0]?.lastInstalledVersion).toBe('1.0.0');
     expect(f.executions()).toBe(0);expect(f.effects).toEqual({stops:0,restarts:0});
@@ -507,7 +522,8 @@ test('running catalog consumers wait rather than being stopped by automatic upda
 test('an install made outside the updater is recorded and restarts idle pane sessions on the next check',async()=>{
   const f=await catalogUpdateFixture();
   try{
-    await f.command({kind:'automation',installationId:'catalog:codex',enabled:true,paneSessions:'restart-idle'});
+    await f.command({kind:'automation-settings',paneSessions:'restart-idle'});
+    await f.command({kind:'automation',installationId:'catalog:codex',enabled:true});
     f.fire();await f.controller.settled();
     expect(f.executions()).toBe(1);
     expect(f.controller.snapshot().policies[0]).toMatchObject({lastInstalledVersion:'2.0.0'});
@@ -574,7 +590,10 @@ async function fixture(holdPreparation = false, catalog?: typeof createCatalog, 
   let panePid = 0;
   const paneAgent = (pids: number[]) => paneStatus === null ? null : ({ paneId: "w1:p1", workspaceId: "w1", terminalId: "t", agent: "pi",
     status: paneStatus, stateChangeSeq: 1, cwd: null, title: null, foregroundPids: pids });
+  const executableSelections=new Map<string,string>();
   const herdr = {
+    executable:async(kind:string)=>executableSelections.get(kind)??null,
+    selectExecutable:async(kind:string,executable:string|null)=>{if(executable===null)executableSelections.delete(kind);else executableSelections.set(kind,executable);},
     socketPath: "/fake",
     agents: async () => { const row = paneAgent([observedPid ?? 0]); return row ? [row] : []; },
     agent: async () => paneAgent(panePid === -1 ? [] : [panePid || (observedPid ?? 0)]),
@@ -690,7 +709,7 @@ async function fixture(holdPreparation = false, catalog?: typeof createCatalog, 
     return result.promise;
   }
   return {
-    root, controller, calls, effects, observe,
+    root, controller, calls, effects, observe, executableSelections,
     connections:()=>connectionCalls,timerCount:()=>timers.size,
     failRestart(id:string|null){failRestartId=id;},
     setObservedPid(pid: number | null, startedAt: string | null = null, installationId: string | null = null) { observedPid = pid; observedStart = startedAt; observedInstallationId = installationId; observationFails = false; },
