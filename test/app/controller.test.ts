@@ -13,6 +13,7 @@ import type { CatalogEntry } from '../../src/app/catalog-types';
 import { createCatalogUpdates } from '../../src/app/catalog-updates';
 import type { latestCatalogVersion } from '../../src/app/catalog-latest';
 import type { CheckResult, Installation, Job, SelectionMetadata, TargetSelection } from "../../src/protocol";
+import { screenLooksIdle } from "../../src/app/observations";
 
 async function nativeControllerFixture(uncertain = false) {
   const entered = Promise.withResolvers<void>(), release = Promise.withResolvers<void>();
@@ -611,7 +612,7 @@ async function fixture(holdPreparation = false, catalog?: typeof createCatalog, 
   let observedInstallationId: string | null = null;
   let paneStatus: "idle" | "working" | "blocked" | null = null;
   const paneCalls: string[] = [];
-  let panePid = 0, screenReads = 0;
+  let panePid = 0, screenReads = 0, engineActivity = true, cpuSamples = 0;
   const paneAgent = (pids: number[]) => paneStatus === null ? null : ({ paneId: "w1:p1", workspaceId: "w1", terminalId: "t", agent: "pi",
     status: paneStatus, stateChangeSeq: 1, cwd: null, title: null, foregroundPids: pids });
   const executableSelections=new Map<string,string>();
@@ -623,7 +624,8 @@ async function fixture(holdPreparation = false, catalog?: typeof createCatalog, 
     agents: async () => { const row = paneAgent([observedPid ?? 0]); return row ? [row] : []; },
     agent: async () => paneAgent(panePid === -1 ? [] : [panePid || (observedPid ?? 0)]),
     foregroundPids: async () => panePid === -1 ? [] : [panePid || (observedPid ?? 0)],
-    read: async () => { screenReads++; return "To resume this session: omo --session 01a1300b-f131-7cf3-a037-7bf50e61a5f4"; },
+    // Before the exit command the pane shows an idle prompt; after it, the resume hint.
+    read: async () => { screenReads++; return panePid === -1 ? "To resume this session: omo --session 01a1300b-f131-7cf3-a037-7bf50e61a5f4" : "done\n──\n❯\n──\nstatus"; },
     sendLine: async (_pane: string, line: string) => { paneCalls.push(line); if (line === "/exit") panePid = -1; else panePid = 999; },
     wait: async (_pane: string, until: readonly string[]) => { paneCalls.push(`wait:${until.join("|")}`); paneStatus = "idle"; return paneAgent([observedPid ?? 0]); },
   };
@@ -707,10 +709,13 @@ async function fixture(holdPreparation = false, catalog?: typeof createCatalog, 
       ...(paneStatus ? { conversation: { id: '01a1300b-f131-7cf3-a037-7bf50e61a5f4', path: '/fixture/session.jsonl', title: null },
         omoSocket: '/fixture/tui.sock', runningEngineVersion: '2026.10.12' } : {}),
       isCurrentConversation: current !== null && current.pid === observedPid && current.startedAt === observedStart,
-      ...(paneStatus !== null && panePid !== -1 ? { herdrPane: { paneId: "w1:p1", status: paneStatus, stateChangeSeq: 1 }, control: "herdr-pane" as const } : {}) }];
+      ...(paneStatus !== null && panePid !== -1 ? { herdrPane: { paneId: "w1:p1", status: paneStatus, stateChangeSeq: 1,
+        screenIdle: (() => { const screen = context?.paneScreens?.get("w1:p1"); return screen === undefined ? null : screenLooksIdle(screen); })(),
+        cpuPercent: context?.cpuPercent?.get(pid) ?? null, cpuQuiet: context?.cpuQuiet?.get(pid) ?? null }, control: "herdr-pane" as const } : {}) }];
   }, herdr, omoState: async () => ({sessionId:'01a1300b-f131-7cf3-a037-7bf50e61a5f4',sessionFile:'/fixture/session.jsonl',
     isStreaming:paneStatus==='working',isCompacting:false,isBashRunning:false,pendingMessageCount:0,
-    hasSessionWork:false,hasActiveWakeSource:false}),
+    ...(engineActivity?{hasSessionWork:false,hasActiveWakeSource:false}:{})}),
+  cpuTimes: pids => { cpuSamples++; return pids.map(pid => `${pid} 0:00.10`).join("\n"); }, sessionFileExists: () => true,
   panePause: async () => { now += 250; }, paneAlive: pid => pid !== (observedPid ?? -1) || panePid !== -1, managed: options => {
     const manager = createManagedSessions(options);
     return { ...manager,
@@ -740,7 +745,8 @@ async function fixture(holdPreparation = false, catalog?: typeof createCatalog, 
     failHerdrExecutable(error:Error|null){herdrExecutableError=error;},
     setObservedPid(pid: number | null, startedAt: string | null = null, installationId: string | null = null) { observedPid = pid; observedStart = startedAt; observedInstallationId = installationId; observationFails = false; },
     setPane(status: "idle" | "working" | "blocked" | null) { paneStatus = status; panePid = 0; },
-    paneCalls, screenReads: () => screenReads,
+    paneCalls, screenReads: () => screenReads, cpuSamples: () => cpuSamples,
+    engineWithoutActivity() { engineActivity = false; },
     failObservation() { observationFails = true; },
     pause(name: "installations" | "targets" | "preparation" | "activation" | "connection") {
       const entered = Promise.withResolvers<void>(), released = Promise.withResolvers<void>();
@@ -778,6 +784,46 @@ test('explicit concurrent refresh recovers failed initialization with one connec
     expect(f.timerCount()).toBe(2);
     f.fire(300000);await f.controller.settled();
     expect(f.calls.checks).toBe(1);expect(f.timerCount()).toBe(2);
+  }finally{await f.close();}
+});
+test('after a verified update, an engine that exposes no activity signal still restarts an idle pane through the screen rule',async()=>{
+  const f=await fixture();f.engineWithoutActivity();try{
+    f.setObservedPid(456,'2026-10-12T09:00:00.000Z','fixture');f.setPane('idle');
+    for(let i=0;i<4;i++){f.fire(15000);await f.controller.settled();}
+    expect(f.controller.snapshot().external[0]?.herdrPane).toMatchObject({screenIdle:true,cpuQuiet:true});
+    await f.command({kind:'policy',installationId:'fixture',mode:'off',intervalMinutes:60,firstCheck:'now',paneSessions:'restart-idle'});
+    await f.command({kind:'check',installationId:'fixture'});
+    const ready=f.observe(value=>value.operations[0]?.stage==='ready');
+    await f.command({kind:'prepare',installationId:'fixture'});
+    const operation=(await ready).operations[0];if(!operation)throw new Error('missing_operation');
+    const settled=f.observe(value=>value.operations[0]?.stage==='completed'&&(value.operations[0].paneResults??[]).every(row=>row.outcome!=='pending'));
+    await f.command({kind:'confirm',operationId:operation.id,revision:operation.revision,sessions:[],restart:false});
+    const final=(await settled).operations[0];
+    expect(final?.paneResults?.[0]).toMatchObject({outcome:'completed'});
+    expect(f.paneCalls).toEqual(['/exit','omo --session 01a1300b-f131-7cf3-a037-7bf50e61a5f4']);
+  }finally{await f.close();}
+});
+test('a batch restart reviews every pane before the first input and then restarts each pane in turn',async()=>{
+  const f=await fixture();f.engineWithoutActivity();try{
+    f.setObservedPid(456,'2026-10-12T09:00:00.000Z','fixture');f.setPane('idle');
+    for(let i=0;i<4;i++){f.fire(15000);await f.controller.settled();}
+    const session=f.controller.snapshot().external[0];if(!session?.herdrPane)throw new Error('missing_pane');
+    await expect(f.command({kind:'pane-restart-batch',items:[{sessionId:session.id,paneId:session.herdrPane.paneId},{sessionId:'external:999',paneId:'w1:p9'}],trustScreen:true})).rejects.toThrow('pane_changed');
+    expect(f.paneCalls).toEqual([]);
+    const done=f.observe(value=>(value.paneRestarts??[]).some(job=>job.sessionId===session.id&&['completed','failed'].includes(job.stage)));
+    await f.command({kind:'pane-restart-batch',items:[{sessionId:session.id,paneId:session.herdrPane.paneId}],trustScreen:true});
+    const job=(await done).paneRestarts?.find(job=>job.sessionId===session.id);
+    expect(job).toMatchObject({stage:'completed',previousPid:456});
+    expect(f.paneCalls).toEqual(['/exit','omo --session 01a1300b-f131-7cf3-a037-7bf50e61a5f4']);
+  }finally{await f.close();}
+});
+test('two observations inside one second keep the previous cpu reading instead of clearing it',async()=>{
+  const f=await fixture();try{
+    f.setObservedPid(456,'2026-10-12T09:00:00.000Z','fixture');f.setPane('idle');
+    for(let i=0;i<4;i++){f.fire(15000);await f.controller.settled();}
+    expect(f.controller.snapshot().external[0]?.herdrPane).toMatchObject({cpuQuiet:true});
+    f.fire(100);await f.controller.settled();
+    expect(f.controller.snapshot().external[0]?.herdrPane).toMatchObject({cpuQuiet:true});
   }finally{await f.close();}
 });
 test('the periodic observation re-reads pane screens so a pane that appears after startup gets its screen hint',async()=>{

@@ -177,6 +177,7 @@ export type AppCommand =
   | { readonly kind: "launch"; readonly installationId: string; readonly cwd: string }
   | { readonly kind: "stop" | "restart"; readonly sessionId: string; readonly generation: number }
   | { readonly kind: "pane-restart"; readonly sessionId: string; readonly paneId: string; readonly trustScreen?: boolean | undefined }
+  | { readonly kind: "pane-restart-batch"; readonly items: readonly { readonly sessionId: string; readonly paneId: string }[]; readonly trustScreen?: boolean | undefined }
   | { readonly kind: "send"; readonly sessionId: string; readonly generation: number; readonly message: string }
   | { readonly kind: "respond"; readonly sessionId: string; readonly generation: number;
       readonly approvalId: string; readonly value: string | boolean }

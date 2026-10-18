@@ -60,6 +60,9 @@ export async function createController(options: Options, dependencies: {
   readonly paneAlive?: (pid: number) => boolean;
   readonly omoThreads?: typeof readOmoThreads;
   readonly omoState?: typeof readOmoState;
+  /** `ps -o pid=,time=` output for the given pids; injected so tests can drive cpu quiet streaks. */
+  readonly cpuTimes?: (pids: readonly number[]) => string;
+  readonly sessionFileExists?: (path: string) => boolean;
 } = {}) {
   privateDirectory(options.directory);
   const clock: Clock = options.clock ?? {
@@ -370,18 +373,21 @@ export async function createController(options: Options, dependencies: {
   const cpuQuietStreak = new Map<number, number>();
   const cpuQuiet = new Map<number, boolean>();
   function sampleCpu(pids: readonly number[]): void {
-    cpuPercent.clear(); cpuQuiet.clear();
-    if (!pids.length) { cpuSample = null; cpuQuietStreak.clear(); return; }
+    if (!pids.length) { cpuSample = null; cpuPercent.clear(); cpuQuiet.clear(); cpuQuietStreak.clear(); return; }
     let output = "";
-    try { output = execFileSync("/bin/ps", ["-o", "pid=,time=", "-p", pids.join(",")], { encoding: "utf8", timeout: 5_000 }); }
-    catch { cpuSample = null; return; }
+    try { output = (dependencies.cpuTimes ?? (pids => execFileSync("/bin/ps", ["-o", "pid=,time=", "-p", pids.join(",")], { encoding: "utf8", timeout: 5_000 })))(pids); }
+    catch { cpuSample = null; cpuPercent.clear(); cpuQuiet.clear(); return; }
     const seconds = new Map<number, number>();
     for (const line of output.split("\n")) {
       const match = line.trim().match(/^(\d+)\s+(?:(\d+):)?(\d+):(\d+(?:\.\d+)?)$/);
       if (match) seconds.set(Number(match[1]), Number(match[2] ?? 0) * 3600 + Number(match[3]) * 60 + Number(match[4]));
     }
     const at = clock.now();
-    if (cpuSample && at - cpuSample.at >= 1_000) for (const [pid, now] of seconds) {
+    // A second observation inside one second (command-triggered refreshes) cannot measure
+    // anything; keep the last reading rather than wiping the quiet signal mid-review.
+    if (cpuSample && at - cpuSample.at < 1_000) return;
+    cpuPercent.clear(); cpuQuiet.clear();
+    if (cpuSample) for (const [pid, now] of seconds) {
       const before = cpuSample.seconds.get(pid);
       if (before !== undefined && now >= before) {
         const percent = Math.round((now - before) / ((at - cpuSample.at) / 1_000) * 1000) / 10;
@@ -629,6 +635,7 @@ export async function createController(options: Options, dependencies: {
     publish: (job: PaneRestartJob) => { paneRestarts.set(job.id, job); changed(); },
     // Only a pid quiet for two consecutive observations counts as quiet for a trusted restart.
     cpuPercent: (pid: number) => cpuQuiet.get(pid) === true ? cpuPercent.get(pid) ?? null : null,
+    ...(dependencies.sessionFileExists ? { sessionFileExists: dependencies.sessionFileExists } : {}),
     omoState: async (session: AppSnapshot["external"][number]) => {
       if (!session.omoSocket || !session.conversation) return "unknown" as const;
       const state = await (dependencies.omoState ?? readOmoState)(session.omoSocket);
@@ -683,7 +690,9 @@ export async function createController(options: Options, dependencies: {
       if (job.paneSessions === "restart-idle" && session.herdrPane!.status !== "idle" && session.herdrPane!.status !== "done") {
         record(session.id, { outcome: "skipped-working" }); return;
       }
-      const result = await restartInPane({ ...paneRestartOptions(), herdr, session, initialSeq: session.herdrPane!.stateChangeSeq, idleTimeoutMs: 30 * 60_000 });
+      // Policy restarts run unattended: the screen rule (herdr idle, prompt visible, pid quiet)
+      // stands in for the activity signal current engines do not expose.
+      const result = await restartInPane({ ...paneRestartOptions(), herdr, session, initialSeq: session.herdrPane!.stateChangeSeq, idleTimeoutMs: 30 * 60_000, trustScreen: true });
       record(session.id, result.stage === "completed" ? { outcome: "completed", resumedPid: result.resumedPid }
         : { outcome: result.failure === "idle_wait_timeout" ? "skipped-working" : "failed", failure: result.failure });
     }));
@@ -707,7 +716,7 @@ export async function createController(options: Options, dependencies: {
         record(target.sessionId, { outcome: "skipped-working" }); return;
       }
       const job = await restartInPane({ ...paneRestartOptions(), herdr, session, initialSeq: session.herdrPane.stateChangeSeq,
-        idleTimeoutMs: 30 * 60_000 });
+        idleTimeoutMs: 30 * 60_000, trustScreen: true });
       record(target.sessionId, job.stage === "completed"
         ? { outcome: "completed", resumedPid: job.resumedPid }
         : { outcome: job.failure === "idle_wait_timeout" ? "skipped-working" : "failed", failure: job.failure });
@@ -1049,6 +1058,27 @@ export async function createController(options: Options, dependencies: {
           const seq = session.herdrPane.stateChangeSeq;
           background(restartInPane({ ...paneRestartOptions(), herdr, session, initialSeq: seq, trustScreen: action.trustScreen === true })
             .then(async () => { await refreshHerdrAgents(); observeProcesses(); }));
+          break;
+        }
+        case "pane-restart-batch": {
+          if (!herdr) throw new AppError("unsupported", "herdr_unavailable");
+          // Review every pane before the first input; panes then restart one at a time so a
+          // slow exit or resume never overlaps another pane's keystrokes.
+          const targets = action.items.map(item => {
+            const session = external.find(row => row.id === item.sessionId && row.processState !== "exited");
+            if (!session || !session.herdrPane || session.herdrPane.paneId !== item.paneId) throw new AppError("conflict", "pane_changed");
+            if(!isSupportedCli(session.family))throw new AppError('unsupported','cli_not_supported');
+            if ([...paneRestarts.values()].some(job => job.paneId === item.paneId && !["completed", "failed"].includes(job.stage)))
+              throw new AppError("busy", "pane_restart_in_progress");
+            return { session, initialSeq: session.herdrPane.stateChangeSeq };
+          });
+          background((async () => {
+            for (const target of targets) {
+              if (closed || closing) return;
+              await restartInPane({ ...paneRestartOptions(), herdr, session: target.session, initialSeq: target.initialSeq, trustScreen: action.trustScreen === true });
+            }
+            await refreshHerdrAgents(); observeProcesses();
+          })());
           break;
         }
         case "send": await managed.send(action.sessionId, action.generation, action.message); break;

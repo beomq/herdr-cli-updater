@@ -153,13 +153,22 @@ test("OmO unknown activity with a trusted screen still refuses while herdr works
   expect(await attempt({ status: "idle", screen: "❯" }, null)).toBe("screen_not_idle");
 });
 
+test("an OmO session whose conversation file does not exist yet is refused before any input", async () => {
+  const empty = { ...session, conversation: { id: "01a14f70-dbe1-7e45-bf41-832710c52dd4", title: null, path: "/tmp/never-written.jsonl" } };
+  const { client, calls } = fakePane({ status: "idle", screen: "❯" });
+  const job = await restartInPane({ herdr: client, session: empty, now: () => 0, initialSeq: 5, isAlive: () => true, publish: () => {},
+    trustScreen: true, cpuPercent: () => 0, omoState: async () => "unknown", sessionFileExists: path => path !== "/tmp/never-written.jsonl" });
+  expect(job).toMatchObject({ stage: "failed", failure: "session_empty" });
+  expect(calls.some(call => call.startsWith("send:"))).toBe(false);
+});
+
 test("OmO completion requires the same conversation on a new validated process", async () => {
   const id = "01a1300b-f131-7cf3-a037-7bf50e61a5f4";
   const original = { ...session, startedAt: "2026-10-01T00:00:00Z", conversation: { id, title: null, path: "/tmp/session.jsonl" } };
   const { client, calls } = fakePane({});
   let reads = 0;
   const job = await restartInPane({ herdr: client, session: original, now: () => 0, initialSeq: 5,
-    isAlive: pid => pid !== 300, publish: () => {}, omoState: async () => "idle",
+    isAlive: pid => pid !== 300, publish: () => {}, omoState: async () => "idle", sessionFileExists: () => true,
     observePane: async () => ++reads === 1 ? original : { ...original, pid: 301, startedAt: "2026-10-13T00:00:00Z", runningEngineVersion: "2026.10.12" } });
   expect(job).toMatchObject({ stage: "completed", resumedPid: 301, resumeId: id });
   expect(calls.filter(call => call.startsWith("send:"))).toEqual(["send:/exit", `send:omo --session ${id}`]);
@@ -169,7 +178,7 @@ test("OmO refuses a mismatched printed conversation rather than resuming it", as
   const { client, calls } = fakePane({ exitPrints: "omo --session 00000000-0000-4000-8000-000000000001" });
   const original = { ...session, conversation: { id: "01a1300b-f131-7cf3-a037-7bf50e61a5f4", title: null, path: "/tmp/session.jsonl" } };
   const job = await restartInPane({ herdr: client, session: original, now: () => 0, initialSeq: 5,
-    isAlive: pid => pid !== 300, publish: () => {}, omoState: async () => "idle" });
+    isAlive: pid => pid !== 300, publish: () => {}, omoState: async () => "idle", sessionFileExists: () => true });
   expect(job.failure).toBe("resume_id_mismatch");
   expect(calls.filter(call => call.startsWith("send:"))).toEqual(["send:/exit"]);
 });

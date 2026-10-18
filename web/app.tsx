@@ -10,7 +10,7 @@ import { CatalogUpdates, CatalogUpdateHistory, catalogHistory, usesCatalogUpdate
 import { PaneSessionChoice, paneSessionLabels } from './pane-session-choice';
 import { installationError } from './install-status';
 import { AgentMark } from './agent-mark';
-import { catalogContainsInstallation, catalogSnapshot, dashboardSummary, engineReviewBinding, engineUpdateAction, installedCatalog, supportedSnapshot } from './dashboard';
+import { catalogContainsInstallation, catalogSnapshot, dashboardSummary, engineReviewBinding, engineUpdateAction, installedCatalog, outdatedSessions, supportedSnapshot } from './dashboard';
 import { CatalogDashboardRow, UpdateControl, VersionEvidence } from './catalog-dashboard';
 import { CatalogBulkActions } from './catalog-bulk';
 import { AutomationSettings, AutomationToggle, workspaceBusy } from './automation-settings';
@@ -48,6 +48,13 @@ const errorMessages: Record<string,string> = {
   running_sessions:t('이 CLI를 사용하는 세션이 있습니다. 직접 종료한 뒤 다시 검토하세요.','Sessions are using this CLI. Close them before reviewing removal again.'),
   installation_referenced:t('이 설치를 참조하는 설정이 있습니다. 설정 경로를 수정한 뒤 다시 검토하세요.','Configuration references this installation. Correct the paths and review again.'),
   session_activity_unverified:t('백그라운드 작업까지 끝났는지 확인할 수 없어 재시작하지 않았습니다.','Restart was not attempted because background-work completion could not be verified.'),
+  session_empty:t('아직 메시지가 없는 대화라 재개할 게 없어 재시작하지 않았습니다. 창에서 직접 다시 여세요.','The conversation has no messages yet, so there is nothing to resume. Reopen it in the pane yourself.'),
+  screen_not_idle:t('실행 시점에 화면이 입력 대기가 아니거나 CPU가 바빠 재시작하지 않았습니다. 잠시 뒤 다시 검토하세요.','At run time the screen was not at a prompt or the process was busy, so it was not restarted. Review again shortly.'),
+  resume_not_observed:t('종료 후 같은 대화가 다시 열리는 것을 확인하지 못했습니다. 창 화면을 확인하세요.','The conversation was not observed reopening after exit. Check the pane.'),
+  pane_changed:t('창의 프로세스가 바뀌어 재시작하지 않았습니다. 최신 상태에서 다시 검토하세요.','The pane process changed, so it was not restarted. Review the latest state.'),
+  agent_blocked:t('세션이 응답을 기다리고 있어 재시작하지 않았습니다.','The session is waiting for an answer, so it was not restarted.'),
+  idle_wait_timeout:t('30분 안에 작업이 끝나지 않아 그대로 두었습니다.','Work did not finish within 30 minutes, so the session was left alone.'),
+  pane_restart_in_progress:t('이 창의 재시작이 이미 진행 중입니다.','A restart for this pane is already in progress.'),
   session_binding_changed:t('창의 프로세스나 대화가 바뀌었습니다. 새 상태를 확인하세요.','The pane process or conversation changed. Refresh its state.'),
   resume_id_mismatch:t('다시 열린 대화가 원래 대화와 달라 완료로 처리하지 않았습니다.','The resumed conversation differs from the original; restart is not verified.'),
   removal_in_progress:t('삭제 작업이 진행 중입니다. 완료 후 다시 시도하세요.','Removal is in progress. Try again after it finishes.'),
@@ -185,6 +192,7 @@ export function Workspace({snapshot,guardSnapshot=snapshot,act,disabled,onView,o
       <div><span>{t('새 버전 있는 CLI','CLIs with new versions')}</span><strong>{summary.updates}</strong><small>{summary.unchecked?t('추가 확인 필요','More checks needed')+' · '+summary.unchecked:t('마지막 조회 기준','From the last checks')}</small></div>
       <button onClick={()=>onView('history')}><span>{t('진행 및 확인할 작업','Open operations')}</span><strong>{summary.operations}</strong><small>{t('업데이트 기록 보기','View update history')} →</small></button>
       <button onClick={()=>onView('sessions')}><span>{t('실행 중 세션','Active sessions')}</span><strong>{summary.sessions??'—'}</strong><small>{summary.sessions===null?t('관찰 결과 확인 필요','Observation unavailable'):summary.unknownSessions?t('상태 미확인','Unknown state')+' · '+summary.unknownSessions:t('터미널 세션 보기','View terminal sessions')} →</small></button>
+      <button data-metric="outdated-sessions" onClick={()=>onView('sessions')}><span>{t('적용 필요 세션','Sessions to apply')}</span><strong>{summary.outdated??'—'}</strong><small>{summary.outdated===null?t('관찰 결과 확인 필요','Observation unavailable'):summary.outdated?t('예전 버전으로 실행 중 · 재시작 검토','Running an older version · review restart'):t('모두 현재 설치 버전','All on the installed version')} →</small></button>
     </section>
     <div className="workspace-toolbar"><div className="stack"><SectionHead title={t('설치된 CLI','Installed CLIs')} count={summary.installed}/><p className="muted">{t('실행 여부와 관계없이 발견된 설치를 표시합니다. 최신 확인·업데이트 지원은 설치 방식에 따라 다릅니다.','Discovered installations are shown whether running or not. Check and update support depends on the installation method.')}</p></div><Button data-action="add-cli" onClick={()=>onView('add')}>+ {t('CLI 추가','Add CLI')}</Button></div>
     {summary.installed>1&&<label className="field workspace-search">{t('CLI 또는 설치 경로 검색','Search CLI or installation path')}<input type="search" value={search} onChange={e=>setSearch(e.target.value)}/></label>}
@@ -235,11 +243,34 @@ function screenRestartOffered(s:AppSnapshot['external'][number],activity:string)
   if(s.herdrPane?.screenIdle!==true||s.herdrPane.cpuQuiet!==true)return false;
   return activity==='working'||(activity==='unknown'&&(s.herdrPane.status==='idle'||s.herdrPane.status==='done'));
 }
+/** One reading of whether a herdr-pane session can be restarted now, shared by the card buttons
+ * and the batch review so both offer exactly the same panes. */
+function paneRestartReadiness(s:AppSnapshot['external'][number],snapshot:AppSnapshot){
+  const state=snapshot.observationFailure?'unknown':s.processState??'observed';
+  const paneJob=(snapshot.paneRestarts??[]).filter(job=>job.paneId===s.herdrPane?.paneId&&(job.sessionId===s.id||!['completed','failed'].includes(job.stage))).sort((a,b)=>b.createdAt-a.createdAt)[0];
+  const paneBusy=!!paneJob&&!['completed','failed'].includes(paneJob.stage);
+  const activity=state!=='observed'?'unknown':s.omoActivity??s.herdrPane?.status??'unknown';
+  const screenIdleHint=state==='observed'&&screenRestartOffered(s,activity);
+  const restartSupported=!!s.family&&['omo','omp','claude','codex'].includes(s.family);
+  const gate=!restartSupported||s.control!=='herdr-pane'||state!=='observed'||paneBusy||activity==='blocked'||(s.family==='omo'&&!s.conversation);
+  const blocked=gate||activity==='unknown';
+  const screenBlocked=gate||!screenIdleHint;
+  // Batch mode never queues a working session behind others; the card's own button may still wait for it.
+  const mode:'idle'|'screen'|null=!blocked&&(activity==='idle'||activity==='done')?'idle':!screenBlocked?'screen':null;
+  return {state,paneJob,paneBusy,activity,screenIdleHint,restartSupported,blocked,screenBlocked,mode};
+}
+const batchBinding=(sessions:readonly AppSnapshot['external'][number][])=>JSON.stringify(sessions.map(s=>[s.id,s.pid,s.startedAt,s.conversation?.id,s.herdrPane?.paneId,s.herdrPane?.stateChangeSeq]));
 function Sessions({snapshot,act,disabled}:{snapshot:AppSnapshot;act:Act;disabled:boolean}) {
   const {t,stamp,installed,title,explain} = useCopy();
   const [review,setReview]=useState<{session:AppSnapshot['external'][number];trustScreen:boolean;server:string|undefined}|null>(null);
+  const [batch,setBatch]=useState<{sessions:readonly AppSnapshot['external'][number][];server:string|undefined;binding:string;selected:readonly string[]}|null>(null);
   const [restartFailed,setRestartFailed]=useState(false);
   const shown=snapshot.external.filter(s=>s.herdrPane);
+  const outdated=outdatedSessions(snapshot);
+  const candidates=outdated.filter(s=>paneRestartReadiness(s,snapshot).mode!==null);
+  const batchCurrent=batch?batch.sessions.map(s=>snapshot.external.find(row=>row.id===s.id)).filter((row):row is AppSnapshot['external'][number]=>!!row):[];
+  const batchStale=!!batch&&(snapshot.serverInstance!==batch.server||batchCurrent.length!==batch.sessions.length||batchBinding(batchCurrent)!==batch.binding
+    ||!!snapshot.observationFailure||batchCurrent.some(row=>paneRestartReadiness(row,snapshot).mode===null||!outdated.some(o=>o.id===row.id)));
   const outside=snapshot.external.filter(s=>s.processState!=='exited'&&!s.herdrPane);
   const current=review&&snapshot.external.find(s=>s.id===review.session.id);
   const stale=!!review&&(snapshot.serverInstance!==review.server||!current||current.pid!==review.session.pid||current.startedAt!==review.session.startedAt
@@ -261,6 +292,9 @@ function Sessions({snapshot,act,disabled}:{snapshot:AppSnapshot;act:Act;disabled
     <SectionHead title={t('herdr 창의 CLI','CLIs in herdr panes')} count={shown.length}/>
     {outside.length>0&&<p className="muted">{t('herdr 밖 실행 '+outside.length+'개는 관리하지 않아 표시하지 않습니다.',outside.length+' processes outside herdr are not managed and not listed.')}</p>}
     <p className="muted">{t('설치 업데이트는 실행 중인 세션을 바꾸지 않습니다. 재시작은 지원과 대화 식별을 확인한 뒤 별도로 검토하세요.','Installation updates leave running sessions alone. Review a session restart separately after checking support and conversation identity.')}</p>
+    {candidates.length>0&&<div className="cluster"><Button data-action="review-pane-restart-batch" data-count={candidates.length} tone="primary" disabled={disabled} onClick={()=>{setRestartFailed(false);setBatch({sessions:candidates,server:snapshot.serverInstance,binding:batchBinding(candidates),selected:candidates.map(s=>s.id)});}}>{t('오래된 세션 '+candidates.length+'개 재시작 검토','Review restart of '+candidates.length+' outdated sessions')}</Button>
+      {outdated.length>candidates.length&&<span className="muted">{t('예전 버전 '+(outdated.length-candidates.length)+'개는 지금 재시작할 수 없어 제외','· '+(outdated.length-candidates.length)+' outdated sessions cannot restart now and are left out')}</span>}</div>}
+    {!candidates.length&&outdated.length>0&&<p className="muted">{t('예전 버전으로 실행 중인 세션 '+outdated.length+'개가 있지만 지금은 모두 재시작할 수 없는 상태입니다.',outdated.length+' sessions run an older version but none can restart right now.')}</p>}
     {!shown.length&&<Notice>{t('herdr 창에서 실행 중인 CLI가 없습니다.','No CLI processes in herdr panes.')}</Notice>}
     {shown.map(s=>{
       const linked=s.installationId?snapshot.installations.find(i=>i.installationId===s.installationId):null;
@@ -273,14 +307,7 @@ function Sessions({snapshot,act,disabled}:{snapshot:AppSnapshot;act:Act;disabled
       const startedAtMs=s.startedAt?Date.parse(s.startedAt):null;
       const updatedSince=startedAtMs!=null&&((s.installationId&&(lastVerifiedUpdate(snapshot.operations,s.installationId)??0)>startedAtMs)
         ||(snapshot.catalogUpdates??[]).some(job=>job.catalogId===s.catalogId&&job.target.executable===s.executable&&job.stage==='completed'&&job.beforeVersion!==job.installedVersion&&job.updatedAt>startedAtMs));
-      const paneJob=(snapshot.paneRestarts??[]).filter(job=>job.paneId===s.herdrPane?.paneId&&(job.sessionId===s.id||!['completed','failed'].includes(job.stage))).sort((a,b)=>b.createdAt-a.createdAt)[0];
-      const paneBusy=!!paneJob&&!['completed','failed'].includes(paneJob.stage);
-      const activity=state!=='observed'?'unknown':s.omoActivity??s.herdrPane?.status??'unknown';
-      const screenIdleHint=state==='observed'&&screenRestartOffered(s,activity);
-      const restartSupported=!!s.family&&['omo','omp','claude','codex'].includes(s.family);
-      const gate=!restartSupported||s.control!=='herdr-pane'||state!=='observed'||paneBusy||activity==='blocked'||(s.family==='omo'&&!s.conversation);
-      const blocked=gate||activity==='unknown';
-      const screenBlocked=gate||!screenIdleHint;
+      const {paneJob,activity,screenIdleHint,restartSupported,blocked,screenBlocked}=paneRestartReadiness(s,snapshot);
       const inferred=s.runningVersionEvidence==='started-after-install'||s.runningVersionEvidence==='started-before-install';
       return <section className="panel" key={s.id+':'+(s.startedAt??'unknown')} data-session-id={s.id} data-activity={activity} data-version-evidence={s.runningVersionEvidence??'unknown'} data-installation-changed={updatedSince?'true':'false'}>
         <div className="cluster"><h3 className="cli-heading">{supported&&<AgentMark agent={s.family??linked?.family??'unknown'} size={24}/>}<span>{cli} · {label}</span></h3><Badge>{state==='exited'?t('종료 확인','Exit observed'):state==='unknown'?t('현재 상태 미확인','Current state unknown'):t('프로세스 관측됨','Process observed')}</Badge>{!supported&&<Badge>{t('아직 지원하지 않음','Not yet supported')}</Badge>}</div>
@@ -311,6 +338,16 @@ function Sessions({snapshot,act,disabled}:{snapshot:AppSnapshot;act:Act;disabled
         ]}/></details>
       </section>;
     })}
+    {batch&&<Dialog title={t('오래된 세션 재시작 검토','Review restart of outdated sessions')} onClose={()=>setBatch(null)}>
+      <p>{t('아래 세션을 한 번에 하나씩 같은 대화로 다시 시작합니다. 각 창에 종료 명령을 보내고 재개 명령을 입력하므로 설치는 바꾸지 않습니다. 서비스가 창마다 프로세스·화면·CPU·대화 ID를 다시 검증하며 확인되지 않은 창은 건너뛰고 다음 창으로 넘어갑니다.','The sessions below restart one at a time into the same conversation. Each pane receives the exit command and then the resume command; no installation changes. The service rechecks process, screen, CPU and conversation ID per pane, skips any pane that fails the check and moves on to the next.')}</p>
+      <ul className="stack" data-batch-count={batch.sessions.length}>{batch.sessions.map(s=>{const current=snapshot.external.find(row=>row.id===s.id);const mode=current?paneRestartReadiness(current,snapshot).mode:null;const disk=s.diskPackage?.version??snapshot.installations.find(i=>i.installationId===s.installationId)?.installedVersion;const diskVersion=typeof disk==='string'?disk:disk?.kind==='known'?disk.version:null;
+        const checked=batch.selected.includes(s.id);
+        return <li key={s.id} data-batch-session={s.id} data-batch-mode={mode??'blocked'}><label className="cluster"><input type="checkbox" checked={checked} onChange={e=>setBatch(previous=>previous&&{...previous,selected:e.target.checked?[...previous.selected,s.id]:previous.selected.filter(id=>id!==s.id)})}/><span><strong>{s.conversation?.title??s.cwd?.split('/').filter(Boolean).at(-1)??s.herdrPane?.paneId}</strong> · <span className="path">{s.herdrPane?.paneId}</span> · {s.runningVersion??'?'} → {diskVersion??'?'} · {mode==='idle'?t('대기 중','Idle'):mode==='screen'?t('화면 기준','Screen-based'):t('지금은 불가','Not now')}</span></label></li>;})}</ul>
+      {batch.sessions.some(s=>paneRestartReadiness(s,snapshot).mode==='screen')&&<Notice tone="warning">{t('화면 기준 항목은 엔진이 활동 상태를 알려주지 않아 herdr·화면·CPU만으로 대기 중이라고 판단합니다. 백그라운드 모니터와 하위 작업은 확인하지 못합니다.','Screen-based items are judged idle from herdr, the screen and CPU only, because the engine reports no activity. Background monitors and child tasks stay unverified.')}</Notice>}
+      {batchStale&&<Notice tone="warning">{t('세션 또는 활동이 바뀌었습니다. 닫고 최신 상태에서 다시 검토하세요.','The sessions or their activity changed. Close and review the latest state.')}</Notice>}
+      {restartFailed&&<Notice tone="error">{t('재시작 요청을 확인하지 못했습니다. 현재 상태를 확인하세요. 자동 재전송하지 않습니다.','Restart request was not confirmed. Check current state; it will not be resent automatically.')}</Notice>}
+      <Button data-action="confirm-pane-restart-batch" tone="primary" disabled={disabled||batchStale||!batch.selected.length} onClick={()=>{if(disabled||batchStale||!batch.selected.length)return;const items=batch.sessions.filter(s=>batch.selected.includes(s.id)).map(s=>({sessionId:s.id,paneId:s.herdrPane?.paneId??''}));void act({kind:'pane-restart-batch',trustScreen:true,items}).then(ok=>{if(ok)setBatch(null);else setRestartFailed(true);});}}>{t('선택한 세션 '+batch.selected.length+'개 다시 시작','Restart '+batch.selected.length+' selected sessions')}</Button>
+    </Dialog>}
     {review&&<Dialog title={t('선택한 세션 재시작 검토','Review selected session restart')} onClose={()=>setReview(null)}>
       <p>{t('현재 작업이 끝난 뒤 같은 대화를 재개합니다. 설치 업데이트는 하지 않습니다. 서비스가 프로세스·활동·대화 ID를 다시 검증하며 확인되지 않으면 중단합니다.','Resume the same conversation after current work finishes. No installation update runs. The service rechecks process, activity and conversation IDs and stops if unverified.')}</p>
       <Facts items={[[t('세션 ID','Session ID'),review.session.id],[t('창','Pane'),review.session.herdrPane?.paneId],[t('대화 ID','Conversation ID'),<span className="path">{review.session.conversation?.id??t('종료 출력에서 확인 필요 · 불일치 시 중단','Must be verified from exit output; mismatch stops restart')}</span>]]}/>

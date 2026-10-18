@@ -38,6 +38,22 @@ test('unknown OmO activity offers only the screen-based restart while herdr, the
     expect(button===undefined||button.includes('disabled')).toBe(true);
   }
 });
+test('one batch review button counts only outdated panes that can restart now, by either rule',()=>{
+  const quiet={status:'idle' as const,stateChangeSeq:1,screenIdle:true,cpuQuiet:true};
+  const outdated=(id:string,fields:Partial<ExternalSession>={})=>external(id,'omo',{processState:'observed',runningVersion:'1.0.0',runningVersionEvidence:'launch-environment',diskPackage:{name:'omo-ai',version:'2.0.0',installedAt:1},herdrPane:{paneId:id,...quiet},...fields});
+  const html=render({...base,observedAt:10,external:[
+    outdated('screen',{omoActivity:'unknown'}),
+    outdated('engine-idle',{omoActivity:'idle',herdrPane:{paneId:'engine-idle',status:'idle',stateChangeSeq:1}}),
+    outdated('current',{runningVersion:'2.0.0',omoActivity:'idle'}),
+    outdated('working',{omoActivity:'working',herdrPane:{paneId:'working',status:'working',stateChangeSeq:1}}),
+    outdated('unknown-no-hint',{omoActivity:'unknown',herdrPane:{paneId:'unknown-no-hint',status:'idle',stateChangeSeq:1}}),
+    outdated('blocked',{omoActivity:'blocked'}),
+    outdated('no-conversation',{omoActivity:'idle',conversation:null}),
+  ]});
+  const button=html.match(/<button[^>]*data-action="review-pane-restart-batch"[^>]*>/)?.[0];
+  expect(button).toBeDefined();expect(button).toContain('data-count="2"');expect(button).not.toContain('disabled');
+  expect(render({...base,observedAt:10,external:[outdated('current',{runningVersion:'2.0.0',omoActivity:'idle'})]})).not.toContain('review-pane-restart-batch');
+});
 test('running evidence stays independent of activity and engine details',()=>{
   const html=render({...base,external:[external('a','omo',{omoActivity:'working',runningVersion:'1.2.3',runningVersionEvidence:'started-after-install',runningEngineVersion:'internal-9.9'})]});
   expect(card(html,'a')).toContain('data-activity="working"');

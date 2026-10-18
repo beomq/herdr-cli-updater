@@ -34,6 +34,25 @@ for(const kind of ['pane','native','managed'] as const)for(const change of (kind
     expect(await page.evaluate(()=>window.reviewCommands)).toEqual([]);
   }finally{await page.close();}
 });
+test('batch review sends one pane-restart-batch command for the listed panes and rejects server drift',async()=>{
+  const page=await browser.newPage({locale:'en-US'});try{
+    await page.goto('http://127.0.0.1:'+server.port+'/');
+    await page.evaluate(()=>new Promise<void>(resolve=>{if(window.reviewReady)resolve();else window.addEventListener('review-render',()=>resolve(),{once:true});}));
+    const button=page.locator('[data-action="review-pane-restart-batch"]');expect(await button.getAttribute('data-count')).toBe('1');
+    await button.click();
+    const dialog=page.locator('.app-dialog[open]');expect(await dialog.locator('[data-batch-session="pane"]').getAttribute('data-batch-mode')).toBe('idle');
+    // Every listed pane starts selected; an unselected list cannot be confirmed.
+    const box=dialog.locator('[data-batch-session="pane"] input[type="checkbox"]');expect(await box.isChecked()).toBe(true);
+    await box.uncheck();expect(await dialog.locator('[data-action="confirm-pane-restart-batch"]').isDisabled()).toBe(true);
+    await box.check();
+    await dialog.locator('[data-action="confirm-pane-restart-batch"]').click();
+    expect(await page.evaluate(()=>window.reviewCommands)).toEqual([{kind:'pane-restart-batch',trustScreen:true,items:[{sessionId:'pane',paneId:'pane-A'}]}]);
+    await page.evaluate(()=>new Promise<void>(resolve=>{window.addEventListener('review-render',()=>resolve(),{once:true});window.reviewChange('server');}));
+    expect(await dialog.locator('[data-action="confirm-pane-restart-batch"]').isDisabled()).toBe(true);
+    await dialog.locator('[data-action="confirm-pane-restart-batch"]').evaluate((button:HTMLButtonElement)=>button.click());
+    expect(await page.evaluate(()=>window.reviewCommands.length)).toBe(1);
+  }finally{await page.close();}
+});
 test('disabled History cannot open recovery or send transport',async()=>{
   const page=await browser.newPage({locale:'en-US'});try{const button=await open(page,'history',true);expect(await button.isDisabled()).toBe(true);await button.evaluate((button:HTMLButtonElement)=>button.click());expect(await page.locator('.app-dialog[open]').count()).toBe(0);expect(await page.evaluate(()=>window.reviewCommands)).toEqual([]);}finally{await page.close();}
 });

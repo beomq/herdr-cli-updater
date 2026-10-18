@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 import type { Installation } from '../src/protocol';
 import type { AppOperation, AppSnapshot, ExternalSession } from '../src/app/types';
-import { catalogSnapshot, dashboardAction, dashboardSummary, installedCatalog, observationGroups, supportedSnapshot } from './dashboard';
+import { catalogSnapshot, dashboardAction, dashboardSummary, installedCatalog, observationGroups, outdatedSessions, supportedSnapshot } from './dashboard';
 import type { CatalogEntry } from '../src/app/catalog-types';
 
 const installation:Installation={installationId:'omo-a',family:'omo',channel:'stable',executableRealpath:'/omo/bin/omo.js',resourcesFingerprint:'fingerprint',resources:[],owner:{kind:'package',manager:'bun',packageName:'omo-ai',prefix:'/omo'},installedVersion:{kind:'known',version:'1'},lastCheck:{checkedAt:10,result:{kind:'update-available',installedVersion:'1',availableVersion:'2',checkedAt:10}}};
@@ -18,6 +18,24 @@ test('dashboard actions prefer inspection and existing operations over new prepa
   expect(dashboardAction(installation,[operation('ready'),operation('uncertain')])).toBe('inspect');
   expect(dashboardAction(installation,[operation('ready','another')])).toBe('prepare');
   for(const stage of ['completed','failed','cancelled'] as const)expect(dashboardAction(installation,[operation(stage)])).toBe('prepare');
+});
+
+test('outdated sessions are herdr panes whose recorded running version differs from the version now on disk',()=>{
+  const pane=(id:string,fields:Partial<ExternalSession>={})=>external(id,{family:'omo',herdrPane:{paneId:'w1:'+id,status:'idle',stateChangeSeq:1},processState:'observed',runningVersion:'1',runningVersionEvidence:'launch-environment',diskPackage:{name:'omo-ai',version:'2',installedAt:1},...fields});
+  const model={...snapshot,observedAt:10,external:[
+    pane('old'),
+    pane('current',{runningVersion:'2'}),
+    pane('inferred',{runningVersionEvidence:'started-before-install'}),
+    pane('unknown-running',{runningVersion:null}),
+    pane('no-disk',{diskPackage:null,installationId:null}),
+    pane('linked',{diskPackage:null,installationId:'omo-a',runningVersion:'0.9'}),
+    pane('exited',{processState:'exited'}),
+    external('outside',{runningVersion:'1',diskPackage:{name:'codex',version:'2',installedAt:1}}),
+  ]};
+  expect(outdatedSessions(model).map(s=>s.id)).toEqual(['old','linked']);
+  expect(dashboardSummary(model).outdated).toBe(2);
+  expect(dashboardSummary({...model,observationFailure:'failed'}).outdated).toBeNull();
+  expect(dashboardSummary(snapshot).outdated).toBeNull();
 });
 
 test('missing or failed observations never report zero active sessions',()=>{

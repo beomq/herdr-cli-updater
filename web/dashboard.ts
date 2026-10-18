@@ -68,6 +68,17 @@ export function engineUpdateAction(installation:Installation, operations:readonl
   return result.kind==='update-available'?{kind:'update',reason:null}:result.kind==='up-to-date'?{kind:'update',reason:'current'}:{kind:'update',reason:'check_failed'};
 }
 
+/** herdr-pane sessions whose process started on a different version than the one now on disk.
+ * Only recorded running versions count; a version inferred from disk cannot be outdated. */
+export function outdatedSessions(snapshot:AppSnapshot):ExternalSession[] {
+  return snapshot.external.filter(s=>{
+    if(s.processState==='exited'||!s.herdrPane)return false;
+    const linked=s.installationId?snapshot.installations.find(i=>i.installationId===s.installationId):null;
+    const disk=s.diskPackage?.version??(linked?.installedVersion.kind==='known'?linked.installedVersion.version:null);
+    return !!disk&&!!s.runningVersion&&s.runningVersionEvidence!=='started-before-install'&&s.runningVersionEvidence!=='started-after-install'&&s.runningVersion!==disk;
+  });
+}
+
 export function dashboardSummary(snapshot:AppSnapshot) {
   const catalog=installedCatalog(snapshot);
   const other=snapshot.installations.filter(i=>isSupportedCli(i.family)&&!catalog.some(entry=>catalogContainsInstallation(entry,i)));
@@ -78,6 +89,7 @@ export function dashboardSummary(snapshot:AppSnapshot) {
     operations:snapshot.operations.filter(o=>!['completed','failed','cancelled'].includes(o.stage)).length+(snapshot.catalogUpdates??[]).filter(job=>['ready','updating','uncertain'].includes(job.stage)).length,
     sessions:snapshot.observedAt==null||snapshot.observationFailure?null:snapshot.external.filter(s=>s.processState!=='exited'&&s.herdrPane).length+snapshot.managed.filter(s=>['starting','ready','working','waiting','stopping','restarting'].includes(s.state)).length,
     unknownSessions:snapshot.managed.filter(s=>s.state==='unknown').length,
+    outdated:snapshot.observedAt==null||snapshot.observationFailure?null:outdatedSessions(snapshot).length,
   };
 }
 

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import type { HerdrPaneAgent, HerdrPaneClient } from "./herdr-panes";
 import { screenLooksIdle } from "./observations";
 import { AppError } from "./types";
@@ -63,6 +64,9 @@ export type PaneRestartOptions = {
   readonly cpuPercent?: (pid: number) => number | null;
   readonly omoState?: (session: ExternalSession) => Promise<OmoActivity>;
   readonly observePane?: (paneId: string) => Promise<ExternalSession | null>;
+  /** OmO writes the conversation file on the first message; without it `omo --session`
+   * cannot resume anything, so an empty session must not be exited. */
+  readonly sessionFileExists?: (path: string) => boolean;
 };
 // Idle OmO TUIs were measured at 0.4-18.4% over 15s windows (96 samples, 16 panes); real
 // in-process work (streaming, compaction) sits well above this bound.
@@ -97,6 +101,7 @@ export async function restartInPane(options: PaneRestartOptions): Promise<PaneRe
     if (!current || current.pid !== session.pid || !session.startedAt || current.startedAt !== session.startedAt
       || !session.conversation || current.conversation?.id !== session.conversation.id) return fail("session_binding_changed");
   }
+  if (family === "omo" && session.conversation && !(options.sessionFileExists ?? existsSync)(session.conversation.path)) return fail("session_empty");
   let agent: HerdrPaneAgent | null = before;
   if (agent.status === "blocked") return fail("agent_blocked");
   if (family === "omo" && options.omoState) {

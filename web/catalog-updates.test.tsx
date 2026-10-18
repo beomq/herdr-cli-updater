@@ -100,6 +100,18 @@ test('prepared catalog updates remain visible in the history until confirmation'
 });
 
 const uncertain:CatalogUpdateJob={id:'recover',requestId:'request',catalogId:'omo',revision:7,stage:'uncertain',target:{kind:'owned',target:'/example',executable:'/example/bin/omo',fingerprint:'fingerprint',preserve:[]},createdAt:0,updatedAt:1,beforeVersion:'1.2.3',installedVersion:null,failure:'service_restarted',checkedVersion:'2.0.0'};
+test('history shows how each pane session fared after an automatic update',()=>{
+  const job:CatalogUpdateJob={...uncertain,id:'auto',requestId:'policy',stage:'completed',installedVersion:'2.0.0',failure:null,paneSessions:'restart-idle',
+    paneResults:[{sessionId:'a',paneId:'w1:p1',outcome:'completed',failure:null,previousPid:1,resumedPid:2},{sessionId:'b',paneId:'w1:p2',outcome:'skipped-working',failure:null,previousPid:3,resumedPid:null},
+      {sessionId:'c',paneId:'w1:p3',outcome:'failed',failure:'screen_not_idle',previousPid:4,resumedPid:null}]};
+  const markup=renderToStaticMarkup(<CatalogUpdateHistory snapshot={{...snapshot,catalogUpdates:[job]}} act={async()=>true}/>);
+  expect(markup).toContain('data-pane-results="3"');
+  expect(markup).toContain('data-pane-outcome="completed"');
+  expect(markup).toContain('data-pane-outcome="skipped-working"');
+  expect(markup).toContain('data-pane-outcome="failed"');
+  expect(markup).toContain('screen_not_idle');
+  expect(renderToStaticMarkup(<CatalogUpdateHistory snapshot={{...snapshot,catalogUpdates:[{...job,paneResults:[]}]}} act={async()=>true}/>)).not.toContain('data-pane-results');
+});
 test('recovery requires the exact selected target and fresh inventory without submitting on render',()=>{
   const model={...snapshot,catalogUpdates:[uncertain]};
   expect(catalogRecoveryBlock(model,uncertain,'reconcile')).toBeNull();
