@@ -1,7 +1,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/operating-native/evidence";
+import { homedir } from "node:os";
+const root = `${homedir()}/.local/share/herdr-cli-updater/operating-native/evidence`;
 const c = JSON.parse(readFileSync(`${root}/candidate.json`));
 const body = JSON.stringify(c.update.qualification), path = `${root}/qualification-debug.json`;
 writeFileSync(path, body, { mode: 0o600 });

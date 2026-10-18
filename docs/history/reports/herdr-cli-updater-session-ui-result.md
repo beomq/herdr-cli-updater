@@ -11,7 +11,7 @@
 ## 실행 증거
 
 최종 실제 QA 디렉터리:
-`/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/runs/ef1b9610-691d-48fd-afa1-e070f3b39089`
+`/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/runs/ef1b9610-691d-48fd-afa1-e070f3b39089`
 
 실행 명령:
 `ONE_FAMILY_PARENT_RELEASE=1 ONE_FAMILY_PLUGIN_ACTION=1 bun .omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/run.mjs`

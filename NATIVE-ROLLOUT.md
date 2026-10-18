@@ -26,10 +26,10 @@ rootRemoved true, resourcesRemaining 0을 확인했다. 마지막 monitor 알림
 - resume: `6b0f0989-702f-40a8-87b0-fa6d42210b2c`
 
 운영 0.9.3과 같은 upstream tag에 ABI4 native 계약을 이식한 별도 작업 경로는
-`/Users/beomseok/Desktop/herdr-updater-core-source-cache/.worktrees/session-restart`이다.
+`/Users/<user>/Desktop/herdr-updater-core-source-cache/.worktrees/session-restart`이다.
 debug 바이너리는 `.local/native-target/debug/herdr`이며 실제 버전은 0.9.3이다.
 debug 데이터 위치는 `herdr-dev`이므로 release용 `herdr` profile 위치와 구분한다.
-운영 `/Users/beomseok/.local/bin/herdr`와 기존 열린 세션은 교체하거나 재시작하지 않았다.
+운영 `/Users/<user>/.local/bin/herdr`와 기존 열린 세션은 교체하거나 재시작하지 않았다.
 
 실제 plugin `launch`로 연 격리 OmO 대화에서 claim·자연 작업 종료·stop·start·release를
 검증했다. 대화 ID·storage identity·cwd·options·환경을 유지하면서 PID는 12996에서
@@ -137,17 +137,17 @@ module pin이 없으므로 새 준비를 만들어야 하며 hash를 임의 재�
 저장소에서 다음 명령은 버전·설치 관측만 확인한다. `doctor`는 세션을 시작하지 않는다.
 
 ```sh
-/Users/beomseok/.bun/bin/omo --version
-/Users/beomseok/.local/bin/herdr --version
+/Users/<user>/.bun/bin/omo --version
+/Users/<user>/.local/bin/herdr --version
 bun scripts/plugin.ts doctor
 ```
 
 기본 실행 경로는 다음 두 파일이다. 두 파일 모두 `BUN_INSTALL`을 독립 prefix로 지정한다.
 
-- `/Users/beomseok/.bun/bin/omo`
-- `/Users/beomseok/.bun/install/global/node_modules/.bin/omo`
+- `/Users/<user>/.bun/bin/omo`
+- `/Users/<user>/.bun/install/global/node_modules/.bin/omo`
 
-독립 설치 경로는 `/Users/beomseok/.local/share/herdr-cli-updater/isolated-omo/prefix`다.
+독립 설치 경로는 `/Users/<user>/.local/share/herdr-cli-updater/isolated-omo/prefix`다.
 기존 공유 OmO 패키지는 삭제하지 않았으므로 목록에 OmO 설치가 둘 보일 수 있다.
 `d`로 경로를 확인해 독립 설치를 구분한다.
 
@@ -158,16 +158,16 @@ bun scripts/plugin.ts doctor
 마지막 측정 여유는 1.8 GiB이므로 지금 반복 실행하지 않는다.
 
 ```sh
-HERDR_SOCKET=/Users/beomseok/.config/herdr/herdr.sock \
+HERDR_SOCKET=/Users/<user>/.config/herdr/herdr.sock \
   bun scripts/plugin.ts prepare-omo \
-  /Users/beomseok/.local/share/herdr-cli-updater/isolated-omo/prefix \
+  /Users/<user>/.local/share/herdr-cli-updater/isolated-omo/prefix \
   /opt/homebrew/Cellar/bun/1.3.6/bin/bun
 ```
 
 ## Native 적용 순서
 
 1. 현재 herdr 0.9.3을 기준으로 ABI4 restart 및 native launch를 지원하는 빌드를 검증한다.
-   기존 검증 바이너리 `/Users/beomseok/Desktop/herdr-updater-toolchain/task20-core-r2-target/release/herdr`는
+   기존 검증 바이너리 `/Users/<user>/Desktop/herdr-updater-toolchain/task20-core-r2-target/release/herdr`는
    현재 존재하지만 `--version` 결과가 0.9.1이다. 이를 운영 바이너리에 덮어쓰지 않는다.
 2. 검증 빌드를 별도 환경·별도 core socket에서 검증한다. 운영 socket이나 작업 중인 pane를
    재사용하지 않는다. 실제 ping에서 `updater_restart_v1`, schema digest와 native launch 지원을
@@ -187,9 +187,9 @@ HERDR_SOCKET=/Users/beomseok/.config/herdr/herdr.sock \
 
 ## 기본 launcher 복구
 
-백업 디렉터리는 `/Users/beomseok/.local/share/herdr-cli-updater/launcher-backups/20261005-default-connection`이다.
-복구 승인을 받은 경우 `bun-bin-omo`를 `/Users/beomseok/.bun/bin/omo`로,
-`node-modules-bin-omo`를 `/Users/beomseok/.bun/install/global/node_modules/.bin/omo`로 복원한다.
+백업 디렉터리는 `/Users/<user>/.local/share/herdr-cli-updater/launcher-backups/20261005-default-connection`이다.
+복구 승인을 받은 경우 `bun-bin-omo`를 `/Users/<user>/.bun/bin/omo`로,
+`node-modules-bin-omo`를 `/Users/<user>/.bun/install/global/node_modules/.bin/omo`로 복원한다.
 두 launcher의 실행 권한은 `0755`를 유지한다. 자동 발견 registry에서도 두 launcher의 검증값만
 복구 파일에 맞춰 이관하고, 다른 설치의 pin이나 alias는 변경하지 않는다.
 복구 후 `omo --version`과 updater의 경로를 확인한다. 진행 중인 대화는 재시작하지 않는다.

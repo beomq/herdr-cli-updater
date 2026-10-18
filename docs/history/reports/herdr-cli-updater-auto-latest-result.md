@@ -18,7 +18,7 @@
 
 실제 stock herdr를 읽는 별도 owned worker와 PTY/xterm 캡처는 기존 `scripts/qa-catalog-sessions.mjs`를 확장해 사용한다. 운영 worker/CLI 세션은 재시작하지 않았다. 외부 최신 버전 조회는 각 설치의 기존 check qualification 결과에 의존한다. 이 작업이 unsupported 설치를 지원하는 것은 아니다.
 
-최종 실제 QA PASS/exit 0: `/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/catalog-sessions/1791129898604`.
+최종 실제 QA PASS/exit 0: `/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/catalog-sessions/1791129898604`.
 automatic-latest/rechecked-latest/catalog-small 캡처에서 자동 조회와 c 결과 즉시 반영, regular 120×40과 small 80×24를 확인했다. OmO 설치 5.1.9의 최신 버전은 실제 5.1.16으로 조회됐다. 다른 설치는 기존 check qualification이 unsupported 등의 실패를 반환해 Failed로 표시됐다. 이는 해당 계열 check 지원을 추가했다는 결과가 아니다. cleanup.json은 terminal joined, browserJoined/serverStopped/rootRemoved true다.
 최종 순차 조회 수정 뒤 host/catalog 70 pass / 0 fail, typecheck/build exit 0. 자동 조회/재확인 UX는 실행 검증됐고 모든 설치의 외부 check 지원은 범위 밖 기존 한계다.
 

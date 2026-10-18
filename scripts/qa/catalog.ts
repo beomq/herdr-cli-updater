@@ -11,6 +11,7 @@ import { createCatalogSourceOwner } from "../../src/service/catalog-sources";
 import { serveDomainWorker } from "../../src/service/worker";
 import { fileDigest, QaError, RunFailure, withIsolation } from "./runner";
 import type { CleanupReceipt, ExecutionReceipt } from "./runner";
+import { homedir } from "node:os";
 
 const project = resolve(import.meta.dir, "../..");
 const evidenceRoot = join(project, ".omo/evidence/herdr-cli-updater/task-1");
@@ -130,7 +131,7 @@ export async function runCatalog(evidenceDir: string) {
       const core = input["core"], archives = input["archives"];
       requireThat("receipt" in core && typeof core.receipt === "string", "invalid-fixtures");
       const receiptPath = core.receipt;
-      requireThat(core.path === "/Users/beomseok/Desktop/herdr-updater-toolchain/task20-core-r2-target/release/herdr",
+      requireThat(core.path === `${homedir()}/Desktop/herdr-updater-toolchain/task20-core-r2-target/release/herdr`,
         "unregistered-core");
       const actualCoreHash = await fileDigest(core.path);
       artifactHashes[core.path] = actualCoreHash;

@@ -1,11 +1,12 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { startTerminal, openTerminalCapture } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/terminal.mjs";
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job";
+import { homedir } from "node:os";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job`;
 const output = join(root, "tui");
 const job = JSON.parse(readFileSync(join(root, "actual-job.json")));
 const terminal = startTerminal(["bun", join(import.meta.dirname, "plugin.ts"), "tui"], join(import.meta.dirname, ".."),
-  { ...process.env, HERDR_SOCKET: "/Users/beomseok/.config/herdr/herdr.sock" }, AbortSignal.timeout(120000));
+  { ...process.env, HERDR_SOCKET: `${homedir()}/.config/herdr/herdr.sock` }, AbortSignal.timeout(120000));
 const capture = await openTerminalCapture({ paths: { tmp: output } }, "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", process.env);
 let rendering = Promise.resolve();
 const render = raw => {

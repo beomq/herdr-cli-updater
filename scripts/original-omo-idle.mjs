@@ -1,5 +1,6 @@
+import { homedir } from "node:os";
 // Read process arguments only; never reads configuration or conversation files.
-const prefix = "/Users/beomseok/.bun/install/global/node_modules/";
+const prefix = `${homedir()}/.bun/install/global/node_modules/`;
 const child = Bun.spawn(["/bin/ps", "-axo", "pid=,uid=,command="], {
   env: { PATH: "/usr/bin:/bin", LANG: "C", LC_ALL: "C" }, stdout: "pipe", stderr: "pipe",
 });

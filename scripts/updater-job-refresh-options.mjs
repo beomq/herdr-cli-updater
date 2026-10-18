@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job";
+import { homedir } from "node:os";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job`;
 const profile = JSON.parse(readFileSync(join(root, "profile.json")));
 const directory = join(profile.operationRoot, "profiles");
 const before = JSON.parse(readFileSync(join(directory, `${profile.beforeProfile}.json`)));

@@ -1,9 +1,10 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { coreRequest } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/run.mjs";
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job";
+import { homedir } from "node:os";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job`;
 const profile = JSON.parse(readFileSync(join(root, "profile.json")));
-const socket = "/Users/beomseok/.config/herdr/herdr.sock";
+const socket = `${homedir()}/.config/herdr/herdr.sock`;
 const preparing = process.argv.includes("--prepare-only");
 const workspace = preparing ? await coreRequest(socket, "workspace.create", { cwd: profile.session.cwd,
   label: "updater 단일 대화 검증", focus: false }, AbortSignal.timeout(10000)) : null;

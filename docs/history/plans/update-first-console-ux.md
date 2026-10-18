@@ -26,7 +26,7 @@ Your next move: 계획 고정밀 검토가 승인되면 별도 실행 요청으�
 ## Scope
 ### Affected user and ideal state
 <!-- From the draft ledger: who this touches and how they use the result, then one IS row per property with its reason, then one GAP row per difference with its reason. Every todo below closes a GAP row; ## Success criteria proves every IS row. -->
-**Affected user:** herdr에서 여러 CLI를 쓰는 사용자. 업데이트 가능 여부와 실행 결과를 첫 화면에서 판단하고, 설치 관리와 실행 세션을 혼동하지 않아야 한다. 구현 대상 /Users/beomseok/Desktop/herdr-cli-updater, 계획·증거 위치 /Users/beomseok/Desktop/portfolio/.omo. 모든 아래 상대 소스 경로는 구현 대상 기준이다.
+**Affected user:** herdr에서 여러 CLI를 쓰는 사용자. 업데이트 가능 여부와 실행 결과를 첫 화면에서 판단하고, 설치 관리와 실행 세션을 혼동하지 않아야 한다. 구현 대상 /Users/<user>/Desktop/herdr-cli-updater, 계획·증거 위치 /Users/<user>/Desktop/portfolio/.omo. 모든 아래 상대 소스 경로는 구현 대상 기준이다.
 
 | Row | Statement | Reason |
 | --- | --- | --- |
@@ -58,7 +58,7 @@ Your next move: 계획 고정밀 검토가 승인되면 별도 실행 요청으�
 ## Verification strategy
 > Zero human intervention - all verification is agent-executed.
 - Test decision: existing Bun/jsdom tests, regressions first for behavior defects; implementation and associated test in same task. No sleep/poll-based tests, prose snapshots or weakened guards.
-- E = /Users/beomseok/Desktop/portfolio/.omo/evidence/update-first-console-ux/execution. Each task writes task-N.md with command, exit code and assertions; UI captures task-N-{desktop,mobile}-{light,dark}.png. Do not put secrets or conversation content in receipts.
+- E = /Users/<user>/Desktop/portfolio/.omo/evidence/update-first-console-ux/execution. Each task writes task-N.md with command, exit code and assertions; UI captures task-N-{desktop,mobile}-{light,dark}.png. Do not put secrets or conversation content in receipts.
 - Relevant tests per increment; final `bun test`, `bun run typecheck`, `bun run build`, `bun run build:site` with diagnostics before build. Use isolated TMPDIR/caches, monitors for runs, clean owned browser/server/cache afterward. Prior 547 passing tests are historical, not current proof.
 - Read-only operating baseline already captured four PNGs in parent evidence folder. Execution QA uses fixture app with mocked command transport and real rendered browser; no operating API mutations. Fixture success does not certify seven real CLI installations.
 

@@ -1,10 +1,11 @@
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-const prefix = "/Users/beomseok/.local/share/herdr-cli-updater/operating-native/prefix";
+import { homedir } from "node:os";
+const prefix = `${homedir()}/.local/share/herdr-cli-updater/operating-native/prefix`;
 const engine = join(prefix, "install/global/node_modules/@code-yeongyu/senpi");
 const { createAgentSession } = await import(pathToFileURL(join(engine, "dist/core/sdk.js")));
 const { nativeEffectiveOptions } = await import(pathToFileURL(join(engine, "dist/core/updater-native-bridge.js")));
-const created = await createAgentSession({ cwd: "/Users/beomseok/Desktop/portfolio", agentDir: "/Users/beomseok/.omo/agent",
+const created = await createAgentSession({ cwd: `${homedir()}/Desktop/portfolio`, agentDir: `${homedir()}/.omo/agent`,
   thinkingLevel: "off", thinkingSelection: { level: "off", source: "explicit" }, tools: ["bash"], autoTitleSessions: false });
 function nonJson(value, path, found) {
   if (value === undefined || (typeof value === "number" && !Number.isFinite(value))) found.push(path);

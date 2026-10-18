@@ -2,15 +2,16 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { CoreOperationsClient } from "../src/core/client.ts";
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/operating-native/evidence";
-const pane = "w22:p1", socket = "/Users/beomseok/.config/herdr/herdr.sock";
-const operations = "/Users/beomseok/.config/herdr/updater-operations-794e95d1341eb0576a26c9410fdd1e200b5609b14458d0c6df59f0e2bedc4470/operations.jsonl";
+import { homedir } from "node:os";
+const root = `${homedir()}/.local/share/herdr-cli-updater/operating-native/evidence`;
+const pane = "w22:p1", socket = `${homedir()}/.config/herdr/herdr.sock`;
+const operations = `${homedir()}/.config/herdr/updater-operations-794e95d1341eb0576a26c9410fdd1e200b5609b14458d0c6df59f0e2bedc4470/operations.jsonl`;
 const client = await CoreOperationsClient.discover(socket, AbortSignal.timeout(10000));
 const before = await client.request({ action: "inspect", pane_id: pane }, AbortSignal.timeout(10000));
 if (!before.binding || !before.native_qualified || before.recovery_required) throw new Error("Native managed session required");
 async function dispatch(request) {
   const signal = AbortSignal.timeout(120000);
-  const observer = client.observeOperation(request.operation_id, operations, signal, "/Users/beomseok/.nvm/versions/node/v24.20.0/bin/node");
+  const observer = client.observeOperation(request.operation_id, operations, signal, `${homedir()}/.nvm/versions/node/v24.20.0/bin/node`);
   try {
     await observer.ready;
     const initial = await client.request(request, signal);

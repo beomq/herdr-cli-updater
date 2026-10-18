@@ -18,7 +18,7 @@
 
 UI/PATH 통합 검증은164개 테스트, 전체 타입 검사, build exit0. 실제 desktop/mobile light/dark 카드를 확인했고 모바일의 과도한 요약 타일은 compact 수치로 축소했다. herdr 연결이 완료되기 전 배포 완료로 표시하지 않는다.
 
-core 구현 경로: /Users/beomseok/Desktop/herdr-updater-core-source-cache/.worktrees/selected-agent-executable . server.agent_executable.get/set API가 대상 서버 소유 설정을 저장·적용하며 새 agent.start만 변경한다. core 집중9개+스키마/endpoint2개 테스트와 debug build 통과. updater 설치 선택은 이 API의 성공을 확인하고 정책/선택을 전환한다. 일반 터미널 변경 실패 시 이전 herdr 선택 복원을 시도하며 복원 실패는 uncertain으로 보고한다. 구형 서버는 성공으로 처리하지 않는다.
+core 구현 경로: /Users/<user>/Desktop/herdr-updater-core-source-cache/.worktrees/selected-agent-executable . server.agent_executable.get/set API가 대상 서버 소유 설정을 저장·적용하며 새 agent.start만 변경한다. core 집중9개+스키마/endpoint2개 테스트와 debug build 통과. updater 설치 선택은 이 API의 성공을 확인하고 정책/선택을 전환한다. 일반 터미널 변경 실패 시 이전 herdr 선택 복원을 시도하며 복원 실패는 uncertain으로 보고한다. 구형 서버는 성공으로 처리하지 않는다.
 
 후속 구현에서 직렬화되지 않는 내부 Agent에 OmO/GJC를 추가했다. 동결된 endpoint는 이미 문자열 식별자를 사용하므로 코덱 변경 없이7종을 지원하며 Pi와 독립적으로 저장·시작한다. 관련 core 회귀152개 통과. 일반 셸 입력은 API 범위 밖이다. 운영 core/서비스는 아직 교체하지 않았다.
 

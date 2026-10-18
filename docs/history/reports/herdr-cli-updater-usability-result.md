@@ -45,7 +45,7 @@ doctor는 별도 임시 상태를 쓰고 운영 pin을 다시 학습하지 않�
 job에 업데이트 후 버전이 없으면 추정하지 않는다. 격리 reader는 이전 지문만 허용하여 완료 후 catalog stale_selection이
 남을 수 있으나 job 검증과 재시작은 별도 완료이며 화면도 두 상태를 구분한다.
 
-cd /Users/beomseok/Desktop/herdr-cli-updater 후 bun scripts/plugin.ts 실행.
+cd /Users/<user>/Desktop/herdr-cli-updater 후 bun scripts/plugin.ts 실행.
 이전 worker가 살아 있으면 사용자가 q/stop 후 다시 열어 새 코드를 적용한다. 이 작업에서 임의 종료하지 않았다.
 방향키, c 확인, Enter 선택/확인, d 상세, u 재조회, 2 jobs, q 닫기를 확인한다.
 목록 실패는 doctor에서 실패 경로/권한/지문 원인을 먼저 보고 u로 재조회한다.

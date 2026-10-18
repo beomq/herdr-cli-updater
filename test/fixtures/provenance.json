@@ -18,16 +18,16 @@
     "releaseReceipt": null,
     "observed": {
       "state": "OBSERVED",
-      "baselineReceipt": "/Users/beomseok/Desktop/portfolio/.omo/ulw-execute/task5-core-baseline.json",
-      "parentVerifyReceipt": "/Users/beomseok/Desktop/portfolio/.omo/ulw-execute/task5-core-parent-verify.json",
+      "baselineReceipt": "/Users/<user>/Desktop/portfolio/.omo/ulw-execute/task5-core-baseline.json",
+      "parentVerifyReceipt": "/Users/<user>/Desktop/portfolio/.omo/ulw-execute/task5-core-parent-verify.json",
       "source": {
         "repository": "https://github.com/herdrdev/herdr.git",
         "releaseTag": "v0.9.1",
         "ref": "065ef9d6a531c49fb8bee7e818ef837065b21ee9",
         "tree": "25c7ed13ca34ac9530d27050d679c0e820022e0c",
-        "snapshot": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-source",
+        "snapshot": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-source",
         "archive": {
-          "path": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-source.tar",
+          "path": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-source.tar",
           "sha256": "050b31ce77072c7ddf98e8f43cd261f531ff4fec3d4a0da9adcf9e1f50c56aa7"
         },
         "sourceFileHashes": {
@@ -48,39 +48,39 @@
         "zigVersion": "0.16.0",
         "artifacts": {
           "cargo": {
-            "path": "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/cargo",
+            "path": "/Users/<user>/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/cargo",
             "sha256": "f00ad85ca0a5b0f15b2a7658f15ef3195d9a04d2763921c1f9eaaa51f0136fe8"
           },
           "rustc": {
-            "path": "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/rustc",
+            "path": "/Users/<user>/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/rustc",
             "sha256": "d10051fa870c54067bd21047e9709084141ffff65695537eb2c0c5d2477467d4"
           },
           "zig": {
-            "path": "/Users/beomseok/Desktop/herdr-updater-toolchain/zig-aarch64-macos-0.16.0/zig",
+            "path": "/Users/<user>/Desktop/herdr-updater-toolchain/zig-aarch64-macos-0.16.0/zig",
             "sha256": "e6cd688d25664983833aae272f501d4bceeae304875b8f1741209d15fd13a4ec"
           }
         },
         "environment": {
-          "RUSTUP_HOME": "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup",
-          "CARGO_HOME": "/Users/beomseok/Desktop/herdr-updater-toolchain/cargo",
+          "RUSTUP_HOME": "/Users/<user>/Desktop/herdr-updater-toolchain/rustup",
+          "CARGO_HOME": "/Users/<user>/Desktop/herdr-updater-toolchain/cargo",
           "RUSTUP_TOOLCHAIN": "1.96.1-aarch64-apple-darwin",
           "RUSTUP_AUTO_INSTALL": "0",
           "RUSTUP_NO_UPDATE_CHECK": "1",
-          "CARGO_TARGET_DIR": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-target",
-          "RUSTC": "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/rustc",
-          "RUSTDOC": "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/rustdoc",
-          "ZIG": "/Users/beomseok/Desktop/herdr-updater-toolchain/zig-aarch64-macos-0.16.0/zig",
-          "ZIG_GLOBAL_CACHE_DIR": "/Users/beomseok/Desktop/herdr-updater-toolchain/zig-cache",
-          "ZIG_LOCAL_CACHE_DIR": "/Users/beomseok/Desktop/herdr-updater-toolchain/zig-local-cache",
-          "PATH": "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin:/Users/beomseok/Desktop/herdr-updater-toolchain/zig-aarch64-macos-0.16.0:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin",
-          "HOME": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/home",
-          "XDG_CONFIG_HOME": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/config",
-          "XDG_STATE_HOME": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/state",
-          "XDG_CACHE_HOME": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/cache",
-          "XDG_RUNTIME_DIR": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/runtime",
-          "TMPDIR": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/tmp",
-          "TMP": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/tmp",
-          "TEMP": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-runtime/tmp",
+          "CARGO_TARGET_DIR": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-target",
+          "RUSTC": "/Users/<user>/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/rustc",
+          "RUSTDOC": "/Users/<user>/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/rustdoc",
+          "ZIG": "/Users/<user>/Desktop/herdr-updater-toolchain/zig-aarch64-macos-0.16.0/zig",
+          "ZIG_GLOBAL_CACHE_DIR": "/Users/<user>/Desktop/herdr-updater-toolchain/zig-cache",
+          "ZIG_LOCAL_CACHE_DIR": "/Users/<user>/Desktop/herdr-updater-toolchain/zig-local-cache",
+          "PATH": "/Users/<user>/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin:/Users/<user>/Desktop/herdr-updater-toolchain/zig-aarch64-macos-0.16.0:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin",
+          "HOME": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-runtime/home",
+          "XDG_CONFIG_HOME": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-runtime/config",
+          "XDG_STATE_HOME": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-runtime/state",
+          "XDG_CACHE_HOME": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-runtime/cache",
+          "XDG_RUNTIME_DIR": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-runtime/runtime",
+          "TMPDIR": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-runtime/tmp",
+          "TMP": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-runtime/tmp",
+          "TEMP": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-runtime/tmp",
           "SHELL": "/bin/sh",
           "LANG": "en_US.UTF-8",
           "TERM": "xterm-256color",
@@ -92,35 +92,35 @@
       },
       "build": {
         "argv": [
-          "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/cargo",
+          "/Users/<user>/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin/cargo",
           "build",
           "--release",
           "--locked"
         ],
-        "cwd": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-source",
+        "cwd": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-source",
         "exitCode": 0,
-        "log": "/Users/beomseok/Desktop/portfolio/.omo/evidence/herdr-core-baseline-task5/release.log",
+        "log": "/Users/<user>/Desktop/portfolio/.omo/evidence/herdr-core-baseline-task5/release.log",
         "logSha256": "d87d2ceef5fbad0b0571d5772367889bc337e458212ea864ce3dd57c3429b55d"
       },
       "binary": {
-        "path": "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-target/release/herdr",
+        "path": "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-target/release/herdr",
         "sha256": "2af87370b8a5a3639c05d4725281140961ee272663261d415c67f4704b5558bb",
         "version": "herdr 0.9.1",
         "versionArgv": [
-          "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-target/release/herdr",
+          "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-target/release/herdr",
           "--version"
         ],
         "versionExitCode": 0,
         "notOfficialDownloadedBinary": true
       },
       "schema": {
-        "path": "/Users/beomseok/Desktop/herdr-updater-core/docs/next/api/herdr-api.schema.json",
+        "path": "/Users/<user>/Desktop/herdr-updater-core/docs/next/api/herdr-api.schema.json",
         "sha256": "226d4ecbd128d2e6bc84e4c8ddcec21ba9c7e51a0aafffcf087111ead3f1fa9a",
-        "builtOutputArtifact": "/Users/beomseok/Desktop/portfolio/.omo/evidence/herdr-core-baseline-task5/built-schema.json",
+        "builtOutputArtifact": "/Users/<user>/Desktop/portfolio/.omo/evidence/herdr-core-baseline-task5/built-schema.json",
         "protocol": 22,
         "schemaVersion": 1,
         "argv": [
-          "/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-target/release/herdr",
+          "/Users/<user>/Desktop/herdr-updater-toolchain/baseline-target/release/herdr",
           "api",
           "schema",
           "--json"
@@ -160,7 +160,7 @@
     "Eight acquired source inventories do not equal release/owner/channel/parser/runtime qualification",
     "Actual all-work drain/input fence/receipts/exact-resume and full8 runtime support remain pending"
   ],
-  "acquisitionReport": "/Users/beomseok/Desktop/portfolio/.omo/ulw-execute/task5-core-baseline.json",
+  "acquisitionReport": "/Users/<user>/Desktop/portfolio/.omo/ulw-execute/task5-core-baseline.json",
   "observedUpstreamRef": "65e35a3858b4a9f6cb9bdf712ffb16c474363846",
   "observedUpstreamCargoVersion": "0.9.3",
   "observedUpstreamSchemaSha256": "9e2af207e9aa8183d4aeca5fde9cc48e7909bb40cdbd7cf21608a6d3ea78075b",
@@ -195,11 +195,11 @@
       "observed": {
         "state": "OBSERVED",
         "qualificationReceipt": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/omo/qualification.json",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/omo/qualification.json",
           "sha256": "0cd2f40ba7d230112a50d01e57c6feff197be3cedf79d7073d296866def0f5ca"
         },
         "sourceArtifact": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/omo/boundedsource/omo/bin/lib/self-update.js",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/omo/boundedsource/omo/bin/lib/self-update.js",
           "sha256": "8fc5b3ba5ebc7a3d9e4e1ed75b36ddf6f76f77c1595148d184a30681ce234fe7"
         },
         "sourceRef": "bcc854a49eddbaf29ab1487922ff0c544ba2d026",
@@ -257,11 +257,11 @@
       "observed": {
         "state": "OBSERVED",
         "qualificationReceipt": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/omp/qualification.json",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/omp/qualification.json",
           "sha256": "e65d734d32215fbea56f0f1b5c1ec278295aa54deabf798ce837005016127081"
         },
         "sourceArtifact": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/omp/boundedsource/src/cli/update-cli.ts",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/omp/boundedsource/src/cli/update-cli.ts",
           "sha256": "ca4a417cb654ce6333cc45dbdc58f3f2109eacb68205199ae8f732bce528fd4f"
         },
         "sourceRef": "f446b8a8193e59b4cbd2cf487ab6fa1915e0b890",
@@ -322,11 +322,11 @@
       "observed": {
         "state": "OBSERVED",
         "qualificationReceipt": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/pi/qualification.json",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/pi/qualification.json",
           "sha256": "f6231f198e9286a127e13406c20f8d9c9aba39cdd14b45fb5986316d6aea50ee"
         },
         "sourceArtifact": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/pi/boundedsource/dist/self-update-bootstrap.js",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/pi/boundedsource/dist/self-update-bootstrap.js",
           "sha256": "07076106c1ef6639b180139f54d8ce170b00c2f7533b10fe4c28eaac9e3871ec"
         },
         "sourceRef": "67ff74ad36c9e89f112fa1d997a72d158705f30e",
@@ -387,11 +387,11 @@
       "observed": {
         "state": "OBSERVED",
         "qualificationReceipt": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/claude/qualification.json",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/claude/qualification.json",
           "sha256": "ed0bf55b66c8a7fc8b3490d97704bec8a3747a79ddd974fdfb78ef54344a98d1"
         },
         "sourceArtifact": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/claude/boundedsource/install.sh",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/claude/boundedsource/install.sh",
           "sha256": "3a68d3406cf674e17bed1733a4dcf37805e2e47d87417700007d7e1aa766a944",
           "sourceUrl": "https://claude.ai/install.sh"
         },
@@ -443,11 +443,11 @@
       "observed": {
         "state": "OBSERVED",
         "qualificationReceipt": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/codex/qualification.json",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/codex/qualification.json",
           "sha256": "592ea56fe3083ebb4e114b1ca4881bc6f4a66edb6857db4742898c04f61145a2"
         },
         "sourceArtifact": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/codex/bounded-source/codex-rs/install-context/src/lib.rs",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/codex/bounded-source/codex-rs/install-context/src/lib.rs",
           "sha256": "b7305f28586f61f7a3cc7d3c53c95dacabca05529b1ba3aa4b5e42d306db2ae5",
           "sourceUrl": "https://raw.githubusercontent.com/openai/codex/fe74a774532af67b5a4a3dec03ce9469e17f89af/codex-rs/install-context/src/lib.rs"
         },
@@ -509,11 +509,11 @@
       "observed": {
         "state": "OBSERVED",
         "qualificationReceipt": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/agy/qualification.json",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/agy/qualification.json",
           "sha256": "4af629225a593db66cb0efa6b640ae27ff401581ccea4f79695e979d3f4883cf"
         },
         "sourceArtifact": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/agy/boundedsource/install.sh",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/agy/boundedsource/install.sh",
           "sha256": "62966c07365423bd4dc209355060744058fb30d60f5323e2d360e39de64e5042"
         },
         "sourceRef": "sha256:62966c07365423bd4dc209355060744058fb30d60f5323e2d360e39de64e5042",
@@ -563,11 +563,11 @@
       "observed": {
         "state": "OBSERVED",
         "qualificationReceipt": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/cursor/qualification.json",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/cursor/qualification.json",
           "sha256": "3a33fc20588485af7537cc29ea344b699f6e99790f56c4f15530927051ce27ce"
         },
         "sourceArtifact": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/cursor/boundedsource/release-2026.01.23/1517.index.js.txt",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/cursor/boundedsource/release-2026.01.23/1517.index.js.txt",
           "sha256": "c050a858a462ed5b735e5693ed5e8575a0cfa98e9c9c78368e016675d9f84ac0"
         },
         "sourceRef": "sha256:bd33acce8516e0b5941e52b0c1ec50447d54cb909cbcddde97acb58d17c109e3",
@@ -622,11 +622,11 @@
       "observed": {
         "state": "OBSERVED",
         "qualificationReceipt": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/grok/qualification.json",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/grok/qualification.json",
           "sha256": "f940e74b8f8a4bebe959c6cf6fd2b864de85b8eebc4e90a933c0bbb1e4c4bd13"
         },
         "sourceArtifact": {
-          "path": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/grok/boundedsource/crates/codegen/xai-grok-update/src/auto_update.rs",
+          "path": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-5/families/grok/boundedsource/crates/codegen/xai-grok-update/src/auto_update.rs",
           "sha256": "43976e24c41d19514eec42cfe521c775692eb383fd5e8237f7de9b060ccbd553",
           "sourceUrl": "https://raw.githubusercontent.com/xai-org/grok-build/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-update/src/auto_update.rs"
         },
@@ -657,7 +657,7 @@
       "qualified": false
     },
     "qualifiedSourceV1": {
-      "registration": "/Users/beomseok/Desktop/portfolio/.omo/ulw-execute/task39-alternate-source-registration.json",
+      "registration": "/Users/<user>/Desktop/portfolio/.omo/ulw-execute/task39-alternate-source-registration.json",
       "acceptedConsumer": "task10 only",
       "globalTrustGranted": false,
       "task5ConsumersRelocated": 0

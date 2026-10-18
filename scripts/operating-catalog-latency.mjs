@@ -2,7 +2,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { attachAuthenticatedWorker } from "../src/service/client.ts";
 import { defaultWorkerDirectory } from "../src/service/worker.ts";
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/operating-native/evidence";
+import { homedir } from "node:os";
+const root = `${homedir()}/.local/share/herdr-cli-updater/operating-native/evidence`;
 mkdirSync(root, { recursive: true, mode: 0o700 });
 const clients = await Promise.all(Array.from({ length: 3 }, () => attachAuthenticatedWorker(defaultWorkerDirectory, 20000)));
 try {

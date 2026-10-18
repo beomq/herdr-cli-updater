@@ -11,8 +11,8 @@ pending-action: none; planning complete, implementation requires separate execut
 review:
   plan_reviewer:
     status: approved
-    workspace_root: /Users/beomseok/Desktop/portfolio
-    runtime_home: /Users/beomseok/.omo/agent
+    workspace_root: /Users/<user>/Desktop/portfolio
+    runtime_home: /Users/<user>/.omo/agent
     target: .omo/plans/herdr-cli-updater.md
     round_id: herdr-cli-updater-replan-r2
     plan_sha256: 3cbe007d79794b6402499f758e7c55c15eb1eb112da99dcec6b5cf1292dca04f
@@ -38,7 +38,7 @@ GAP-1 | Proposed commands and pane restart semantics remain unverified; read ins
 C1 | Independent herdr plugin and TUI workflow | active | local herdr CLI and web-ui manifest research
 C2 | Eight CLI install/update/resume adapters | active | official contracts research
 C3 | Durable update/restart state machine with herdr pane bindings | active | herdr source contract research
-C4 | Minimal upstream herdr-web-ui consumer PR | deferred until plugin verified | /Users/beomseok/Desktop/herdr-web-ui
+C4 | Minimal upstream herdr-web-ui consumer PR | deferred until plugin verified | /Users/<user>/Desktop/herdr-web-ui
 <!-- Lock the SHAPE before depth. One row per top-level component that can succeed or fail independently. -->
 <!-- id | outcome (one line) | status: active|deferred | evidence path -->
 
@@ -81,14 +81,14 @@ Actual plugin TUI entry is `herdr plugin pane open --plugin <ID> --entrypoint <I
 Local herdr0.9.1 help: `agent start <NAME> --kind <KIND> --pane <ID> -- [AGENT_ARG]...` requires interactive shell prompt; readiness means expected agent detected in same terminal. Kind list includes omp/pi/claude/codex/cursor/agy/grok but NOT omo. This invalidates treating all8 as identical supported agent.start kinds.
 Local `pane run <PANE_ID> <COMMAND>...` exists, but help alone does not prove argv-preserving safe launch, graceful exit or atomic idle claim; implementation must inspect protocol/source or require core support rather than guess.
 Bundled `herdr api schema --json` parses successfully via full stdout stream. AgentSessionInfo requires source/agent/kind/value. PaneProcessInfo exposes tty, shell_pid, foreground process group; processes expose optional argv/cwd. Session identity and launch information can be missing, so fail-closed capability states are required.
-Raw status is NOT a certified safe shutdown boundary: /Users/beomseok/Desktop/herdr-web-ui/server/completion.ts:8-25 documents omo child processes changing pi/working to claude/unknown/idle; UI-derived done cannot serve as safe completion proof.
+Raw status is NOT a certified safe shutdown boundary: /Users/<user>/Desktop/herdr-web-ui/server/completion.ts:8-25 documents omo child processes changing pi/working to claude/unknown/idle; UI-derived done cannot serve as safe completion proof.
 `pi` PATH actually resolves @code-yeongyu/senpi2026.10.1-3, not upstream Pi. `omp` resolves @oh-my-pi/pi-coding-agent17.1.8 / can1357/oh-my-pi. Adapter identity must use real install package/executable, not command name.
 Local actual help supports omo --session path|id; omp --resume=<value>; agy --conversation; codex resume; grok --resume session UUID/title. Exact immutable identifiers must be supplied, not recent-session/picker/title or create-if-missing flags.
 Source history: web-ui HEAD01290a4 fixes status change during subscription reopen (#291), showing event/snapshot races must be tested.
-Installed herdr path /Users/beomseok/.local/bin/herdr. Actual plugin actions use manifest argv arrays, not invented `herdr cli-updater` syntax: /Users/beomseok/Desktop/herdr-web-ui/herdr-plugin.toml.
+Installed herdr path /Users/<user>/.local/bin/herdr. Actual plugin actions use manifest argv arrays, not invented `herdr cli-updater` syntax: /Users/<user>/Desktop/herdr-web-ui/herdr-plugin.toml.
 Local web-ui HEAD 01290a4; user untracked .worktrees/ and omo-pane-icons-pr.md preserved.
 Local PATH provides omo/omp/pi/claude/codex/agy/grok; `cursor` command absent. Exact family identities still under official help research.
-Repository /Users/beomseok/Desktop/portfolio is not git; planning artifact location only.
+Repository /Users/<user>/Desktop/portfolio is not git; planning artifact location only.
 
 ## Decisions (with rationale)
 User compared omo-webchat restart. Source at commit372a0bb confirms owned shared OmO RPC engine replacement, active chat warning not finish-wait, SIGTERM→SIGKILL. Compare sources internal/api/system_restart.go:21-55, internal/omorpc/restart.go:31-53, internal/omorpc/ensure_supervisor_unix.go:34-75. Read-only source/test comparison, no runtime execution. Patterns of ownership/install-runtime separation reusable; interruption semantics conflict with requested busy-work preservation.

@@ -1,7 +1,7 @@
 {
   "classification": "genuine-archived-installation-readonly-not-native-qualification",
   "core": {
-    "path": "/Users/beomseok/Desktop/herdr-updater-toolchain/task20-core-r2-target/release/herdr",
+    "path": "/Users/<user>/Desktop/herdr-updater-toolchain/task20-core-r2-target/release/herdr",
     "sha256": "b60103c89d66baf5cdea8104dc91b84cf346e063ee317e883267fda3b2aa0c2a",
     "receipt": ".omo/evidence/herdr-cli-updater/task-20/abi3/DoneClaim-r2.json"
   },

@@ -3,12 +3,13 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { preparedNativeRecipe } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/normalize.mjs";
 import { acquiredClosure, installOriginal } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/install.mjs";
+import { homedir } from "node:os";
 
-const root = process.env.OPERATING_NATIVE_ROOT ?? "/Users/beomseok/.local/share/herdr-cli-updater/operating-native";
+const root = process.env.OPERATING_NATIVE_ROOT ?? `${homedir()}/.local/share/herdr-cli-updater/operating-native`;
 const prefix = join(root, process.env.OPERATING_NATIVE_PREFIX_NAME ?? "prefix");
 const evidence = join(root, "evidence");
 mkdirSync(evidence, { recursive: true, mode: 0o700 });
-process.env.ONE_FAMILY_TARGET_RUNTIME = "/Users/beomseok/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json";
+process.env.ONE_FAMILY_TARGET_RUNTIME = `${homedir()}/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json`;
 const acquired = join(import.meta.dirname, "../.omo/evidence/herdr-cli-updater/task22/update-only-composition-r1/implementation-r1/inputs");
 process.env.ONE_FAMILY_BEFORE_ACQUISITION = join(acquired, "acquisition.json");
 process.env.ONE_FAMILY_BEFORE_ALIASES = join(acquired, "alias-closure.json");
@@ -25,8 +26,8 @@ for (const row of [...acquisition.records, ...aliases.records]) {
 }
 const managerPath = "/private/tmp/herdr-native-519-tools/bun-darwin-aarch64/bun";
 const manager = { path: managerPath, sha256: createHash("sha256").update(readFileSync(managerPath)).digest("hex") };
-const environment = { HOME: "/Users/beomseok", BUN_INSTALL: prefix,
-  PATH: "/opt/homebrew/Cellar/bun/1.3.6/bin:/Users/beomseok/.nvm/versions/node/v24.20.0/bin:/Users/beomseok/.local/bin:/opt/homebrew/bin:/usr/bin:/bin" };
+const environment = { HOME: homedir(), BUN_INSTALL: prefix,
+  PATH: `/opt/homebrew/Cellar/bun/1.3.6/bin:${homedir()}/.nvm/versions/node/v24.20.0/bin:${homedir()}/.local/bin:/opt/homebrew/bin:/usr/bin:/bin` };
 const installReceipt = join(evidence, process.env.OPERATING_NATIVE_INSTALL_RECEIPT ?? "original-install.json");
 if (!existsSync(installReceipt)) {
   const installed = await installOriginal(rows, recipe.target.version, manager, root, environment, AbortSignal.timeout(300000));

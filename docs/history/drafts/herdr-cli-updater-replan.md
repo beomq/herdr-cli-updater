@@ -44,7 +44,7 @@ Started: 2026-10-02. 기존 최종 계획을 같은 경로에서 보완하는 �
 ## 성공 기준과 QA
 - C001: collect/verify workflow와 부모 파일·공식 계약 대조. 모든 안전 주장은 citation 또는 명시적 미확인/core gate. 근거 `.omo/evidence/herdr-cli-updater-replan/research.md`.
 - C002: 최종 계획에 JS validator 실행. grammar/header/모든 IS·GAP·task·QA·dependency·파일 소유권 오류 0; native reviewer OKAY와 같은 SHA256. 근거 `plan-validation.json` 및 reassessment evidence.
-- C003: `git -C /Users/beomseok/Desktop/herdr-web-ui status --short`, HEAD/diff 대조. 제품 변경 0, 원래 untracked 유지, 새 제품 폴더 없음, QA 자원 없음. 근거 `scope-audit.md`.
+- C003: `git -C /Users/<user>/Desktop/herdr-web-ui status --short`, HEAD/diff 대조. 제품 변경 0, 원래 untracked 유지, 새 제품 폴더 없음, QA 자원 없음. 근거 `scope-audit.md`.
 - runtime product QA는 이번 계획 완료의 증거가 아니다. 계획은 downstream exact-resume·입력 경쟁·crash·공유 설치·삭제 세션·실패 복구·TUI/xterm/browser 회귀의 실제 실행 기준을 정의한다.
 
 ## Now
@@ -54,7 +54,7 @@ Started: 2026-10-02. 기존 최종 계획을 같은 경로에서 보완하는 �
 수집 → 반증 → 사용자 상태·격차 → 상세 quick 분할 계획 → 구조/범위 검증 → native review → cleanup/checkpoint → 보고.
 
 ## Findings
-- 기존 계획 12개 구현·4개 최종 검증은 전부 미착수. 제품 폴더 `/Users/beomseok/Desktop/herdr-cli-updater` 없음.
+- 기존 계획 12개 구현·4개 최종 검증은 전부 미착수. 제품 폴더 `/Users/<user>/Desktop/herdr-cli-updater` 없음.
 - 기존 web-ui HEAD `01290a4`; untracked `.worktrees/`, `omo-pane-icons-pr.md` 유지해야 한다.
 - 기존 리뷰 SHA256 `48bd8c2de039cef6caf84edd96de40d3bb43d32ab2340c5a23873356b548b6af`; 계획 보완은 새 리뷰 digest가 필요하다.
 - `herdr-web-ui/AGENTS.md` 없음. 기존 지침 위치는 조사 lane에서 확인한다.

@@ -1,12 +1,13 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { homedir } from "node:os";
 
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/single-session-5.1.21";
+const root = `${homedir()}/.local/share/herdr-cli-updater/single-session-5.1.21`;
 const prefix = join(root, "prefix"), home = join(root, "installer-home");
 mkdirSync(home, { recursive: true, mode: 0o700 });
 const manager = "/private/tmp/herdr-native-519-tools/bun-darwin-aarch64/bun";
 const env = { HOME: home, BUN_INSTALL: prefix, BUN_CONFIG_REGISTRY: "https://registry.npmjs.org",
-  PATH: "/opt/homebrew/Cellar/bun/1.3.6/bin:/Users/beomseok/.nvm/versions/node/v24.20.0/bin:/usr/bin:/bin" };
+  PATH: `/opt/homebrew/Cellar/bun/1.3.6/bin:${homedir()}/.nvm/versions/node/v24.20.0/bin:/usr/bin:/bin` };
 const child = Bun.spawn([manager, "add", "-g", "omo-ai@5.1.21", "--trust"], {
   cwd: root, env, stdin: "ignore", stdout: "pipe", stderr: "pipe",
 });

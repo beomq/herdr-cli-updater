@@ -3,7 +3,8 @@ import { join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { attachAuthenticatedWorker } from "../src/service/client.ts";
 import { discoverWorker, stopWorker, startWorker } from "../src/service/worker.ts";
-const directory = "/Users/beomseok/.local/share/herdr-cli-updater/worker";
+import { homedir } from "node:os";
+const directory = `${homedir()}/.local/share/herdr-cli-updater/worker`;
 const client = await attachAuthenticatedWorker(directory, 15000);
 let saved;
 try {
@@ -17,9 +18,9 @@ if (existsSync(directory)) {
     || /^[a-f0-9]{64}\.jsonl$/.test(name) && lstatSync(join(directory, name)).isFile())) throw new Error("Unknown retired worker data");
   renameSync(directory, `${directory}.catalog-reload-${Date.now()}`);
 }
-process.env.HERDR_CLI_UPDATER_RUNTIME_CONFIG = "/Users/beomseok/.local/share/herdr-cli-updater/runtime.json";
-await startWorker(directory, { home: "/Users/beomseok", path: process.env.PATH,
-  prefixes: ["/opt/homebrew", "/usr/local"], socket: "/Users/beomseok/.config/herdr/herdr.sock" });
+process.env.HERDR_CLI_UPDATER_RUNTIME_CONFIG = `${homedir()}/.local/share/herdr-cli-updater/runtime.json`;
+await startWorker(directory, { home: homedir(), path: process.env.PATH,
+  prefixes: ["/opt/homebrew", "/usr/local"], socket: `${homedir()}/.config/herdr/herdr.sock` });
 const fresh = await attachAuthenticatedWorker(directory, 15000);
 try {
   const jobs = await fresh.request({ operation: "jobs" });

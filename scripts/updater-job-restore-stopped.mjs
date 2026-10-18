@@ -5,9 +5,10 @@ import { CoreOperationsClient } from "../src/core/client.ts";
 import { attachAuthenticatedWorker } from "../src/service/client.ts";
 import { discoverWorker, stopWorker } from "../src/service/worker.ts";
 import { installOriginal } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/install.mjs";
+import { homedir } from "node:os";
 
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job";
-const worker = "/Users/beomseok/.local/share/herdr-cli-updater/worker";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job`;
+const worker = `${homedir()}/.local/share/herdr-cli-updater/worker`;
 const profile = JSON.parse(readFileSync(join(root, "profile.json")));
 const saved = JSON.parse(readFileSync(join(root, "actual-job.json")));
 const canonical = value => Array.isArray(value) ? value.map(canonical)
@@ -22,7 +23,7 @@ try {
   if (job.status !== "recovery_required" || job.targetTxns[0].receipt?.kind !== "completed"
     || job.targetTxns[0].receipt.effect !== "stopped") throw new Error("Exact completed stop required");
 } finally { client.close(); }
-const core = await CoreOperationsClient.discover("/Users/beomseok/.config/herdr/herdr.sock", AbortSignal.timeout(10000));
+const core = await CoreOperationsClient.discover(`${homedir()}/.config/herdr/herdr.sock`, AbortSignal.timeout(10000));
 const claim = await core.request({ action: "result", operation_id: claimId }, AbortSignal.timeout(10000));
 const stopId = job.targetTxns[0].receipt.operationId;
 const stopped = await core.request({ action: "result", operation_id: stopId }, AbortSignal.timeout(10000));
@@ -33,7 +34,7 @@ const revision = Date.now();
 renameSync(worker, `${worker}.retired-${revision}`);
 if (existsSync(`${worker}.jobs`)) renameSync(`${worker}.jobs`, `${worker}.jobs.actual-job-history-${revision}`);
 const installation = JSON.parse(readFileSync(join(root, "evidence/installation.json")));
-const baseline = JSON.parse(readFileSync("/Users/beomseok/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json"));
+const baseline = JSON.parse(readFileSync(`${homedir()}/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json`));
 const archived = join(root, `prefix-files-verified-521-${revision}`);
 renameSync(join(root, "prefix"), archived);
 const rows = baseline.update.qualification.target.artifacts.map(artifact =>
@@ -48,7 +49,7 @@ for (const pin of retained.closure) {
 async function dispatch(request) {
   const signal = AbortSignal.timeout(60000);
   const observation = core.observeOperation(request.operation_id, join(profile.operationRoot, "operations.jsonl"), signal,
-    "/Users/beomseok/.nvm/versions/node/v24.20.0/bin/node");
+    `${homedir()}/.nvm/versions/node/v24.20.0/bin/node`);
   try {
     await observation.ready;
     const accepted = await core.request(request, signal);

@@ -3,8 +3,9 @@ import { join, relative } from "node:path";
 import { createHash } from "node:crypto";
 import { preparedNativeRecipe } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/normalize.mjs";
 import { installOriginal } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/install.mjs";
+import { homedir } from "node:os";
 
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job`;
 const beforePrefix = join(root, "prefix"), imagePrefix = join(root, "latest-image"), secondPrefix = join(root, "latest-independent");
 const revision = Date.now();
 const priorLockPath = join(imagePrefix, "install/global/bun.lock");
@@ -38,7 +39,7 @@ const home = join(root, "latest-installer-home");
 mkdirSync(home, { recursive: true, mode: 0o700 });
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
 const pin = path => ({ path: realpathSync(path), sha256: hash(readFileSync(path)) });
-process.env.ONE_FAMILY_TARGET_RUNTIME = "/Users/beomseok/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json";
+process.env.ONE_FAMILY_TARGET_RUNTIME = `${homedir()}/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json`;
 const old = join(import.meta.dirname, "../.omo/evidence/herdr-cli-updater/task22/update-only-composition-r1/implementation-r1/inputs");
 process.env.ONE_FAMILY_BEFORE_ACQUISITION = join(old, "acquisition.json");
 process.env.ONE_FAMILY_BEFORE_ALIASES = join(old, "alias-closure.json");
@@ -48,7 +49,7 @@ const rows = [...recipe.acquisitionArtifacts.filter(row => !recipe.artifacts.som
 const beforeInstall = JSON.parse(readFileSync(join(root, "evidence/installation.json")));
 const manager = beforeInstall.manager;
 const environment = { HOME: home, BUN_INSTALL: imagePrefix,
-  PATH: "/opt/homebrew/Cellar/bun/1.3.6/bin:/Users/beomseok/.nvm/versions/node/v24.20.0/bin:/usr/bin:/bin" };
+  PATH: `/opt/homebrew/Cellar/bun/1.3.6/bin:${homedir()}/.nvm/versions/node/v24.20.0/bin:/usr/bin:/bin` };
 if (topologyLock) {
   mkdirSync(join(imagePrefix, "install/global"), { recursive: true, mode: 0o700 });
   writeFileSync(join(imagePrefix, "install/global/package.json"), topologyWorkspace);

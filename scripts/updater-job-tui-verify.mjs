@@ -2,13 +2,14 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { startTerminal, openTerminalCapture, bounded } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/terminal.mjs";
 import { attachAuthenticatedWorker } from "../src/service/client.ts";
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job";
+import { homedir } from "node:os";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job`;
 const profile = JSON.parse(readFileSync(join(root, "profile.json")));
 const output = join(root, "tui");
 mkdirSync(output, { recursive: true, mode: 0o700 });
 const signal = AbortSignal.timeout(360000);
 const terminal = startTerminal(["bun", join(import.meta.dirname, "plugin.ts"), "tui"], join(import.meta.dirname, ".."),
-  { ...process.env, HERDR_SOCKET: "/Users/beomseok/.config/herdr/herdr.sock" }, signal);
+  { ...process.env, HERDR_SOCKET: `${homedir()}/.config/herdr/herdr.sock` }, signal);
 const capture = await openTerminalCapture({ paths: { tmp: output } }, "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", process.env);
 let rendering = Promise.resolve();
 const render = raw => {
@@ -38,7 +39,7 @@ const key = async (input, predicate) => {
   await event;
 };
 const sink = async (name, bytes) => writeFileSync(join(output, name), bytes, { mode: 0o600 });
-const client = await attachAuthenticatedWorker("/Users/beomseok/.local/share/herdr-cli-updater/worker", 15000);
+const client = await attachAuthenticatedWorker(`${homedir()}/.local/share/herdr-cli-updater/worker`, 15000);
 let subscription;
 try {
   const originalJobs = await client.request({ operation: "jobs" });

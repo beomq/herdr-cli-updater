@@ -1,7 +1,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { attachAuthenticatedWorker } from "../src/service/client.ts";
 import { defaultWorkerDirectory } from "../src/service/worker.ts";
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/operating-native/evidence";
+import { homedir } from "node:os";
+const root = `${homedir()}/.local/share/herdr-cli-updater/operating-native/evidence`;
 const client = await attachAuthenticatedWorker(defaultWorkerDirectory, 15000);
 try {
   const installations = await client.request({ operation: "installations" });

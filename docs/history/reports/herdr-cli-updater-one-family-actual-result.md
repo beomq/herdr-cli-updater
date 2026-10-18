@@ -8,7 +8,7 @@
 
 이전·이후의 full conversation ID, storage identity, cwd, options SHA-256, environment SHA-256이 모두 일치했다. root PID와 pane generation만 새 실행으로 바뀌었다. 같은 create-job requestId를 다시 전송해 existing job을 받았고, 추가 설치·재시작 없이 binding이 그대로였다.
 
-성공 증거 경로: `/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/runs/c8e8f4ee-31f8-408c-9205-c3b6e5d9a399/`. `job.json`, `native-before-after.json`, `operations.jsonl`, `installer-*.jsonl`, `transition-input-refusal.json`, `actual-bash-proof.json`, `completed-job.png`, `harness-cleanup.json`, `isolation-cleanup.json`에서 확인할 수 있다. before PID 27522, after PID 28751, generation 1→2이며 session identity는 동일하다. 독립 after 파일 28,375개가 모두 일치했다. 성공·실패 소유 root는 제거했고, 부모의 최종 프로세스 조회에서도 `/private/tmp/hq-` QA 프로세스 0건이었다.
+성공 증거 경로: `/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/runs/c8e8f4ee-31f8-408c-9205-c3b6e5d9a399/`. `job.json`, `native-before-after.json`, `operations.jsonl`, `installer-*.jsonl`, `transition-input-refusal.json`, `actual-bash-proof.json`, `completed-job.png`, `harness-cleanup.json`, `isolation-cleanup.json`에서 확인할 수 있다. before PID 27522, after PID 28751, generation 1→2이며 session identity는 동일하다. 독립 after 파일 28,375개가 모두 일치했다. 성공·실패 소유 root는 제거했고, 부모의 최종 프로세스 조회에서도 `/private/tmp/hq-` QA 프로세스 0건이었다.
 
 이전 성공 b9abffd5의 completed-job 캡처는 수동 refresh 전 queued 화면이어서 완료 UI 근거에서 제외했다. 추가 QA에서 독립 target을 target 위에 재설치한 반면 실제 updater는 before 5.1.9 위에 설치해 nearest dependency layout이 달라졌다. 독립 target도 같은 before-version layout에서 생성하도록 수정했다. 실제 시나리오의 after 결과를 정답으로 복사하거나 product guard를 완화하지 않았다. 진단용 임시 제품 코드는 제거했고 `src/adapters/update-context.ts` Git diff가 비어 있음을 확인했다.
 

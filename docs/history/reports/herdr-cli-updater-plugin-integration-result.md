@@ -2,7 +2,7 @@
 
 ## 범위
 
-`/Users/beomseok/Desktop/herdr-cli-updater`의 workspace action → overlay pane →
+`/Users/<user>/Desktop/herdr-cli-updater`의 workspace action → overlay pane →
 `scripts/plugin.ts open` → 실제 worker → 기존 OmO 한 계열 runner/native 재개를 연결했다.
 운영 CLI·현재 사용자 세션·인증 파일은 건드리지 않았다. 커밋·푸시·PR·배포는 하지 않았다.
 
@@ -10,7 +10,7 @@
 
 최종 제품 코드 실행:
 `.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/runs/c626e143-0069-49be-800b-445a98f1f3e0/`
-(경로 기준은 `/Users/beomseok/Desktop/herdr-cli-updater`이다.)
+(경로 기준은 `/Users/<user>/Desktop/herdr-cli-updater`이다.)
 
 - `plugin-action.json`, `plugin-link.json`: 실제 workspace action과 overlay 진입.
 - `catalog.png`, `checked-catalog.png`, `selected-target.png`, `confirm.png`: 목록·최신 버전·명시적 pane 선택·확인.
@@ -24,7 +24,7 @@
 실행 명령:
 
 ```sh
-cd /Users/beomseok/Desktop/herdr-cli-updater
+cd /Users/<user>/Desktop/herdr-cli-updater
 ONE_FAMILY_PARENT_RELEASE=1 ONE_FAMILY_PLUGIN_ACTION=1 bun .omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/run.mjs
 ```
 
@@ -49,7 +49,7 @@ runtime·worker·runtime 테스트 LSP error 없음.
 
 ## 사용과 한계
 
-기본 진입은 `bun run build`, `herdr plugin link /Users/beomseok/Desktop/herdr-cli-updater`,
+기본 진입은 `bun run build`, `herdr plugin link /Users/<user>/Desktop/herdr-cli-updater`,
 `herdr plugin action invoke updater --plugin beomq.cli-updater`이다.
 색상·테두리·선택 강조가 있는 목록에서 `c` 확인, Enter 선택·확인, Space pane 선택,
 `m` 모드, `u` 진행 재조회, `q` 화면 닫기를 사용한다.

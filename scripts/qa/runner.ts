@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { chmod, lstat, mkdir, mkdtemp, readdir, readlink, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import type { Subprocess } from "bun";
+import { homedir } from "node:os";
 
 export class QaError extends Error {
   constructor(readonly code: string, message: string) {
@@ -427,7 +428,7 @@ const archives = new WeakMap<QaContext, Map<ArchiveReceipt, {
 // Bootstrap's independently acquired private compiler, not a registry/caller claim.
 // Another toolchain requires a new acquisition proof, not matching version text.
 const acquiredCompiler = {
-  root: "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin",
+  root: `${homedir()}/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin`,
   rustcSha256: "d10051fa870c54067bd21047e9709084141ffff65695537eb2c0c5d2477467d4",
   cargoSha256: "f00ad85ca0a5b0f15b2a7658f15ef3195d9a04d2763921c1f9eaaa51f0136fe8",
 } as const;

@@ -3,10 +3,11 @@ import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { preparedNativeRecipe } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/normalize.mjs";
+import { homedir } from "node:os";
 
 const product = join(import.meta.dirname, "..");
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/original-omo-integration";
-const original = "/Users/beomseok/.bun/install/global";
+const root = `${homedir()}/.local/share/herdr-cli-updater/original-omo-integration`;
+const original = `${homedir()}/.bun/install/global`;
 const prefix = join(root, "prepared-prefix");
 const global = join(prefix, "install/global");
 mkdirSync(global, { recursive: true, mode: 0o700 });
@@ -17,7 +18,7 @@ const beforeManifest = readFileSync(join(original, "package.json"));
 const beforeLock = readFileSync(join(original, "bun.lock"));
 copyFileSync(join(original, "package.json"), join(global, "package.json"));
 copyFileSync(join(original, "bun.lock"), join(global, "bun.lock"));
-process.env.ONE_FAMILY_TARGET_RUNTIME = "/Users/beomseok/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json";
+process.env.ONE_FAMILY_TARGET_RUNTIME = `${homedir()}/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json`;
 process.env.ONE_FAMILY_BEFORE_ACQUISITION = join(product, ".omo/evidence/herdr-cli-updater/task22/update-only-composition-r1/implementation-r1/inputs/acquisition.json");
 process.env.ONE_FAMILY_BEFORE_ALIASES = join(product, ".omo/evidence/herdr-cli-updater/task22/update-only-composition-r1/implementation-r1/inputs/alias-closure.json");
 const recipe = preparedNativeRecipe("/private/tmp/herdr-prompt-preset-native-519-r6/preparation.json");
@@ -57,7 +58,7 @@ try {
     cwd: root, stdin: "ignore", stdout: "pipe", stderr: "pipe",
     env: { HOME: home, BUN_INSTALL: prefix, BUN_CONFIG_REGISTRY: `http://127.0.0.1:${server.port}`,
       BUN_INSTALL_CACHE_DIR: join(root, "uncompressed-cache"),
-      PATH: "/opt/homebrew/Cellar/bun/1.3.6/bin:/Users/beomseok/.nvm/versions/node/v24.20.0/bin:/usr/bin:/bin" },
+      PATH: `/opt/homebrew/Cellar/bun/1.3.6/bin:${homedir()}/.nvm/versions/node/v24.20.0/bin:/usr/bin:/bin` },
   });
   const [stdout, stderr, exitCode] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
   const before = Bun.JSON5.parse(beforeLock.toString());
@@ -105,7 +106,7 @@ try {
       cwd: root, stdin: "ignore", stdout: "pipe", stderr: "pipe",
       env: { HOME: home, BUN_INSTALL: prefix, BUN_CONFIG_REGISTRY: `http://127.0.0.1:${server.port}`,
         BUN_INSTALL_CACHE_DIR: join(root, "uncompressed-cache"),
-        PATH: "/opt/homebrew/Cellar/bun/1.3.6/bin:/Users/beomseok/.nvm/versions/node/v24.20.0/bin:/usr/bin:/bin" },
+        PATH: `/opt/homebrew/Cellar/bun/1.3.6/bin:${homedir()}/.nvm/versions/node/v24.20.0/bin:/usr/bin:/bin` },
     });
     const [installOut, installErr, installExit] = await Promise.all([
       new Response(install.stdout).text(), new Response(install.stderr).text(), install.exited,
@@ -115,7 +116,7 @@ try {
     if (digest(readFileSync(join(global, "bun.lock"))) !== digest(afterBytes)) throw new Error("Frozen installation changed prepared lock");
     const version = Bun.spawn(["/opt/homebrew/Cellar/bun/1.3.6/bin/bun", join(global, "node_modules/omo-ai/bin/omo.js"), "--version"], {
       cwd: root, stdin: "ignore", stdout: "pipe", stderr: "pipe",
-      env: { HOME: home, BUN_INSTALL: prefix, PATH: "/opt/homebrew/Cellar/bun/1.3.6/bin:/Users/beomseok/.nvm/versions/node/v24.20.0/bin:/usr/bin:/bin" },
+      env: { HOME: home, BUN_INSTALL: prefix, PATH: `/opt/homebrew/Cellar/bun/1.3.6/bin:${homedir()}/.nvm/versions/node/v24.20.0/bin:/usr/bin:/bin` },
     });
     const [versionOut, versionErr, versionExit] = await Promise.all([
       new Response(version.stdout).text(), new Response(version.stderr).text(), version.exited,

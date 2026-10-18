@@ -10,12 +10,13 @@ import { CoreOperationsClient } from "../src/core/client.ts";
 import { preparePluginRuntime } from "../src/service/plugin-runtime.ts";
 import { discoverWorker, stopWorker } from "../src/service/worker.ts";
 import { attachAuthenticatedWorker } from "../src/service/client.ts";
+import { homedir } from "node:os";
 
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/operating-native";
+const root = `${homedir()}/.local/share/herdr-cli-updater/operating-native`;
 const prefix = join(root, process.env.OPERATING_NATIVE_PREFIX_NAME ?? "prefix"), evidence = join(root, "evidence");
 const exec = join(import.meta.dirname, "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution");
 const acquired = join(import.meta.dirname, "../.omo/evidence/herdr-cli-updater/task22/update-only-composition-r1/implementation-r1/inputs");
-process.env.ONE_FAMILY_TARGET_RUNTIME = "/Users/beomseok/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json";
+process.env.ONE_FAMILY_TARGET_RUNTIME = `${homedir()}/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json`;
 process.env.ONE_FAMILY_BEFORE_ACQUISITION = join(acquired, "acquisition.json");
 process.env.ONE_FAMILY_BEFORE_ALIASES = join(acquired, "alias-closure.json");
 const recipe = preparedNativeRecipe(process.env.OPERATING_NATIVE_PREPARATION ?? "/private/tmp/herdr-session-restart-native-519-r3/preparation.json");
@@ -29,16 +30,16 @@ Object.assign(installation.environment, {
   HERDR_NATIVE_SENPI_ROOT: join(prefix, "install/global/node_modules/@code-yeongyu/senpi"),
   HERDR_NATIVE_OMO_PLUGIN: join(prefix, "install/global/node_modules/omo-ai/plugin"),
   OMO_RUNTIME: "bun", SENPI_RUNTIME: "bun", TERM: "xterm-256color", SHELL: "/bin/zsh",
-  HERDR_SOCKET: "/Users/beomseok/.config/herdr/herdr.sock",
-  OMO_CODING_AGENT_DIR: "/Users/beomseok/.omo/agent",
-  SENPI_CODING_AGENT_DIR: "/Users/beomseok/.omo/agent",
-  PI_CODING_AGENT_DIR: "/Users/beomseok/.omo/agent",
+  HERDR_SOCKET: `${homedir()}/.config/herdr/herdr.sock`,
+  OMO_CODING_AGENT_DIR: `${homedir()}/.omo/agent`,
+  SENPI_CODING_AGENT_DIR: `${homedir()}/.omo/agent`,
+  PI_CODING_AGENT_DIR: `${homedir()}/.omo/agent`,
 });
 const hash = value => createHash("sha256").update(value).digest("hex");
 const pin = path => ({ path: realpathSync(path), sha256: hash(readFileSync(path)) });
 const save = (name, value) => { const path = join(evidence, name); writeFileSync(path, JSON.stringify(value), { mode: 0o600 }); return pin(path); };
-const socket = "/Users/beomseok/.config/herdr/herdr.sock", cwd = "/Users/beomseok/Desktop/portfolio";
-const operationsRoot = join("/Users/beomseok/.config/herdr", `updater-operations-${hash(socket)}`);
+const socket = `${homedir()}/.config/herdr/herdr.sock`, cwd = `${homedir()}/Desktop/portfolio`;
+const operationsRoot = join(`${homedir()}/.config/herdr`, `updater-operations-${hash(socket)}`);
 const profiles = join(operationsRoot, "profiles");
 mkdirSync(profiles, { recursive: true, mode: 0o700 });
 const core = await CoreOperationsClient.discover(socket, AbortSignal.timeout(10000));
@@ -131,7 +132,7 @@ const acquiredArtifacts = manifests.map(row => {
   return { ...row, archive: source.archive, metadata: source.metadata };
 });
 const { artifacts, grants } = targetArtifacts(recipe, acquiredArtifacts);
-const node = pin("/Users/beomseok/.nvm/versions/node/v24.20.0/bin/node");
+const node = pin(`${homedir()}/.nvm/versions/node/v24.20.0/bin/node`);
 const installerHome = join(root, "installer-home");
 mkdirSync(installerHome, { mode: 0o700, recursive: true });
 const now = Date.now(), qualification = { installation: before, manager: { ...installation.manager, name: "bun" },
@@ -140,7 +141,7 @@ const now = Date.now(), qualification = { installation: before, manager: { ...in
   target: { packageName: "omo-ai", version: "5.1.19", channel: "latest", checkedAt: now, expiresAt: now + 300000, artifacts,
     postinstall: independent.filter(p => p.path.startsWith(join(prefix, "install/global/node_modules/"))) } };
 const metadata = recipe.artifacts.find(a => a.name === "omo-ai").provenance.vendor.metadata;
-const sockets = "/Users/beomseok/.config/herdr", worker = "/Users/beomseok/.local/share/herdr-cli-updater/worker";
+const sockets = `${homedir()}/.config/herdr`, worker = `${homedir()}/.local/share/herdr-cli-updater/worker`;
 const registeredSockets = [];
 function collectSockets(directory) {
   for (const row of readdirSync(directory, { withFileTypes: true })) {
@@ -157,7 +158,7 @@ const candidate = { schemaVersion: 1, profile: "omo-qualified-native-abi4", owne
     { url: "https://registry.npmjs.org/omo-ai/5.1.19", status: 200, body: metadata }],
   native: { coreSocket: socket, coreIdentity: core.identity, operationsPath: join(operationsRoot, "operations.jsonl"),
     runtimeId: `operating:${session.fullId}`, profile: profileName, sessionPath: session.file, sourceBinding: recipe.sourceBinding,
-    node: pin("/Users/beomseok/.nvm/versions/node/v24.20.0/bin/node"), paneId: pane },
+    node: pin(`${homedir()}/.nvm/versions/node/v24.20.0/bin/node`), paneId: pane },
   coverage: { root, prefix, socketDirectory: sockets, registeredSockets, rootPids: [native.binding.supervisor.pid] } };
 const revision = Date.now();
 const candidatePath = save(`candidate-${revision}.json`, candidate).path;

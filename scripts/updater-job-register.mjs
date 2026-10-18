@@ -9,10 +9,11 @@ import { discoverWorker, stopWorker, startWorker } from "../src/service/worker.t
 import { preparedNativeRecipe } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/normalize.mjs";
 import { targetArtifacts } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/issued-inputs.mjs";
 import { qualifyOmoUpdate } from "../src/adapters/update-context.ts";
+import { homedir } from "node:os";
 
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job";
-const prefix = join(root, "prefix"), worker = "/Users/beomseok/.local/share/herdr-cli-updater/worker";
-const socket = "/Users/beomseok/.config/herdr/herdr.sock", sockets = "/Users/beomseok/.config/herdr";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job`;
+const prefix = join(root, "prefix"), worker = `${homedir()}/.local/share/herdr-cli-updater/worker`;
+const socket = `${homedir()}/.config/herdr/herdr.sock`, sockets = `${homedir()}/.config/herdr`;
 const profile = JSON.parse(readFileSync(join(root, "profile.json"))), image = JSON.parse(readFileSync(join(root, "latest-image.json")));
 const beforeInstall = JSON.parse(readFileSync(join(root, "evidence/installation.json")));
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
@@ -85,7 +86,7 @@ const { artifacts, grants } = targetArtifacts(recipe, acquiredArtifacts);
 const home = join(root, "installer-home");
 mkdirSync(home, { recursive: true, mode: 0o700 });
 const now = Date.now();
-const node = pin("/Users/beomseok/.nvm/versions/node/v24.20.0/bin/node");
+const node = pin(`${homedir()}/.nvm/versions/node/v24.20.0/bin/node`);
 const qualification = { installation: before, manager: { ...beforeInstall.manager, name: "bun", node },
   env: { BUN_INSTALL: prefix, HOME: home, PATH: [beforeInstall.manager.path.slice(0, beforeInstall.manager.path.lastIndexOf("/")),
     node.path.slice(0, node.path.lastIndexOf("/"))].join(":") },
@@ -113,7 +114,7 @@ const candidate = { schemaVersion: 1, profile: "omo-qualified-native-abi4", owne
     { url: `https://registry.npmjs.org/omo-ai/${recipe.target.version}`, status: 200, body: recipe.artifacts.find(a => a.name === "omo-ai").provenance.vendor.metadata }],
   native: { coreSocket: socket, coreIdentity: core.identity, operationsPath: join(profile.operationRoot, "operations.jsonl"),
     runtimeId: `actual-job:${profile.session.fullId}`, profile: profile.afterProfile, sessionPath: profile.session.file,
-    sourceBinding: recipe.sourceBinding, node: pin("/Users/beomseok/.nvm/versions/node/v24.20.0/bin/node"), paneId: profile.pane },
+    sourceBinding: recipe.sourceBinding, node: pin(`${homedir()}/.nvm/versions/node/v24.20.0/bin/node`), paneId: profile.pane },
   coverage: { root, prefix, socketDirectory: sockets, registeredSockets, rootPids: [native.binding.supervisor.pid] } };
 const tagsPath = join(root, `dist-tags-${revision}.json`);
 writeFileSync(tagsPath, acquired.acquiredDistTags, { flag: "wx", mode: 0o600 });
@@ -144,7 +145,7 @@ if (existsSync(jobsDirectory)) {
 }
 const runtimePath = join(root, `runtime-${revision}.json`);
 await preparePluginRuntime(candidatePath, runtimePath, { directory: worker, coreSocket: socket });
-const configRoot = "/Users/beomseok/.local/share/herdr-cli-updater", runtimeConfig = join(configRoot, "runtime.json");
+const configRoot = `${homedir()}/.local/share/herdr-cli-updater`, runtimeConfig = join(configRoot, "runtime.json");
 const existing = JSON.parse(readFileSync(runtimeConfig));
 if (existing.profile !== RUNTIME_SET_PROFILE) throw new Error("Existing runtime set required");
 const configurations = existing.configurations.filter(pin => {
@@ -164,7 +165,7 @@ renameSync(runtimeConfig, `${runtimeConfig}.${revision}-before-actual-job`);
 renameSync(nextRuntime, runtimeConfig);
 process.env.HERDR_CLI_UPDATER_RUNTIME_CONFIG = runtimeConfig;
 process.env.HERDR_SOCKET = socket;
-await startWorker(worker, { home: "/Users/beomseok", path: process.env.PATH,
+await startWorker(worker, { home: homedir(), path: process.env.PATH,
   prefixes: ["/opt/homebrew", "/usr/local"], socket });
 const started = await attachAuthenticatedWorker(worker, 15000);
 try { const targets = await started.request({ operation: "targets", installationId: before.installationId });

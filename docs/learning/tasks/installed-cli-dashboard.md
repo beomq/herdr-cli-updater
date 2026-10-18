@@ -107,7 +107,7 @@ Pi 하위 패키지 제거는 OmO에 영향을 줄 수 있어 독립 CLI 제거�
 
 ## 로컬 반영
 
-- 같은 상태 저장소 `/Users/beomseok/.local/share/cli-updater`, 같은 주소
+- 같은 상태 저장소 `/Users/<user>/.local/share/cli-updater`, 같은 주소
   `http://127.0.0.1:62204`에서 웹 서비스만 정상 재시작했다.
   PID 43793 → 88272. CLI 프로세스 종료·설치 변경 명령은 실행하지 않았다.
 - 실제 인증 화면에서 설치 11종을 확인했다. 서비스 ready,

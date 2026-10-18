@@ -3,10 +3,11 @@ import { join } from "node:path";
 import { attachAuthenticatedWorker } from "../src/service/client.ts";
 import { CoreOperationsClient } from "../src/core/client.ts";
 import { coreRequest } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/run.mjs";
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job";
+import { homedir } from "node:os";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job`;
 const job = JSON.parse(readFileSync(join(root, "actual-job.json")));
 const profile = JSON.parse(readFileSync(join(root, "profile.json")));
-const client = await attachAuthenticatedWorker("/Users/beomseok/.local/share/herdr-cli-updater/worker", 15000);
+const client = await attachAuthenticatedWorker(`${homedir()}/.local/share/herdr-cli-updater/worker`, 15000);
 try {
   const inspection = await client.request({ operation: "inspect-job", jobId: job.jobId });
   if (!inspection.ok) throw new Error("Actual updater job inspection failed");
@@ -15,7 +16,7 @@ try {
     console.log(`UPDATER_JOB_PENDING ${current.status} ${current.installTxn.state}`);
     process.exitCode = 1;
   } else {
-    const core = await CoreOperationsClient.discover("/Users/beomseok/.config/herdr/herdr.sock", AbortSignal.timeout(10000));
+    const core = await CoreOperationsClient.discover(`${homedir()}/.config/herdr/herdr.sock`, AbortSignal.timeout(10000));
     const snapshot = await core.request({ action: "inspect", pane_id: profile.pane }, AbortSignal.timeout(10000));
     const screen = await coreRequest(core.socketId, "pane.read", { pane_id: profile.pane, source: "visible", lines: 14 }, AbortSignal.timeout(10000));
     const installedVersion = JSON.parse(readFileSync(join(root, "prefix/install/global/node_modules/omo-ai/package.json"))).version;

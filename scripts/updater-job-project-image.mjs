@@ -3,14 +3,15 @@ import { join, relative } from "node:path";
 import { createHash } from "node:crypto";
 import { preparedNativeRecipe } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/normalize.mjs";
 import { targetArtifacts } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/issued-inputs.mjs";
+import { homedir } from "node:os";
 
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job`;
 const image = JSON.parse(readFileSync(join(root, "latest-image.json")));
-const set = JSON.parse(readFileSync("/Users/beomseok/.local/share/herdr-cli-updater/runtime.json"));
+const set = JSON.parse(readFileSync(`${homedir()}/.local/share/herdr-cli-updater/runtime.json`));
 const input = JSON.parse(readFileSync(set.configurations.find(row => row.path.startsWith(root + "/")).path));
 const prefix = input.coverage.prefix;
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
-process.env.ONE_FAMILY_TARGET_RUNTIME = "/Users/beomseok/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json";
+process.env.ONE_FAMILY_TARGET_RUNTIME = `${homedir()}/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json`;
 const old = join(import.meta.dirname, "../.omo/evidence/herdr-cli-updater/task22/update-only-composition-r1/implementation-r1/inputs");
 process.env.ONE_FAMILY_BEFORE_ACQUISITION = join(old, "acquisition.json");
 process.env.ONE_FAMILY_BEFORE_ALIASES = join(old, "alias-closure.json");

@@ -15,7 +15,7 @@
 ## 현재 검증
 
 부모: 전체 제품2253 pass0fail, typecheck/build exit0. core75개 nextest pass, core release build exit0. just 미설치로 기존 isolated Rust toolchain cargo nextest 사용.
-실제 제품 `launch → prepare → action` whole flow: `/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/runs/2b84079a-0219-49df-83ee-88ae897c564d` PASS exit0. genuine current native packages5.1.9→5.1.10. Busy 자연 완료, transition input refusal, graceful stop, original Bun install, native resume, release, duplicate effects0. before/final session 전체 object(full id/storage/cwd/options/env) 동일, root PID73125→73700. cleanup rootRemoved/action joined/resourcesRemaining0. 정상·작은 화면 직접 확인.
+실제 제품 `launch → prepare → action` whole flow: `/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/runs/2b84079a-0219-49df-83ee-88ae897c564d` PASS exit0. genuine current native packages5.1.9→5.1.10. Busy 자연 완료, transition input refusal, graceful stop, original Bun install, native resume, release, duplicate effects0. before/final session 전체 object(full id/storage/cwd/options/env) 동일, root PID73125→73700. cleanup rootRemoved/action joined/resourcesRemaining0. 정상·작은 화면 직접 확인.
 
 ## 미완료
 

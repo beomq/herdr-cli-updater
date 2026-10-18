@@ -2,7 +2,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { CoreOperationsClient, OperationFailure } from "../src/core/client.ts";
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job";
+import { homedir } from "node:os";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job`;
 const profile = JSON.parse(readFileSync(join(root, "profile.json")));
 const job = JSON.parse(readFileSync(join(root, "actual-job-terminal.json")));
 if (job.status !== "recovery_required" || job.installTxn.state !== "queued") throw new Error("Baseline recovery not applicable");
@@ -11,7 +12,7 @@ const canonical = value => Array.isArray(value) ? value.map(canonical)
   : value !== null && typeof value === "object" ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
 const claimId = `op-${createHash("sha256").update(JSON.stringify(canonical([job.jobId, selected.targetId, "claim"]))).digest("hex")}`;
 const stopId = job.targetTxns[0].receipt.operationId;
-const client = await CoreOperationsClient.discover("/Users/beomseok/.config/herdr/herdr.sock", AbortSignal.timeout(10000));
+const client = await CoreOperationsClient.discover(`${homedir()}/.config/herdr/herdr.sock`, AbortSignal.timeout(10000));
 const signal = AbortSignal.timeout(90000);
 const claim = await client.request({ action: "result", operation_id: claimId }, signal);
 const stop = await client.request({ action: "result", operation_id: stopId }, signal);
@@ -20,7 +21,7 @@ if (!claim.owner_token || stop.receipt?.status !== "completed" || stop.receipt.a
   throw new Error("Exact completed stop recovery unavailable");
 async function dispatch(request) {
   const observation = client.observeOperation(request.operation_id, join(profile.operationRoot, "operations.jsonl"), signal,
-    "/Users/beomseok/.nvm/versions/node/v24.20.0/bin/node");
+    `${homedir()}/.nvm/versions/node/v24.20.0/bin/node`);
   try {
     await observation.ready;
     let result;

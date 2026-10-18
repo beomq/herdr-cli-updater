@@ -5,7 +5,7 @@ import { once } from "node:events";
 import { chmodSync, cpSync, linkSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, readdirSync,
   realpathSync, rmSync, symlinkSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { PackagePrefixSnapshot } from "../../src/adapters/package-update";
 import { createPackageUpdateSpec, executePackageUpdate, qualifyPackageUpdate } from "../../src/adapters/package-update";
@@ -21,7 +21,7 @@ import { serveWorker } from "../../src/service/worker";
 
 const roots: string[] = [], cleanups: (() => Promise<void>)[] = [];
 const hash = (bytes: Uint8Array | string): string => createHash("sha256").update(bytes).digest("hex");
-const node = realpathSync("/Users/beomseok/.nvm/versions/node/v24.20.0/bin/node");
+const node = realpathSync(`${homedir()}/.nvm/versions/node/v24.20.0/bin/node`);
 const tools = realpathSync(mkdtempSync(join(tmpdir(), "prepare-original-npm-")));
 const npm = join(tools, "package/bin/npm-cli.js");
 beforeAll(async () => {

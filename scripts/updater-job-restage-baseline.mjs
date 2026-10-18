@@ -6,13 +6,14 @@ import { discoverWorker, stopWorker } from "../src/service/worker.ts";
 import { CoreOperationsClient } from "../src/core/client.ts";
 import { coreRequest } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/run.mjs";
 import { installOriginal } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/install.mjs";
+import { homedir } from "node:os";
 
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job";
-const worker = "/Users/beomseok/.local/share/herdr-cli-updater/worker";
-const prefix = join(root, "prefix"), socket = "/Users/beomseok/.config/herdr/herdr.sock";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job`;
+const worker = `${homedir()}/.local/share/herdr-cli-updater/worker`;
+const prefix = join(root, "prefix"), socket = `${homedir()}/.config/herdr/herdr.sock`;
 const profile = JSON.parse(readFileSync(join(root, "profile.json")));
 const installation = JSON.parse(readFileSync(join(root, "evidence/installation.json")));
-const baseline = JSON.parse(readFileSync("/Users/beomseok/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json"));
+const baseline = JSON.parse(readFileSync(`${homedir()}/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json`));
 const current = JSON.parse(readFileSync(join(prefix, "install/global/node_modules/omo-ai/package.json")));
 if (current.version !== "5.1.21" || baseline.update.qualification.target.version !== "5.1.19") throw new Error("Unexpected trial versions");
 const pane = "w1V:p1";

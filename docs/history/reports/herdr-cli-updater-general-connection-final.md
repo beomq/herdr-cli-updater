@@ -10,10 +10,10 @@
 
 ## 실제 정상 흐름
 
-P: `/Users/beomseok/Desktop/herdr-cli-updater`.
-C: `/Users/beomseok/Desktop/herdr-updater-core`.
+P: `/Users/<user>/Desktop/herdr-cli-updater`.
+C: `/Users/<user>/Desktop/herdr-updater-core`.
 
-실행 폴더: `/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/runs/fa7b839e-2fbf-4775-a3ec-2e115f8a56db`.
+실행 폴더: `/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/runs/fa7b839e-2fbf-4775-a3ec-2e115f8a56db`.
 
 - 원본 genuine OmO5.1.9→5.1.17, paired Senpi2026.10.1-3→2026.10.8. 실제 public archives와 source 빌드, 원래 isolated Bun install 사용.
 - plugin `launch`/`prepare`/herdr action/overlay/실제 worker job을 통해 수행, QA가 native lifecycle을 대체하지 않음.
@@ -44,15 +44,15 @@ C: `/Users/beomseok/Desktop/herdr-updater-core`.
 ## 운영 적용과 직접 확인
 
 운영 적용은 하지 않았다. stock herdr0.9.3는 native updater 미지원이므로 plugin 등록만으로 실제 update/restart가 생기지 않는다.
-검증 native binary: `/Users/beomseok/Desktop/herdr-updater-toolchain/task20-core-r2-target/release/herdr`.
+검증 native binary: `/Users/<user>/Desktop/herdr-updater-toolchain/task20-core-r2-target/release/herdr`.
 
 별도 native 지원 환경에 실제 설치별 candidate/profile이 준비돼야 한다.
 `USAGE.md`와 `scripts/native-prepare/README.md`에 private 입력 계약·준비·재사용 명령을 기록했다.
 
 ```sh
-cd /Users/beomseok/Desktop/herdr-cli-updater
+cd /Users/<user>/Desktop/herdr-cli-updater
 # native 지원 herdr 별도 환경에서 등록·열기
-herdr plugin link /Users/beomseok/Desktop/herdr-cli-updater
+herdr plugin link /Users/<user>/Desktop/herdr-cli-updater
 herdr plugin action invoke updater --plugin beomq.cli-updater
 # 실제 core private profile이 준비된 pristine shell pane
 bun scripts/plugin.ts launch <pane-id> <private-profile-id>

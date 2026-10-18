@@ -1,12 +1,13 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { startTerminal, openTerminalCapture } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/terminal.mjs";
+import { homedir } from "node:os";
 
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/operating-native/evidence/enter";
+const root = `${homedir()}/.local/share/herdr-cli-updater/operating-native/evidence/enter`;
 mkdirSync(root, { recursive: true, mode: 0o700 });
 const signal = AbortSignal.timeout(120000);
 const terminal = startTerminal(["bun", join(import.meta.dirname, "plugin.ts"), "tui"], join(import.meta.dirname, ".."),
-  { ...process.env, HERDR_SOCKET: "/Users/beomseok/.config/herdr/herdr.sock" }, signal);
+  { ...process.env, HERDR_SOCKET: `${homedir()}/.config/herdr/herdr.sock` }, signal);
 const capture = await openTerminalCapture({ paths: { tmp: root } }, "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", process.env);
 const sink = async (name, bytes) => { writeFileSync(join(root, name), bytes, { mode: 0o600 }); };
 const screen = raw => capture.screen(raw, terminal.cols, terminal.rows);

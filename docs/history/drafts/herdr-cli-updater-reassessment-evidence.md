@@ -50,7 +50,7 @@
 
 ## 정식 리뷰
 round herdr-cli-updater-r1, task st_01a0fbc2 terminal completed, child session01a0fbc2-f4eb-7f46-b3b1-dcaceb6c871b. Native plan-reviewer verdict **[OKAY]**, no blocking comments/conditions. Existing sources checked; IS-1~IS-7 all tasks/QA mapped. herdr fence dependency explicitly missing and tasks1/7 gate completion, so not blocking plan approval.
-Reviewer target .omo/plans/herdr-cli-updater.md workspace /Users/beomseok/Desktop/portfolio. Before launch and after verdict same SHA25648bd8c2de039cef6caf84edd96de40d3bb43d32ab2340c5a23873356b548b6af,38349bytes; safe O_NOFOLLOW fd-chain validation PASS both. No plan edits between review and receipt.
+Reviewer target .omo/plans/herdr-cli-updater.md workspace /Users/<user>/Desktop/portfolio. Before launch and after verdict same SHA25648bd8c2de039cef6caf84edd96de40d3bb43d32ab2340c5a23873356b548b6af,38349bytes; safe O_NOFOLLOW fd-chain validation PASS both. No plan edits between review and receipt.
 
 ## 완료 감사
 1. Actual herdr/web-ui mechanism facts and missing guarantees: draft mechanism matrix plus plan evidence ledger/source citations/help; PASS. No idle/resume guarantee inferred.

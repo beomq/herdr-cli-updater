@@ -35,7 +35,7 @@ worker 상태와 작업 DB, launcher 백업, `registry.json`, 최신 QA 사본�
 
 ```sh
 bun test test/service/preparation-retention.test.ts scripts/family-update/retention.test.mjs
-bun scripts/cleanup-retained.ts /Users/beomseok/.local/share/herdr-cli-updater
+bun scripts/cleanup-retained.ts /Users/<user>/.local/share/herdr-cli-updater
 omo --version
 du -sh ~/.local/share/herdr-cli-updater/worker-preparations
 ```

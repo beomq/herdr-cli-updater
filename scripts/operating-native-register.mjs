@@ -4,8 +4,9 @@ import { createHash } from "node:crypto";
 import { configurePluginRuntime, RUNTIME_SET_PROFILE } from "../src/service/plugin-runtime.ts";
 import { discoverWorker, stopWorker, startWorker, defaultWorkerDirectory } from "../src/service/worker.ts";
 import { attachAuthenticatedWorker } from "../src/service/client.ts";
+import { homedir } from "node:os";
 
-const root = "/Users/beomseok/.local/share/herdr-cli-updater";
+const root = `${homedir()}/.local/share/herdr-cli-updater`;
 const native = JSON.parse(readFileSync(join(root, "operating-native/evidence/applied.json"))).runtime, runtime = join(root, "runtime.json");
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
 if (existsSync(defaultWorkerDirectory)) {
@@ -20,7 +21,7 @@ if (existsSync(defaultWorkerDirectory)) {
 const registry = join(root, "worker.catalog/auto-sources.json");
 const original = readFileSync(registry);
 const state = JSON.parse(original);
-const approved = new Set(["/Users/beomseok/.bun/bin/omo", "/Users/beomseok/.bun/install/global/node_modules/.bin/omo"]);
+const approved = new Set([`${homedir()}/.bun/bin/omo`, `${homedir()}/.bun/install/global/node_modules/.bin/omo`]);
 for (const reference of state.pins) {
   if (approved.has(reference.path)) {
     reference.sha256 = hash(readFileSync(reference.path));
@@ -41,8 +42,8 @@ configurePluginRuntime(next, { schemaVersion: 1, profile: RUNTIME_SET_PROFILE, c
 renameSync(runtime, `${runtime}.${Date.now()}-before-native`);
 renameSync(next, runtime);
 process.env.HERDR_CLI_UPDATER_RUNTIME_CONFIG = runtime;
-process.env.HERDR_SOCKET = "/Users/beomseok/.config/herdr/herdr.sock";
-await startWorker(defaultWorkerDirectory, { home: "/Users/beomseok", path: process.env.PATH,
+process.env.HERDR_SOCKET = `${homedir()}/.config/herdr/herdr.sock`;
+await startWorker(defaultWorkerDirectory, { home: homedir(), path: process.env.PATH,
   prefixes: ["/opt/homebrew", "/usr/local"], socket: process.env.HERDR_SOCKET });
 const client = await attachAuthenticatedWorker(defaultWorkerDirectory, 15000);
 try {

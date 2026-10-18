@@ -3,8 +3,9 @@ import { join, relative } from "node:path";
 import { createHash } from "node:crypto";
 import { discoverExecutable } from "../src/discovery.ts";
 import { qualifyOmoUpdate, createOmoUpdateSpec, executeOmoUpdate } from "../src/adapters/update-context.ts";
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job";
-const set = JSON.parse(readFileSync("/Users/beomseok/.local/share/herdr-cli-updater/runtime.json"));
+import { homedir } from "node:os";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job`;
+const set = JSON.parse(readFileSync(`${homedir()}/.local/share/herdr-cli-updater/runtime.json`));
 const input = JSON.parse(readFileSync(set.configurations.find(p => p.path.startsWith(root + "/")).path));
 const probe = process.argv[2] ?? join(root, `installer-probe-${Date.now()}`), prefix = join(probe, "prefix"), home = join(probe, "home");
 if (!process.argv[2]) {

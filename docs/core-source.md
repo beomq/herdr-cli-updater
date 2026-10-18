@@ -8,24 +8,24 @@
 관측 설명 문자열은 지원 판정에 사용하지 않는다. SHA, Git ref/tag, 파일, JSON receipt와 실제 readonly binary 출력만 검사한다.
 
 2026-10-02 source acquisition 보고서:
-`/Users/beomseok/Desktop/portfolio/.omo/ulw-execute/task5-core-bootstrap.json`.
+`/Users/<user>/Desktop/portfolio/.omo/ulw-execute/task5-core-bootstrap.json`.
 
 - 설치 herdr는 `0.9.1`, protocol `22`, schema_version `1`이다. 직접 `herdr --version`, `herdr api schema --json`을 실행했다.
 - 설치 schema stdout SHA256: `226d4ecbd128d2e6bc84e4c8ddcec21ba9c7e51a0aafffcf087111ead3f1fa9a`.
 - 획득 보고서는 설치 binary SHA256 `5fc7a7e7adfaca56fa80aa89dcb025693357268dab8285b9ce2d08a2313c89de`와 공식 v0.9.1 macOS arm64 asset digest 일치, tag schema 일치를 기록한다.
 - 설치 release의 peeled source commit은 `065ef9d6a531c49fb8bee7e818ef837065b21ee9`, tag `v0.9.1`이다.
 - 처음 확보한 public ref `65e35a3858b4a9f6cb9bdf712ffb16c474363846`는 Cargo `0.9.3`이고 정확히 가리키는 release tag가 없다. schema SHA256은 `9e2af207e9aa8183d4aeca5fde9cc48e7909bb40cdbd7cf21608a6d3ea78075b`로 설치본과 다르다. protocol22만 같다고 source가 같지는 않다.
-- r2 보고서 `/Users/beomseok/Desktop/portfolio/.omo/ulw-execute/task5-core-bootstrap-r2.json`은 C를 공식 v0.9.1 ref로 선택하고 private Rust/Zig와 실제 metadata를 확보했다. metadata는 build가 아니다. 실제 source build qualification은 계속 미완료이며 C는 다른 작업자 소유다.
+- r2 보고서 `/Users/<user>/Desktop/portfolio/.omo/ulw-execute/task5-core-bootstrap-r2.json`은 C를 공식 v0.9.1 ref로 선택하고 private Rust/Zig와 실제 metadata를 확보했다. metadata는 build가 아니다. 실제 source build qualification은 계속 미완료이며 C는 다른 작업자 소유다.
 
 ### 현재 격리 build 관측
 
-`/Users/beomseok/Desktop/portfolio/.omo/ulw-execute/task5-core-baseline.json`과 `task5-core-parent-verify.json`은 이후 실제 release build를 확인한다. "아직 build를 하지 않았다"는 이전 상태는 현재 inventory에 적용하지 않는다.
+`/Users/<user>/Desktop/portfolio/.omo/ulw-execute/task5-core-baseline.json`과 `task5-core-parent-verify.json`은 이후 실제 release build를 확인한다. "아직 build를 하지 않았다"는 이전 상태는 현재 inventory에 적용하지 않는다.
 
 - official v0.9.1 ref `065ef9d6a531c49fb8bee7e818ef837065b21ee9`, tree `25c7ed13ca34ac9530d27050d679c0e820022e0c`.
-- immutable archive `/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-source.tar`, SHA256 `050b31ce77072c7ddf98e8f43cd261f531ff4fec3d4a0da9adcf9e1f50c56aa7`; extraction은 `baseline-source`다.
+- immutable archive `/Users/<user>/Desktop/herdr-updater-toolchain/baseline-source.tar`, SHA256 `050b31ce77072c7ddf98e8f43cd261f531ff4fec3d4a0da9adcf9e1f50c56aa7`; extraction은 `baseline-source`다.
 - private Rust/Cargo 1.96.1 및 Zig 0.16.0, 실제 환경과 executable hash는 registry의 `core.observed.toolchain`에 있다. 운영 toolchain으로 바꾸지 않았다.
-- 실제 argv는 private cargo의 `build --release --locked`, cwd는 `/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-source`, exit0. build log SHA256 `d87d2ceef5fbad0b0571d5772367889bc337e458212ea864ce3dd57c3429b55d`.
-- 실제 binary `/Users/beomseok/Desktop/herdr-updater-toolchain/baseline-target/release/herdr`, SHA256 `2af87370b8a5a3639c05d4725281140961ee272663261d415c67f4704b5558bb`. readonly version은 `herdr 0.9.1`, exit0. 다운로드한 official 설치 binary의 `5fc7...`와 같은 파일이라고 주장하지 않는다.
+- 실제 argv는 private cargo의 `build --release --locked`, cwd는 `/Users/<user>/Desktop/herdr-updater-toolchain/baseline-source`, exit0. build log SHA256 `d87d2ceef5fbad0b0571d5772367889bc337e458212ea864ce3dd57c3429b55d`.
+- 실제 binary `/Users/<user>/Desktop/herdr-updater-toolchain/baseline-target/release/herdr`, SHA256 `2af87370b8a5a3639c05d4725281140961ee272663261d415c67f4704b5558bb`. readonly version은 `herdr 0.9.1`, exit0. 다운로드한 official 설치 binary의 `5fc7...`와 같은 파일이라고 주장하지 않는다.
 - 실제 binary schema stdout SHA256 `226d4ecbd128d2e6bc84e4c8ddcec21ba9c7e51a0aafffcf087111ead3f1fa9a`, protocol22/schema1, exit0이며 source/installed schema와 같다.
 - fmt/clippy는 exit0지만 **cargo test는 exit101, unit target은 SIGPIPE13/BrokenPipe**다. 완료한 target들의 125 pass와 종료 전 관측한 28 FAILED 이름은 전체 성공/실패 총계가 아니다. parent 재실행도 같은 실패를 기록했고 원인은 미확정이다. baseline은 FAIL, readiness와 restart 지원은 미완료다.
 
@@ -43,10 +43,10 @@
 ## 검증 API
 
 ```sh
-cd /Users/beomseok/Desktop/herdr-cli-updater
+cd /Users/<user>/Desktop/herdr-cli-updater
 bun scripts/qa/provenance.ts \
   --registry test/fixtures/provenance.json \
-  --core-source /Users/beomseok/Desktop/herdr-updater-core \
+  --core-source /Users/<user>/Desktop/herdr-updater-core \
   --evidence-dir .omo/evidence/herdr-cli-updater/task-5/provenance-live
 ```
 
@@ -116,7 +116,7 @@ trusted producer는 archive extraction이 정확히 해당 immutable bytes이며
 
 ### task39 출처 경계
 
-`/Users/beomseok/Desktop/portfolio/.omo/ulw-execute/task39-alternate-source-registration.json`의 `qualified-source-v1`은 **task10 consumer만** parent/independent 검증을 받았다.
+`/Users/<user>/Desktop/portfolio/.omo/ulw-execute/task39-alternate-source-registration.json`의 `qualified-source-v1`은 **task10 consumer만** parent/independent 검증을 받았다.
 legacy는 retained/unknown writer/unqualified 상태다. global trust가 아니며 task5 consumer relocation은 별도 등록이 필요하다.
 이 reconciliation은 legacy 파일을 변경하거나 다른 consumer를 alternate source로 바꾸지 않았다.
 

@@ -15,7 +15,7 @@
 `bun scripts/qa-catalog-sessions.mjs`
 
 최종 화면 증거:
-`/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/catalog-sessions/1791121688890`
+`/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/catalog-sessions/1791121688890`
 
 `sessions.json`은 12개 OmO 세션을 관찰했다. 화면에서 Open=12, Working=2, Ready=-였다.
 다른 계열은 관찰된 세션이 없으므로 Open/Working/Ready=0이었다.
@@ -40,7 +40,7 @@ stock UDS 회귀는 sessions 성공에도 runtimes/targets/create-job unsupporte
 
 ## 직접 확인
 
-진행 중 updater job이 없는 상태에서 기존 패널 q → `cd /Users/beomseok/Desktop/herdr-cli-updater` → `bun scripts/plugin.ts stop` → `herdr plugin action invoke updater --plugin beomq.cli-updater` 순서로 updater worker만 새 코드로 연다.
+진행 중 updater job이 없는 상태에서 기존 패널 q → `cd /Users/<user>/Desktop/herdr-cli-updater` → `bun scripts/plugin.ts stop` → `herdr plugin action invoke updater --plugin beomq.cli-updater` 순서로 updater worker만 새 코드로 연다.
 이는 CLI 대화를 재시작하는 명령이 아니지만 진행 중 updater job이 있다면 종료하지 않는다.
 방향키로 목록 선택, u로 최신 관찰 재조회, d로 진단을 확인한다. 새 상태 숫자는 재조회 시점의 관찰이며 추정 count나 polling이 아니다.
 업데이트 실행은 native 설정과 최종 확인이 별도로 필요하다. 사용자 직접 확인은 미확인이다.

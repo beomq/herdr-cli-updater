@@ -7,6 +7,7 @@ import { socketChild, malformedChild, quietChild } from "../../scripts/qa/fixtur
 import { copyPrivateBinary, dispatchRegistry, fileDigest, hashBytes, produceArchive, produceBuild, QaError, RunFailure, withIsolation } from "../../scripts/qa/runner";
 import { registry } from "../../scripts/qa/registry";
 import type { CleanupReceipt, QaContext } from "../../scripts/qa/runner";
+import { homedir } from "node:os";
 
 const childArgs = (script: string): readonly [string, ...string[]] => [process.execPath, "-e", script];
 
@@ -429,7 +430,7 @@ test("T8-A1 joins deadline-triggered action effects before claiming cleanup0", a
   }
 });
 
-const pinnedCoreSource = "/Users/beomseok/Desktop/herdr-updater-core";
+const pinnedCoreSource = `${homedir()}/Desktop/herdr-updater-core`;
 const pinnedCoreRef = "065ef9d6a531c49fb8bee7e818ef837065b21ee9";
 
 async function acquirePinnedCore(context: QaContext): Promise<string> {
@@ -696,7 +697,7 @@ test("T8-R3 admitted read copy waits for external release", async () => {
 
 test("T8-R3 exact compiler argv rejects before genuine invocation", async () => {
   // Given: genuine acquired executable names/bytes bypass all later mimic guards.
-  const bin = "/Users/beomseok/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin";
+  const bin = `${homedir()}/Desktop/herdr-updater-toolchain/rustup/toolchains/1.96.1-aarch64-apple-darwin/bin`;
   const rustc = join(bin, "rustc");
   const cargo = join(bin, "cargo");
   const failure = await failed(async (context) => {

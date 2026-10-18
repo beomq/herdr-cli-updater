@@ -3,11 +3,12 @@ import { join, relative, dirname } from "node:path";
 import { createHash } from "node:crypto";
 import { preparedNativeRecipe } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/normalize.mjs";
 import { acquiredClosure, installOriginal } from "../.omo/evidence/herdr-cli-updater/one-family/actual-qa/execution/install.mjs";
+import { homedir } from "node:os";
 
-const operating = "/Users/beomseok/.local/share/herdr-cli-updater/operating-native/prefix-r6";
+const operating = `${homedir()}/.local/share/herdr-cli-updater/operating-native/prefix-r6`;
 const prefix = "/private/tmp/herdr-operating-r6-frozen-after-image";
 const acquired = join(import.meta.dirname, "../.omo/evidence/herdr-cli-updater/task22/update-only-composition-r1/implementation-r1/inputs");
-process.env.ONE_FAMILY_TARGET_RUNTIME = "/Users/beomseok/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json";
+process.env.ONE_FAMILY_TARGET_RUNTIME = `${homedir()}/.local/share/herdr-cli-updater/worker-preparations/omo-mJsivd/omo-runtime.json`;
 process.env.ONE_FAMILY_BEFORE_ACQUISITION = join(acquired, "acquisition.json");
 process.env.ONE_FAMILY_BEFORE_ALIASES = join(acquired, "alias-closure.json");
 const recipe = preparedNativeRecipe("/private/tmp/herdr-prompt-preset-native-519-r6/preparation.json");
@@ -18,7 +19,7 @@ const rows = acquiredClosure(acquisition, aliases, recipe.artifacts, recipe.targ
 for (const row of [...acquisition.records, ...aliases.records]) if (!rows.some(a => a.name === row.name && a.version === row.version)) rows.push(row);
 mkdirSync(join(prefix, "install/global"), { recursive: true, mode: 0o700 });
 for (const name of ["package.json", "bun.lock"]) copyFileSync(join(operating, "install/global", name), join(prefix, "install/global", name));
-const installation = JSON.parse(readFileSync("/Users/beomseok/.local/share/herdr-cli-updater/operating-native/evidence/installation.json"));
+const installation = JSON.parse(readFileSync(`${homedir()}/.local/share/herdr-cli-updater/operating-native/evidence/installation.json`));
 const env = { ...installation.environment, BUN_INSTALL: prefix };
 const result = await installOriginal(rows, recipe.target.version, installation.manager, prefix, env, AbortSignal.timeout(300000), true);
 writeFileSync(join(prefix, "original-install.json"), JSON.stringify(result), { mode: 0o600 });
@@ -36,7 +37,7 @@ function walk(directory) {
   }
 }
 walk(join(prefix, "install/global/node_modules"));
-const operatingOrigin = JSON.parse(readFileSync("/Users/beomseok/.local/share/herdr-cli-updater/operating-native/evidence/original-install-r6-pinned.json")).registryOrigin;
+const operatingOrigin = JSON.parse(readFileSync(`${homedir()}/.local/share/herdr-cli-updater/operating-native/evidence/original-install-r6-pinned.json`)).registryOrigin;
 for (const name of ["install/global/package.json", "install/global/bun.lock", "bin/omo"]) {
   const path = join(prefix, name);
   const observed = readFileSync(path, "utf8");

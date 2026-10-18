@@ -5,9 +5,9 @@
   "status": "READ_ONLY_PREREQUISITE_INVENTORY",
   "generatedAt": "2026-10-02T23:01:44.200Z",
   "roots": {
-    "C": "/Users/beomseok/Desktop/herdr-updater-core",
-    "P": "/Users/beomseok/Desktop/herdr-cli-updater",
-    "W": "/Users/beomseok/Desktop/herdr-web-ui"
+    "C": "/Users/<user>/Desktop/herdr-updater-core",
+    "P": "/Users/<user>/Desktop/herdr-cli-updater",
+    "W": "/Users/<user>/Desktop/herdr-web-ui"
   },
   "sourceReference": {
     "C": {
@@ -25,16 +25,16 @@
     }
   },
   "task18": {
-    "producerReceipt": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-18/core-r3/receipt.json",
+    "producerReceipt": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-18/core-r3/receipt.json",
     "producerStatus": "PASS_NARROW_INCREMENT_READY_FOR_INDEPENDENT_AUDIT",
-    "independentAudit": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-18/adversarial-verify-core-r3.json",
+    "independentAudit": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-18/adversarial-verify-core-r3.json",
     "auditVerdict": "REJECT",
     "auditFinding": "Recorded audit receipt R3-AUDIT-1; current source hashes may differ from that receipt. This inventory does not repeat or accept task18 remediation.",
     "implementationBlockedUntil": "Parent task18 narrow independent acceptance; no authority expansion in this inventory"
   },
   "qa": {
     "scenario": "all-input-race",
-    "planPath": "/Users/beomseok/Desktop/portfolio/.omo/plans/herdr-cli-updater.md",
+    "planPath": "/Users/<user>/Desktop/portfolio/.omo/plans/herdr-cli-updater.md",
     "planLines": [
       131,
       424,
@@ -52,17 +52,17 @@
     "executed": false
   },
   "evidence": {
-    "manifest": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-19/input-inventory/source-manifest.json",
-    "searches": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-19/input-inventory/search-evidence.json",
-    "scopeProposal": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-19/input-inventory/scope-proposal.json",
-    "report": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-19/input-inventory/report.md",
-    "validation": "/Users/beomseok/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-19/input-inventory/validation.json"
+    "manifest": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-19/input-inventory/source-manifest.json",
+    "searches": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-19/input-inventory/search-evidence.json",
+    "scopeProposal": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-19/input-inventory/scope-proposal.json",
+    "report": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-19/input-inventory/report.md",
+    "validation": "/Users/<user>/Desktop/herdr-cli-updater/.omo/evidence/herdr-cli-updater/task-19/input-inventory/validation.json"
   },
   "nodes": {
     "native-msg": {
       "repo": "C",
       "path": "src/client/shell.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/client/shell.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/client/shell.rs",
       "symbol": "target_event_message / push_target_event",
       "lineStart": 69,
       "lineEnd": 120,
@@ -75,7 +75,7 @@
     "native-key": {
       "repo": "C",
       "path": "src/client/shell/input.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/client/shell/input.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/client/shell/input.rs",
       "symbol": "ClientShellState::push_pane_key",
       "lineStart": 1011,
       "lineEnd": 1025,
@@ -88,7 +88,7 @@
     "attach-write": {
       "repo": "C",
       "path": "src/client/mod.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/client/mod.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/client/mod.rs",
       "symbol": "ClientLoopEvent stdin forwarding",
       "lineStart": 830,
       "lineEnd": 922,
@@ -101,7 +101,7 @@
     "transport": {
       "repo": "C",
       "path": "src/server/client_transport.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/client_transport.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/client_transport.rs",
       "symbol": "client_read_loop",
       "lineStart": 1020,
       "lineEnd": 1049,
@@ -114,7 +114,7 @@
     "transport-target": {
       "repo": "C",
       "path": "src/server/client_transport.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/client_transport.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/client_transport.rs",
       "symbol": "client_read_loop structured input",
       "lineStart": 1174,
       "lineEnd": 1260,
@@ -127,7 +127,7 @@
     "transport-scroll": {
       "repo": "C",
       "path": "src/server/client_transport.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/client_transport.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/client_transport.rs",
       "symbol": "client_read_loop attach semantic input",
       "lineStart": 1356,
       "lineEnd": 1388,
@@ -140,7 +140,7 @@
     "head-raw": {
       "repo": "C",
       "path": "src/server/headless.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless.rs",
       "symbol": "HeadlessServer::handle_server_event ClientInput",
       "lineStart": 2125,
       "lineEnd": 2148,
@@ -153,7 +153,7 @@
     "head-pane": {
       "repo": "C",
       "path": "src/server/headless.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless.rs",
       "symbol": "HeadlessServer::handle_server_event ClientShellPaneInput",
       "lineStart": 2401,
       "lineEnd": 2487,
@@ -166,7 +166,7 @@
     "head-popup": {
       "repo": "C",
       "path": "src/server/headless.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless.rs",
       "symbol": "HeadlessServer::handle_server_event ClientShellPopupInput",
       "lineStart": 2488,
       "lineEnd": 2565,
@@ -179,7 +179,7 @@
     "head-scroll": {
       "repo": "C",
       "path": "src/server/headless.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless.rs",
       "symbol": "HeadlessServer::handle_terminal_attach_scroll",
       "lineStart": 1399,
       "lineEnd": 1426,
@@ -192,7 +192,7 @@
     "head-mouse": {
       "repo": "C",
       "path": "src/server/headless.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless.rs",
       "symbol": "HeadlessServer::handle_terminal_attach_mouse",
       "lineStart": 1428,
       "lineEnd": 1476,
@@ -205,7 +205,7 @@
     "head-clipboard": {
       "repo": "C",
       "path": "src/server/headless.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless.rs",
       "symbol": "HeadlessServer::paste_client_clipboard_image_path",
       "lineStart": 1230,
       "lineEnd": 1327,
@@ -218,7 +218,7 @@
     "head-release": {
       "repo": "C",
       "path": "src/server/headless.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless.rs",
       "symbol": "HeadlessServer::release_client_shell_inputs",
       "lineStart": 1044,
       "lineEnd": 1075,
@@ -231,7 +231,7 @@
     "native-write": {
       "repo": "C",
       "path": "src/client/shell_runtime.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/client/shell_runtime.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/client/shell_runtime.rs",
       "symbol": "apply_client_shell input outcome request forwarding",
       "lineStart": 746,
       "lineEnd": 788,
@@ -244,7 +244,7 @@
     "native-reader": {
       "repo": "C",
       "path": "src/client/input.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/client/input.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/client/input.rs",
       "symbol": "stdin_reader_loop",
       "lineStart": 38,
       "lineEnd": 69,
@@ -257,7 +257,7 @@
     "native-shell": {
       "repo": "C",
       "path": "src/client/shell/input.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/client/shell/input.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/client/shell/input.rs",
       "symbol": "ClientShellState::handle_raw_events",
       "lineStart": 159,
       "lineEnd": 239,
@@ -270,7 +270,7 @@
     "input-key": {
       "repo": "C",
       "path": "src/server/pane_input.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/pane_input.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/pane_input.rs",
       "symbol": "apply_client_terminal_input_events key",
       "lineStart": 291,
       "lineEnd": 320,
@@ -283,7 +283,7 @@
     "input-mouse": {
       "repo": "C",
       "path": "src/server/pane_input.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/pane_input.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/pane_input.rs",
       "symbol": "apply_client_terminal_input_events mouse",
       "lineStart": 226,
       "lineEnd": 289,
@@ -296,7 +296,7 @@
     "input-scroll": {
       "repo": "C",
       "path": "src/server/pane_input.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/pane_input.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/pane_input.rs",
       "symbol": "apply_scroll",
       "lineStart": 129,
       "lineEnd": 184,
@@ -309,7 +309,7 @@
     "input-text": {
       "repo": "C",
       "path": "src/server/pane_input.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/pane_input.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/pane_input.rs",
       "symbol": "apply_client_terminal_input_events text",
       "lineStart": 321,
       "lineEnd": 325,
@@ -322,7 +322,7 @@
     "pane-bytes": {
       "repo": "C",
       "path": "src/pane.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pane.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pane.rs",
       "symbol": "PaneRuntime::try_send_bytes / queue_user_input_submission / try_send_paste",
       "lineStart": 3220,
       "lineEnd": 3247,
@@ -335,7 +335,7 @@
     "pane-io": {
       "repo": "C",
       "path": "src/pane.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pane.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pane.rs",
       "symbol": "PaneRuntimeIo::try_send_bytes / queue_user_input_submission",
       "lineStart": 1385,
       "lineEnd": 1420,
@@ -348,7 +348,7 @@
     "unix-admit": {
       "repo": "C",
       "path": "src/pty/actor/unix.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pty/actor/unix.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pty/actor/unix.rs",
       "symbol": "PtyIoActorHandle::try_write_user_input / queue_user_input_submission",
       "lineStart": 109,
       "lineEnd": 177,
@@ -361,7 +361,7 @@
     "unix-enter": {
       "repo": "C",
       "path": "src/pty/actor/unix.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pty/actor/unix.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pty/actor/unix.rs",
       "symbol": "PtyIoActorRunner::schedule_submission_enter",
       "lineStart": 880,
       "lineEnd": 898,
@@ -374,7 +374,7 @@
     "unix-write": {
       "repo": "C",
       "path": "src/pty/actor/unix.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pty/actor/unix.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pty/actor/unix.rs",
       "symbol": "PtyIoActorRunner::flush_pending_writes_once",
       "lineStart": 931,
       "lineEnd": 965,
@@ -387,7 +387,7 @@
     "input-paste": {
       "repo": "C",
       "path": "src/server/pane_input.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/pane_input.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/pane_input.rs",
       "symbol": "apply_client_terminal_input_events paste",
       "lineStart": 326,
       "lineEnd": 331,
@@ -400,7 +400,7 @@
     "input-raw": {
       "repo": "C",
       "path": "src/server/pane_input.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/pane_input.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/pane_input.rs",
       "symbol": "apply_terminal_attach_input",
       "lineStart": 187,
       "lineEnd": 201,
@@ -413,7 +413,7 @@
     "win-forward": {
       "repo": "C",
       "path": "src/pty/actor.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pty/actor.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pty/actor.rs",
       "symbol": "run_input_forwarder",
       "lineStart": 322,
       "lineEnd": 374,
@@ -426,7 +426,7 @@
     "rpc-wire": {
       "repo": "C",
       "path": "src/api/server.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/api/server.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/api/server.rs",
       "symbol": "handle_connection / handle_request",
       "lineStart": 249,
       "lineEnd": 294,
@@ -439,7 +439,7 @@
     "rpc-admit": {
       "repo": "C",
       "path": "src/api/server.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/api/server.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/api/server.rs",
       "symbol": "dispatch_to_app",
       "lineStart": 858,
       "lineEnd": 878,
@@ -452,7 +452,7 @@
     "rpc-head": {
       "repo": "C",
       "path": "src/server/headless.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless.rs",
       "symbol": "handle_api_request_with_shutdown_check_inner",
       "lineStart": 2940,
       "lineEnd": 2980,
@@ -465,7 +465,7 @@
     "win-admit": {
       "repo": "C",
       "path": "src/pty/actor.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pty/actor.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pty/actor.rs",
       "symbol": "PtyIoActorHandle::try_write_user_input / queue_user_input_submission",
       "lineStart": 81,
       "lineEnd": 146,
@@ -478,7 +478,7 @@
     "api-text": {
       "repo": "C",
       "path": "src/app/api/panes.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/panes.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/panes.rs",
       "symbol": "handle_pane_send_text",
       "lineStart": 1800,
       "lineEnd": 1817,
@@ -491,7 +491,7 @@
     "api-input": {
       "repo": "C",
       "path": "src/app/api/panes.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/panes.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/panes.rs",
       "symbol": "handle_pane_send_input",
       "lineStart": 1819,
       "lineEnd": 1843,
@@ -504,7 +504,7 @@
     "api-keys": {
       "repo": "C",
       "path": "src/app/api/panes.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/panes.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/panes.rs",
       "symbol": "handle_pane_send_keys",
       "lineStart": 1914,
       "lineEnd": 1940,
@@ -517,7 +517,7 @@
     "win-write": {
       "repo": "C",
       "path": "src/pty/actor.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pty/actor.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pty/actor.rs",
       "symbol": "write_and_flush",
       "lineStart": 405,
       "lineEnd": 408,
@@ -530,7 +530,7 @@
     "terminal-bytes": {
       "repo": "C",
       "path": "src/terminal/runtime.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/terminal/runtime.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/terminal/runtime.rs",
       "symbol": "TerminalRuntime::try_send_bytes / queue_user_input_submission",
       "lineStart": 461,
       "lineEnd": 481,
@@ -543,7 +543,7 @@
     "prompt-worker": {
       "repo": "C",
       "path": "src/app/api/agents.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/agents.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/agents.rs",
       "symbol": "handle_deferred_agent_api_request response waiter",
       "lineStart": 81,
       "lineEnd": 107,
@@ -556,7 +556,7 @@
     "api-agent-keys": {
       "repo": "C",
       "path": "src/app/api/agents.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/agents.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/agents.rs",
       "symbol": "handle_agent_send_keys",
       "lineStart": 330,
       "lineEnd": 373,
@@ -569,7 +569,7 @@
     "prompt-head": {
       "repo": "C",
       "path": "src/server/headless.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless.rs",
       "symbol": "deferred agent prompt dispatch",
       "lineStart": 3084,
       "lineEnd": 3094,
@@ -582,7 +582,7 @@
     "api-agent-prompt": {
       "repo": "C",
       "path": "src/app/api/agents.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/agents.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/agents.rs",
       "symbol": "queue_agent_prompt",
       "lineStart": 109,
       "lineEnd": 216,
@@ -595,7 +595,7 @@
     "resume-start": {
       "repo": "C",
       "path": "src/app/agent_resume.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/agent_resume.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/agent_resume.rs",
       "symbol": "start_pending_agent_resume",
       "lineStart": 205,
       "lineEnd": 282,
@@ -608,7 +608,7 @@
     "resume-timer": {
       "repo": "C",
       "path": "src/server/headless.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless.rs",
       "symbol": "apply pending resume timer / geometry",
       "lineStart": 3417,
       "lineEnd": 3424,
@@ -621,7 +621,7 @@
     "resume-attach": {
       "repo": "C",
       "path": "src/server/headless.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless.rs",
       "symbol": "attach_terminal_client pending resume",
       "lineStart": 1892,
       "lineEnd": 1899,
@@ -634,7 +634,7 @@
     "agent-start": {
       "repo": "C",
       "path": "src/app/agents.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/agents.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/agents.rs",
       "symbol": "start_agent",
       "lineStart": 145,
       "lineEnd": 228,
@@ -647,7 +647,7 @@
     "prompt-wait": {
       "repo": "C",
       "path": "src/api/wait.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/api/wait.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/api/wait.rs",
       "symbol": "prompt_agent",
       "lineStart": 177,
       "lineEnd": 238,
@@ -660,7 +660,7 @@
     "focus-send": {
       "repo": "C",
       "path": "src/pane.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pane.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pane.rs",
       "symbol": "try_send_focus_event",
       "lineStart": 3250,
       "lineEnd": 3262,
@@ -673,7 +673,7 @@
     "rpc-dispatch": {
       "repo": "C",
       "path": "src/app/api.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api.rs",
       "symbol": "handle_api_request_after_internal_events_drained",
       "lineStart": 1178,
       "lineEnd": 1190,
@@ -686,7 +686,7 @@
     "alt-poll": {
       "repo": "C",
       "path": "src/server/headless.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless.rs",
       "symbol": "poll_pending_alt_screen_reads",
       "lineStart": 2814,
       "lineEnd": 2835,
@@ -699,7 +699,7 @@
     "custom-invoke": {
       "repo": "C",
       "path": "src/app/custom_commands.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/custom_commands.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/custom_commands.rs",
       "symbol": "handle_command_invoke / execute_custom_command_response",
       "lineStart": 80,
       "lineEnd": 130,
@@ -712,7 +712,7 @@
     "custom-actions": {
       "repo": "C",
       "path": "src/app/custom_commands.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/custom_commands.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/custom_commands.rs",
       "symbol": "execute_custom_command_binding",
       "lineStart": 212,
       "lineEnd": 225,
@@ -725,7 +725,7 @@
     "custom-shell": {
       "repo": "C",
       "path": "src/app/custom_commands.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/custom_commands.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/custom_commands.rs",
       "symbol": "spawn_custom_command",
       "lineStart": 288,
       "lineEnd": 304,
@@ -738,7 +738,7 @@
     "custom-pane": {
       "repo": "C",
       "path": "src/app/custom_commands.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/custom_commands.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/custom_commands.rs",
       "symbol": "spawn_pane_command",
       "lineStart": 363,
       "lineEnd": 409,
@@ -751,7 +751,7 @@
     "custom-overlay": {
       "repo": "C",
       "path": "src/app/custom_commands.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/custom_commands.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/custom_commands.rs",
       "symbol": "spawn_overlay_argv_command",
       "lineStart": 440,
       "lineEnd": 493,
@@ -764,7 +764,7 @@
     "popup-spawn": {
       "repo": "C",
       "path": "src/app/popup.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/popup.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/popup.rs",
       "symbol": "spawn_popup_shell_command / spawn_popup_argv_command",
       "lineStart": 35,
       "lineEnd": 96,
@@ -777,7 +777,7 @@
     "alt-wheel": {
       "repo": "C",
       "path": "src/server/alt_screen_read.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/alt_screen_read.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/alt_screen_read.rs",
       "symbol": "send_wheel",
       "lineStart": 443,
       "lineEnd": 466,
@@ -790,7 +790,7 @@
     "plugin-action": {
       "repo": "C",
       "path": "src/app/api/plugins/mod.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/plugins/mod.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/plugins/mod.rs",
       "symbol": "handle_plugin_action_invoke",
       "lineStart": 177,
       "lineEnd": 213,
@@ -803,7 +803,7 @@
     "plugin-key": {
       "repo": "C",
       "path": "src/app/api/plugins/mod.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/plugins/mod.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/plugins/mod.rs",
       "symbol": "invoke_plugin_action_from_keybind",
       "lineStart": 225,
       "lineEnd": 255,
@@ -816,7 +816,7 @@
     "plugin-link": {
       "repo": "C",
       "path": "src/app/api/plugins/mod.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/plugins/mod.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/plugins/mod.rs",
       "symbol": "plugin link activation start_plugin_command",
       "lineStart": 389,
       "lineEnd": 404,
@@ -829,7 +829,7 @@
     "plugin-start": {
       "repo": "C",
       "path": "src/app/api/plugins/runtime.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/plugins/runtime.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/plugins/runtime.rs",
       "symbol": "start_plugin_command background spawn",
       "lineStart": 16,
       "lineEnd": 175,
@@ -842,7 +842,7 @@
     "command-native": {
       "repo": "C",
       "path": "src/client/shell/actions.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/client/shell/actions.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/client/shell/actions.rs",
       "symbol": "custom command endpoint action",
       "lineStart": 235,
       "lineEnd": 255,
@@ -855,7 +855,7 @@
     "endpoint-send": {
       "repo": "C",
       "path": "src/client/endpoint_commands.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/client/endpoint_commands.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/client/endpoint_commands.rs",
       "symbol": "EndpointCommands::send_next",
       "lineStart": 90,
       "lineEnd": 124,
@@ -868,7 +868,7 @@
     "endpoint-admit": {
       "repo": "C",
       "path": "src/server/headless/endpoint_requests.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/headless/endpoint_requests.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/headless/endpoint_requests.rs",
       "symbol": "handle_client_shell_endpoint_request",
       "lineStart": 4,
       "lineEnd": 130,
@@ -881,7 +881,7 @@
     "shell-respawn": {
       "repo": "C",
       "path": "src/app/api.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api.rs",
       "symbol": "respawn_shell_for_launch_pane",
       "lineStart": 541,
       "lineEnd": 598,
@@ -894,7 +894,7 @@
     "plugin-pane": {
       "repo": "C",
       "path": "src/app/api/plugins/panes.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/plugins/panes.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/plugins/panes.rs",
       "symbol": "open_plugin_popup_pane / overlay / split / tab",
       "lineStart": 11,
       "lineEnd": 238,
@@ -907,7 +907,7 @@
     "runtime-spawn": {
       "repo": "C",
       "path": "src/terminal/runtime.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/terminal/runtime.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/terminal/runtime.rs",
       "symbol": "spawn / spawn_shell_command / spawn_argv_command",
       "lineStart": 86,
       "lineEnd": 220,
@@ -920,7 +920,7 @@
     "pane-spawn": {
       "repo": "C",
       "path": "src/pane.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pane.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pane.rs",
       "symbol": "spawn_command_builder",
       "lineStart": 2297,
       "lineEnd": 2344,
@@ -933,7 +933,7 @@
     "unix-spawn": {
       "repo": "C",
       "path": "src/pty/backend/unix.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pty/backend/unix.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pty/backend/unix.rs",
       "symbol": "spawn_with_portable_pty",
       "lineStart": 12,
       "lineEnd": 41,
@@ -946,7 +946,7 @@
     "focus": {
       "repo": "C",
       "path": "src/app/api.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api.rs",
       "symbol": "send_pane_focus_event",
       "lineStart": 867,
       "lineEnd": 879,
@@ -959,7 +959,7 @@
     "tab-spawn": {
       "repo": "C",
       "path": "src/workspace/tab.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/workspace/tab.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/workspace/tab.rs",
       "symbol": "new_with_runtime",
       "lineStart": 121,
       "lineEnd": 171,
@@ -972,7 +972,7 @@
     "restore": {
       "repo": "C",
       "path": "src/persist/restore.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/persist/restore.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/persist/restore.rs",
       "symbol": "restore_tab runtime construction",
       "lineStart": 575,
       "lineEnd": 628,
@@ -985,7 +985,7 @@
     "workspace-new": {
       "repo": "C",
       "path": "src/app/api/workspaces.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/workspaces.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/workspaces.rs",
       "symbol": "handle_workspace_create",
       "lineStart": 39,
       "lineEnd": 78,
@@ -998,7 +998,7 @@
     "tab-new": {
       "repo": "C",
       "path": "src/app/api/tabs.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/tabs.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/tabs.rs",
       "symbol": "handle_tab_create",
       "lineStart": 47,
       "lineEnd": 94,
@@ -1011,7 +1011,7 @@
     "pane-new": {
       "repo": "C",
       "path": "src/app/api/panes.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/panes.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/panes.rs",
       "symbol": "handle_pane_split",
       "lineStart": 34,
       "lineEnd": 97,
@@ -1024,7 +1024,7 @@
     "split-spawn": {
       "repo": "C",
       "path": "src/workspace/tab.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/workspace/tab.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/workspace/tab.rs",
       "symbol": "split runtime command branch",
       "lineStart": 340,
       "lineEnd": 393,
@@ -1037,7 +1037,7 @@
     "appearance-response": {
       "repo": "C",
       "path": "src/pane.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pane.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pane.rs",
       "symbol": "apply_host_terminal_appearance",
       "lineStart": 1944,
       "lineEnd": 1957,
@@ -1050,7 +1050,7 @@
     "resize-response": {
       "repo": "C",
       "path": "src/pane.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pane.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pane.rs",
       "symbol": "resize",
       "lineStart": 2918,
       "lineEnd": 2935,
@@ -1063,7 +1063,7 @@
     "parser-response": {
       "repo": "C",
       "path": "src/pane.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pane.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pane.rs",
       "symbol": "spawn_command_builder on_read callback terminal_responses",
       "lineStart": 2408,
       "lineEnd": 2449,
@@ -1076,7 +1076,7 @@
     "import-response": {
       "repo": "C",
       "path": "src/pane.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pane.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pane.rs",
       "symbol": "handoff imported on_read callback terminal_responses",
       "lineStart": 2239,
       "lineEnd": 2266,
@@ -1089,7 +1089,7 @@
     "unix-response": {
       "repo": "C",
       "path": "src/pty/actor/unix.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pty/actor/unix.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pty/actor/unix.rs",
       "symbol": "write_terminal_response / read_once / enqueue_terminal_responses",
       "lineStart": 816,
       "lineEnd": 857,
@@ -1102,7 +1102,7 @@
     "unix-controls": {
       "repo": "C",
       "path": "src/pty/actor/unix.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pty/actor/unix.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pty/actor/unix.rs",
       "symbol": "apply_pending_controls",
       "lineStart": 791,
       "lineEnd": 814,
@@ -1115,7 +1115,7 @@
     "win-response": {
       "repo": "C",
       "path": "src/pty/actor.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pty/actor.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pty/actor.rs",
       "symbol": "write_terminal_response",
       "lineStart": 148,
       "lineEnd": 158,
@@ -1128,7 +1128,7 @@
     "win-spawn": {
       "repo": "C",
       "path": "src/pty/backend.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/pty/backend.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/pty/backend.rs",
       "symbol": "spawn_with_portable_pty",
       "lineStart": 17,
       "lineEnd": 40,
@@ -1141,7 +1141,7 @@
     "completion": {
       "repo": "C",
       "path": "src/server/updater_completion.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/updater_completion.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/updater_completion.rs",
       "symbol": "Completion::apply / snapshot",
       "lineStart": 145,
       "lineEnd": 266,
@@ -1154,7 +1154,7 @@
     "completion-app": {
       "repo": "C",
       "path": "src/app/dispatcher/api.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/dispatcher/api.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/dispatcher/api.rs",
       "symbol": "apply_updater_completion",
       "lineStart": 34,
       "lineEnd": 128,
@@ -1167,7 +1167,7 @@
     "workspace-spawn": {
       "repo": "C",
       "path": "src/app/creation.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/creation.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/creation.rs",
       "symbol": "create_workspace_with_launch_env",
       "lineStart": 126,
       "lineEnd": 144,
@@ -1180,7 +1180,7 @@
     "p-update": {
       "repo": "P",
       "path": "src/install/update.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-cli-updater/src/install/update.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-cli-updater/src/install/update.ts",
       "symbol": "consumeOmoUpdate run callback",
       "lineStart": 165,
       "lineEnd": 173,
@@ -1193,7 +1193,7 @@
     "p-worker": {
       "repo": "P",
       "path": "src/service/worker.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-cli-updater/src/service/worker.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-cli-updater/src/service/worker.ts",
       "symbol": "startWorker",
       "lineStart": 243,
       "lineEnd": 270,
@@ -1206,7 +1206,7 @@
     "completion-p": {
       "repo": "P",
       "path": "src/core/completion.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-cli-updater/src/core/completion.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-cli-updater/src/core/completion.ts",
       "symbol": "CompletionClient::request / exchange",
       "lineStart": 126,
       "lineEnd": 189,
@@ -1219,7 +1219,7 @@
     "status-worker": {
       "repo": "C",
       "path": "src/app/tab_bar_status.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/tab_bar_status.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/tab_bar_status.rs",
       "symbol": "run_status_command",
       "lineStart": 462,
       "lineEnd": 503,
@@ -1232,7 +1232,7 @@
     "p-probe": {
       "repo": "P",
       "path": "src/discovery.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-cli-updater/src/discovery.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-cli-updater/src/discovery.ts",
       "symbol": "probeExecutable",
       "lineStart": 277,
       "lineEnd": 289,
@@ -1245,7 +1245,7 @@
     "cli-prompt": {
       "repo": "C",
       "path": "src/cli/agent.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/cli/agent.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/cli/agent.rs",
       "symbol": "agent_prompt request",
       "lineStart": 832,
       "lineEnd": 843,
@@ -1258,7 +1258,7 @@
     "cli-agent-keys": {
       "repo": "C",
       "path": "src/cli/agent.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/cli/agent.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/cli/agent.rs",
       "symbol": "agent_send_keys",
       "lineStart": 847,
       "lineEnd": 860,
@@ -1271,7 +1271,7 @@
     "cli-start": {
       "repo": "C",
       "path": "src/cli/agent.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/cli/agent.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/cli/agent.rs",
       "symbol": "agent_start request",
       "lineStart": 372,
       "lineEnd": 386,
@@ -1284,7 +1284,7 @@
     "cli-wire": {
       "repo": "C",
       "path": "src/api/client.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/api/client.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/api/client.rs",
       "symbol": "write_request",
       "lineStart": 158,
       "lineEnd": 162,
@@ -1297,7 +1297,7 @@
     "cli-run": {
       "repo": "C",
       "path": "src/cli/pane.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/cli/pane.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/cli/pane.rs",
       "symbol": "pane_run",
       "lineStart": 1039,
       "lineEnd": 1052,
@@ -1310,7 +1310,7 @@
     "cli-keys": {
       "repo": "C",
       "path": "src/cli/pane.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/cli/pane.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/cli/pane.rs",
       "symbol": "pane_send_keys",
       "lineStart": 1028,
       "lineEnd": 1037,
@@ -1323,7 +1323,7 @@
     "cli-text": {
       "repo": "C",
       "path": "src/cli/pane.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/cli/pane.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/cli/pane.rs",
       "symbol": "pane_send_text",
       "lineStart": 1017,
       "lineEnd": 1026,
@@ -1336,7 +1336,7 @@
     "web-auth": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "createServer.fetch access and origin gates",
       "lineStart": 795,
       "lineEnd": 830,
@@ -1349,7 +1349,7 @@
     "web-http": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "POST /api/pane/input and /api/pane/keys",
       "lineStart": 1224,
       "lineEnd": 1242,
@@ -1362,7 +1362,7 @@
     "web-ws-input": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "websocket.message input",
       "lineStart": 1436,
       "lineEnd": 1485,
@@ -1375,7 +1375,7 @@
     "web-ws-keys": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "websocket.message keys",
       "lineStart": 1500,
       "lineEnd": 1522,
@@ -1388,7 +1388,7 @@
     "web-secret": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "websocket.message secret",
       "lineStart": 1523,
       "lineEnd": 1556,
@@ -1401,7 +1401,7 @@
     "web-submit": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "websocket.message submit",
       "lineStart": 1561,
       "lineEnd": 1589,
@@ -1414,7 +1414,7 @@
     "web-serialize": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "serialize",
       "lineStart": 285,
       "lineEnd": 289,
@@ -1427,7 +1427,7 @@
     "web-submit-writer": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "submitText",
       "lineStart": 306,
       "lineEnd": 336,
@@ -1440,7 +1440,7 @@
     "web-mirror": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "attach MirrorSession write callback",
       "lineStart": 528,
       "lineEnd": 544,
@@ -1453,7 +1453,7 @@
     "web-sidecar": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "attach start PtySession",
       "lineStart": 671,
       "lineEnd": 678,
@@ -1466,7 +1466,7 @@
     "web-rpc-text": {
       "repo": "W",
       "path": "server/herdr/client.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/herdr/client.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/herdr/client.ts",
       "symbol": "paneSendText",
       "lineStart": 266,
       "lineEnd": 267,
@@ -1479,7 +1479,7 @@
     "web-rpc-wire": {
       "repo": "W",
       "path": "server/herdr/client.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/herdr/client.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/herdr/client.ts",
       "symbol": "herdrRpc socket write",
       "lineStart": 137,
       "lineEnd": 145,
@@ -1492,7 +1492,7 @@
     "web-rpc-start": {
       "repo": "W",
       "path": "server/herdr/client.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/herdr/client.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/herdr/client.ts",
       "symbol": "agentStart",
       "lineStart": 188,
       "lineEnd": 202,
@@ -1505,7 +1505,7 @@
     "web-rpc-keys": {
       "repo": "W",
       "path": "server/herdr/client.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/herdr/client.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/herdr/client.ts",
       "symbol": "paneSendKeys",
       "lineStart": 279,
       "lineEnd": 280,
@@ -1518,7 +1518,7 @@
     "web-rpc-prompt": {
       "repo": "W",
       "path": "server/herdr/client.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/herdr/client.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/herdr/client.ts",
       "symbol": "agentPrompt",
       "lineStart": 275,
       "lineEnd": 276,
@@ -1531,7 +1531,7 @@
     "web-start": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "POST /api/workspace/create",
       "lineStart": 980,
       "lineEnd": 1025,
@@ -1544,7 +1544,7 @@
     "web-host-writer": {
       "repo": "W",
       "path": "server/pty/session.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/pty/session.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/pty/session.ts",
       "symbol": "PtySession::send / write",
       "lineStart": 65,
       "lineEnd": 79,
@@ -1554,7 +1554,7 @@
     "web-prompt-answer": {
       "repo": "W",
       "path": "server/prompt.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/prompt.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/prompt.ts",
       "symbol": "handlePromptRequest answer steps",
       "lineStart": 1983,
       "lineEnd": 2068,
@@ -1567,7 +1567,7 @@
     "web-prompt-open": {
       "repo": "W",
       "path": "server/prompt.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/prompt.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/prompt.ts",
       "symbol": "openQueuedQuestion",
       "lineStart": 1905,
       "lineEnd": 1916,
@@ -1580,7 +1580,7 @@
     "web-prompt-close": {
       "repo": "W",
       "path": "server/prompt.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/prompt.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/prompt.ts",
       "symbol": "closeOpenQuestion",
       "lineStart": 1926,
       "lineEnd": 1929,
@@ -1593,7 +1593,7 @@
     "web-prompt-late": {
       "repo": "W",
       "path": "server/prompt.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/prompt.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/prompt.ts",
       "symbol": "close Codex queue after response",
       "lineStart": 1878,
       "lineEnd": 1883,
@@ -1606,7 +1606,7 @@
     "web-image": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "POST /api/pane/image",
       "lineStart": 1268,
       "lineEnd": 1296,
@@ -1619,7 +1619,7 @@
     "web-host-spawn": {
       "repo": "W",
       "path": "server/pty/pty-host.mjs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/pty/pty-host.mjs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/pty/pty-host.mjs",
       "symbol": "node-pty spawn attach process",
       "lineStart": 34,
       "lineEnd": 40,
@@ -1629,7 +1629,7 @@
     "web-machine-http": {
       "repo": "W",
       "path": "server/machine-api.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/machine-api.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/machine-api.ts",
       "symbol": "handleMachineRequest proxy",
       "lineStart": 72,
       "lineEnd": 110,
@@ -1642,7 +1642,7 @@
     "web-shell-start": {
       "repo": "W",
       "path": "server/shell-agent.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/shell-agent.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/shell-agent.ts",
       "symbol": "startShellAgent",
       "lineStart": 67,
       "lineEnd": 84,
@@ -1655,7 +1655,7 @@
     "web-local-alias": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "/api/machines/local alias",
       "lineStart": 836,
       "lineEnd": 849,
@@ -1668,7 +1668,7 @@
     "web-remote-ws": {
       "repo": "W",
       "path": "server/index.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/index.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/index.ts",
       "symbol": "/ws machine_id relay upgrade",
       "lineStart": 852,
       "lineEnd": 869,
@@ -1681,7 +1681,7 @@
     "web-host-native": {
       "repo": "W",
       "path": "server/pty/pty-host.mjs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/pty/pty-host.mjs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/pty/pty-host.mjs",
       "symbol": "handle input frame",
       "lineStart": 81,
       "lineEnd": 91,
@@ -1694,7 +1694,7 @@
     "web-machine-ws": {
       "repo": "W",
       "path": "server/machine-relay.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/machine-relay.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/machine-relay.ts",
       "symbol": "MachineRelay::message",
       "lineStart": 62,
       "lineEnd": 74,
@@ -1704,7 +1704,7 @@
     "web-image-store": {
       "repo": "W",
       "path": "server/paste.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-web-ui/server/paste.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-web-ui/server/paste.ts",
       "symbol": "savePaneImage",
       "lineStart": 60,
       "lineEnd": 94,
@@ -1717,7 +1717,7 @@
     "plugin-hook": {
       "repo": "C",
       "path": "src/app/api/plugins/runtime.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/plugins/runtime.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/plugins/runtime.rs",
       "symbol": "run_plugin_hooks / deferred startup hooks",
       "lineStart": 184,
       "lineEnd": 264,
@@ -1730,7 +1730,7 @@
     "status-admit": {
       "repo": "C",
       "path": "src/app/tab_bar_status.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/tab_bar_status.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/tab_bar_status.rs",
       "symbol": "refresh status command generation",
       "lineStart": 136,
       "lineEnd": 166,
@@ -1743,7 +1743,7 @@
     "pi-hook": {
       "repo": "C",
       "path": "src/integration/assets/pi/herdr-agent-state.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/integration/assets/pi/herdr-agent-state.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/integration/assets/pi/herdr-agent-state.ts",
       "symbol": "reportSession / sendState",
       "lineStart": 114,
       "lineEnd": 146,
@@ -1756,7 +1756,7 @@
     "omp-hook": {
       "repo": "C",
       "path": "src/integration/assets/omp/herdr-agent-state.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/integration/assets/omp/herdr-agent-state.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/integration/assets/omp/herdr-agent-state.ts",
       "symbol": "reportSession / sendState",
       "lineStart": 147,
       "lineEnd": 178,
@@ -1769,7 +1769,7 @@
     "pane-input-config": {
       "repo": "C",
       "path": "src/app/api/panes.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/panes.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/panes.rs",
       "symbol": "handle_pane_input_set",
       "lineStart": 1440,
       "lineEnd": 1464,
@@ -1782,7 +1782,7 @@
     "editor-start": {
       "repo": "C",
       "path": "src/app/custom_commands.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/custom_commands.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/custom_commands.rs",
       "symbol": "open_focused_scrollback_in_editor",
       "lineStart": 307,
       "lineEnd": 345,
@@ -1795,7 +1795,7 @@
     "worktree-start": {
       "repo": "C",
       "path": "src/app/api/worktrees.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/worktrees.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/worktrees.rs",
       "symbol": "worktree open / create parent workspace",
       "lineStart": 126,
       "lineEnd": 140,
@@ -1808,7 +1808,7 @@
     "worktree-parent": {
       "repo": "C",
       "path": "src/app/api/worktrees.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/api/worktrees.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/api/worktrees.rs",
       "symbol": "worktree create missing parent runtime",
       "lineStart": 413,
       "lineEnd": 418,
@@ -1821,7 +1821,7 @@
     "clipboard-send": {
       "repo": "C",
       "path": "src/client/clipboard_images.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/client/clipboard_images.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/client/clipboard_images.rs",
       "symbol": "write_remote_image_to_server",
       "lineStart": 11,
       "lineEnd": 44,
@@ -1831,7 +1831,7 @@
     "clipboard-transport": {
       "repo": "C",
       "path": "src/server/client_transport.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/client_transport.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/client_transport.rs",
       "symbol": "client_read_loop ClipboardImage",
       "lineStart": 1092,
       "lineEnd": 1112,
@@ -1844,7 +1844,7 @@
     "api-channel": {
       "repo": "C",
       "path": "src/api/mod.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/api/mod.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/api/mod.rs",
       "symbol": "ApiRequestSender",
       "lineStart": 96,
       "lineEnd": 96,
@@ -1857,7 +1857,7 @@
     "server-module": {
       "repo": "C",
       "path": "src/server/mod.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/server/mod.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/server/mod.rs",
       "symbol": "pane_input/updater_completion declarations",
       "lineStart": 17,
       "lineEnd": 23,
@@ -1867,7 +1867,7 @@
     "app-fence-state": {
       "repo": "C",
       "path": "src/app/mod.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/app/mod.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/app/mod.rs",
       "symbol": "App updater_completions fields",
       "lineStart": 106,
       "lineEnd": 110,
@@ -1880,7 +1880,7 @@
     "updater-schema": {
       "repo": "C",
       "path": "src/api/schema/updater.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/api/schema/updater.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/api/schema/updater.rs",
       "symbol": "CompletionAction / CompletionParams",
       "lineStart": 75,
       "lineEnd": 113,
@@ -1890,7 +1890,7 @@
     "updater-response": {
       "repo": "C",
       "path": "src/api/schema/response.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/api/schema/response.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/api/schema/response.rs",
       "symbol": "ResponseResult::UpdaterCompletion",
       "lineStart": 308,
       "lineEnd": 310,
@@ -1900,7 +1900,7 @@
     "updater-capability": {
       "repo": "C",
       "path": "src/api/schema/server.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/api/schema/server.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/api/schema/server.rs",
       "symbol": "CompletionCapabilities",
       "lineStart": 33,
       "lineEnd": 38,
@@ -1910,7 +1910,7 @@
     "p-service-transport": {
       "repo": "P",
       "path": "src/service/socket.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-cli-updater/src/service/socket.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-cli-updater/src/service/socket.ts",
       "symbol": "flush peer output",
       "lineStart": 38,
       "lineEnd": 51,
@@ -1923,7 +1923,7 @@
     "p-service-request": {
       "repo": "P",
       "path": "src/service/socket.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-cli-updater/src/service/socket.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-cli-updater/src/service/socket.ts",
       "symbol": "requestWorker transport",
       "lineStart": 230,
       "lineEnd": 255,
@@ -1936,7 +1936,7 @@
     "endpoint-worker": {
       "repo": "C",
       "path": "src/client/endpoint/writer.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/client/endpoint/writer.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/client/endpoint/writer.rs",
       "symbol": "NativeEndpointTransport::with_lifetime endpoint-writer thread",
       "lineStart": 41,
       "lineEnd": 76,
@@ -1946,7 +1946,7 @@
     "p-domain": {
       "repo": "P",
       "path": "src/service/domain.ts",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-cli-updater/src/service/domain.ts",
+      "absolutePath": "/Users/<user>/Desktop/herdr-cli-updater/src/service/domain.ts",
       "symbol": "createDomain request handler",
       "lineStart": 34,
       "lineEnd": 107,
@@ -1959,7 +1959,7 @@
     "endpoint-frame-write": {
       "repo": "C",
       "path": "src/client/endpoint/writer.rs",
-      "absolutePath": "/Users/beomseok/Desktop/herdr-updater-core/src/client/endpoint/writer.rs",
+      "absolutePath": "/Users/<user>/Desktop/herdr-updater-core/src/client/endpoint/writer.rs",
       "symbol": "write_batch / write_frame",
       "lineStart": 194,
       "lineEnd": 257,
@@ -6038,9 +6038,9 @@
   "completeness": {
     "claim": "Current C/P/W statically discovered callsite inventory, not native eight-family qualification or runtime fence proof.",
     "sourceRootsSwept": [
-      "/Users/beomseok/Desktop/herdr-updater-core/src",
-      "/Users/beomseok/Desktop/herdr-cli-updater/src",
-      "/Users/beomseok/Desktop/herdr-web-ui/server"
+      "/Users/<user>/Desktop/herdr-updater-core/src",
+      "/Users/<user>/Desktop/herdr-cli-updater/src",
+      "/Users/<user>/Desktop/herdr-web-ui/server"
     ],
     "unknownRouteIds": [
       "unknown.native.omo.work-admission",

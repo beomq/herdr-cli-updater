@@ -4,6 +4,7 @@ import { createHash, createPublicKey, verify } from "node:crypto";
 import { chmod, cp, lstat, mkdir, readFile, readdir, readlink, realpath, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { prunePackageCopies, releaseFailedAcquisition } from "./retention.mjs";
+import { homedir } from "node:os";
 
 const targets = {
   claude: ["@anthropic-ai/claude-code", "2.1.289"],
@@ -98,7 +99,7 @@ async function tools() {
   need(bun.sha256 === "539598c775882420b9d8deb7dc14d845f20f7d26f5600c50ab067dde6ac3f3bf", "Original Bun pin drift");
   need(node.sha256 === "e4b5a3af0e05c75de2eae013904145f40fe7fc2a6e6f17510128bf45cca4e79b", "Original Node pin drift");
   // npm is the original public npm CLI, not a package-authority shim.
-  const npm = await pin("/Users/beomseok/.nvm/versions/node/v24.20.0/lib/node_modules/npm/bin/npm-cli.js");
+  const npm = await pin(`${homedir()}/.nvm/versions/node/v24.20.0/lib/node_modules/npm/bin/npm-cli.js`);
   return { bun, node, npm };
 }
 async function environment(root) {
@@ -119,9 +120,9 @@ function policy(root, network) {
 (deny file-write*)
 (allow file-write* (subpath ${JSON.stringify(root)}))
 (allow file-write-data (literal "/dev/null") (literal "/dev/tty"))
-(deny file-read* (subpath "/Users/beomseok/.ssh") (subpath "/Users/beomseok/.aws")
- (subpath "/Users/beomseok/.config") (subpath "/Users/beomseok/.claude") (subpath "/Users/beomseok/.codex")
- (subpath "/Users/beomseok/.grok") (subpath "/Users/beomseok/Library/Keychains"))
+(deny file-read* (subpath "${homedir()}/.ssh") (subpath "${homedir()}/.aws")
+ (subpath "${homedir()}/.config") (subpath "${homedir()}/.claude") (subpath "${homedir()}/.codex")
+ (subpath "${homedir()}/.grok") (subpath "${homedir()}/Library/Keychains"))
 (deny mach-lookup (global-name "com.apple.securityd") (global-name "com.apple.securityd.xpc")
  (global-name "com.apple.CredentialStore"))
 ${network ? "" : "(deny network*)"}

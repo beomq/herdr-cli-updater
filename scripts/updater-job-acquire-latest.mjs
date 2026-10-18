@@ -1,10 +1,11 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
+import { homedir } from "node:os";
 
-const root = "/Users/beomseok/.local/share/herdr-cli-updater/updater-single-job/acquisition";
+const root = `${homedir()}/.local/share/herdr-cli-updater/updater-single-job/acquisition`;
 mkdirSync(root, { recursive: true, mode: 0o700 });
-const installed = "/Users/beomseok/.local/share/herdr-cli-updater/single-session-5.1.21/prefix/install/global";
+const installed = `${homedir()}/.local/share/herdr-cli-updater/single-session-5.1.21/prefix/install/global`;
 const lock = Bun.JSON5.parse(readFileSync(join(installed, "bun.lock"), "utf8"));
 const tagsResponse = await fetch("https://registry.npmjs.org/-/package/omo-ai/dist-tags", { signal: AbortSignal.timeout(30000) });
 if (!tagsResponse.ok) throw new Error("Latest dist-tags request failed");

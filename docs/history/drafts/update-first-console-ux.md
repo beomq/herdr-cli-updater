@@ -11,7 +11,7 @@ pending-action: deliver approved plan; execution requires separate user request
 review:
   plan_reviewer:
     status: approved
-    workspace_root: /Users/beomseok/Desktop/portfolio
+    workspace_root: /Users/<user>/Desktop/portfolio
     runtime_home: null
     target: .omo/plans/update-first-console-ux.md
     round_id: ux-review-2
@@ -54,7 +54,7 @@ status: approved
 
 ## Grounded approach — 2026-10-15
 - User approved plan writing and high-accuracy review through approval question. Complete plan now created; consultant review in flight, native plan-reviewer follows after findings integrated.
-- Target repository: /Users/beomseok/Desktop/herdr-cli-updater. Planning artifacts remain in portfolio/.omo; no product edits authorized by this plan request.
+- Target repository: /Users/<user>/Desktop/herdr-cli-updater. Planning artifacts remain in portfolio/.omo; no product edits authorized by this plan request.
 - Intent CLEAR; review_required true. User wants understandable update-first UX, not visual-only polish.
 - Primary navigation proposal: Updates, Terminal sessions, History. Installation management and automation live in each CLI detail; Add CLI is explicit. Preserve global history for uncertain jobs and recovery.
 - One installed CLI row, explicit Update affordance, separate latest check and exact reason when update cannot run. Preserve underlying engine/catalog identities and approval revisions; no wholesale protocol replacement.
