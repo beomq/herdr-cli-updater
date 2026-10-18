@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { createClaudeAdapter } from "../../src/adapters/claude";
 import type { ClaudeCommandEvidence, ClaudeDependencies, ClaudeSavedSession } from "../../src/adapters/claude";
-import { fixture, hash } from "../../.omo/evidence/herdr-cli-updater/task-12/fixture";
+import { fixture, hash } from "../fixtures/evidence/task-12/fixture";
 
 const fixtures: Awaited<ReturnType<typeof fixture>>[] = [];
 async function owned(manager: "native" | "npm" | "bun" | "homebrew" = "native", output?: string) {

@@ -14,7 +14,7 @@ import type { PluginRuntimeLoad } from "../../src/service/plugin-runtime";
 import { OMO_UPDATE_RUNTIME_PROFILE, validateOmoUpdateRuntimeInputs } from "../../src/service/omo-update-runtime";
 import type { OmoUpdateRuntimeInputs } from "../../src/service/omo-update-runtime";
 import { serveWorker, unsupportedDomainHandler } from "../../src/service/worker";
-import { fixture, hash, now } from "../../.omo/evidence/herdr-cli-updater/task22/update-only-composition-r1/implementation-r1/fixture";
+import { fixture, hash, now } from "../fixtures/evidence/task22/update-only-composition-r1/implementation-r1/fixture";
 
 // Real issuer, adapter, OS census and private consumer; the fixture's manager is
 // controlled. This does not attest an operating installation or vendor update.

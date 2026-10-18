@@ -1,6 +1,6 @@
 import { lstatSync, readFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
-import { fixture, digest } from "../../.omo/evidence/herdr-cli-updater/task-4/check-runtime-r1/fixture";
+import { fixture, digest } from "./evidence/task-4/check-runtime-r1/fixture";
 
 /** Reuse the real HTTP/store fixture without rewriting the preserved Senpi input. */
 export async function upstreamPiFixture(installedVersion = "1.1.0") {

@@ -1,11 +1,11 @@
 import { afterEach, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { hash } from "../../.omo/evidence/herdr-cli-updater/task-11/fixture";
+import { hash } from "../fixtures/evidence/task-11/fixture";
 import { writeFile } from "node:fs/promises";
 import { createPiAdapter } from "../../src/adapters/pi";
 import { upstreamPiFixture } from "../fixtures/pi-package";
-import { fixture as originalSenpiFixture } from "../../.omo/evidence/herdr-cli-updater/task-11/fixture";
+import { fixture as originalSenpiFixture } from "../fixtures/evidence/task-11/fixture";
 import { rm } from "node:fs/promises";
 import type { FailureCode } from "../../src/protocol";
 const roots: string[] = [];

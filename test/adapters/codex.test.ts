@@ -1,9 +1,10 @@
 import { afterEach, expect, test } from "bun:test";
 import { closeSync, existsSync, openSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync, writeSync } from "node:fs";
 import { join } from "node:path";
-import { fixture, digest, threadId } from "../../.omo/evidence/herdr-cli-updater/task-13/fixture";
+import { fixture, digest, threadId } from "../fixtures/evidence/task-13/fixture";
 import { createCodexAdapter } from "../../src/adapters/codex";
 import type { RuntimeIdentity } from "../../src/adapters/types";
+import { artifactPath, artifactTest } from "../fixtures/artifacts";
 
 const fixtures: Awaited<ReturnType<typeof fixture>>[] = [];
 async function setup(manager: "npm" | "bun" = "npm", executablePadding = 0) {
@@ -311,12 +312,12 @@ test("preserves native no-daemon routing only with matching private options evid
   expect(existsSync(f.callsPath)).toBe(false);
 });
 
-test("qualified official parser accepts constructed local resume grammar without resuming", async () => {
+artifactTest("qualified official parser accepts constructed local resume grammar without resuming", async () => {
   // Given: actual acquired task5 official binary, isolated fixture-only session.
   const f = await setup();
   const spec = f.adapter.exactResume(f.runtime);
   if (!spec.ok) throw new TypeError(spec.error.code);
-  const binary = join(import.meta.dir, "../../.omo/evidence/herdr-cli-updater/task-5/families/codex/task-cache/extracted/codex-aarch64-apple-darwin");
+  const binary = artifactPath("task-5/families/codex/task-cache/extracted/codex-aarch64-apple-darwin");
   // When: --help triggers the real parser but never opens/resumes a conversation.
   const child = Bun.spawn([binary, ...spec.value.command.args, "--help"], {
     cwd: f.root, env: { HOME: f.root, CODEX_HOME: f.root, LANG: "C" }, stdout: "pipe", stderr: "pipe",

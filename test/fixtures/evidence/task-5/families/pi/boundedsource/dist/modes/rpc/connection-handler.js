@@ -1,0 +1,1459 @@
+/**
+ * Per-connection RPC handler.
+ *
+ * This is the transport-independent core extracted from `runRpcMode`. It owns
+ * exactly one AgentSession runtime and speaks the JSONL RPC protocol over an
+ * injected output sink and a caller-driven line feed. It knows nothing about
+ * `process.stdout`, `process.stdin`, or process signals — those belong to the
+ * host (classic single-connection stdio in `rpc-mode.ts` or another transport
+ * adapter).
+ *
+ * Behaviour is byte-for-byte identical to the original `runRpcMode` command
+ * loop: the same responses, the same event stream, the same extension-UI
+ * bridge, the same backpressure discipline. The only difference is that writes
+ * go to `sink.writeRaw` instead of `writeRawStdout`, and the caller decides how
+ * (and whether) to end the process.
+ */
+import * as crypto from "node:crypto";
+import { basename, dirname, extname } from "node:path";
+import { VERSION } from "../../config.js";
+import { authMethodStatus, buildLoginProviderInfos } from "../../core/auth-providers.js";
+import { getCredentialAccounts, pinCredentialAccount, removeCredentialAccount, } from "../../core/credential-accounts.js";
+import { AssistantEditError, SessionStreamingError } from "../../core/edited-assistant-message.js";
+import { UserEditError } from "../../core/edited-user-message.js";
+import { emitProviderAccountsChanged, subscribeProviderAccountEvents, } from "../../core/extensions/builtin/anthropic-subscription/account-events.js";
+import { ANTHROPIC_SUBSCRIPTION_PROVIDER_ID } from "../../core/extensions/builtin/anthropic-subscription/account-management.js";
+import { isMcpControlInventoryChanged, MCP_CONTROL_INVENTORY_CHANGED_EVENT, MCP_CONTROL_INVENTORY_REQUEST_EVENT, } from "../../core/extensions/builtin/mcp/control-inventory.js";
+import { applyFastMode, resolveServiceTierMemoryModel, } from "../../core/extensions/builtin/service-tier.js";
+import { getSupportedThinkingLevels } from "../../core/thinking-levels.js";
+import { UNKNOWN_COMMAND_CONFIRM_HINT, UnknownCommandError } from "../../core/unknown-command.js";
+import { theme } from "../interactive/theme/theme.js";
+import { ConnectionQuestionBridge, degradeQuestion, sessionQuestionBridges } from "./connection-question-bridge.js";
+import { AUTO_TITLE_SESSIONS_CAPABILITY, buildCustomUnsupportedRequest, DEFAULT_CUSTOM_EXTENSION_LABEL, EXTENSION_EVENTS_CAPABILITY, MEDIA_PLACEHOLDERS_CAPABILITY, QUESTION_CAPABILITY, } from "./custom-capability.js";
+import { createRpcEventOutputBuffer } from "./event-output-buffer.js";
+import { settleExtensionUiResponse } from "./extension-ui-response.js";
+import { HostSessionControl } from "./host-session-control.js";
+import { createRpcLoginPromptCallbacks } from "./login-prompts.js";
+import { protocolIdentity } from "./protocol-identity.js";
+import { buildRpcCommandsForSession, createCommandsChangedEvent, rpcCommandListDigest } from "./rpc-command-surface.js";
+import { rpcCommandPayloadError, rpcCommandShapeError, rpcMessageLengthError } from "./rpc-input-validation.js";
+import { buildRpcSessionState } from "./rpc-session-state.js";
+import { RPC_ERROR_MEDIA_NOT_FOUND, RPC_ERROR_UNKNOWN_COMMAND } from "./rpc-types.js";
+import { SessionExtensionUiRequests } from "./session-extension-ui-requests.js";
+export { buildRpcSessionState } from "./rpc-session-state.js";
+function loadedExtensionName(path) {
+    const synthetic = /^<(?:builtin|inline):([^>]+)>$/.exec(path);
+    if (synthetic)
+        return synthetic[1];
+    const withoutExtension = basename(path, extname(path));
+    if (withoutExtension !== "index")
+        return withoutExtension;
+    const parent = dirname(path);
+    const parentName = basename(parent);
+    return parentName === "src" || parentName === "dist" ? basename(dirname(parent)) : parentName;
+}
+function loadedExtensions(session) {
+    return session.resourceLoader.getExtensions().extensions.map((extension) => ({
+        name: loadedExtensionName(extension.path),
+        path: extension.path,
+        sourceInfo: extension.sourceInfo,
+        enabled: true,
+    }));
+}
+function loadedMcpStatus(server) {
+    if (server.status !== undefined)
+        return server.status;
+    if (server.serverInfo !== null)
+        return "connected";
+    if (server.authStatus === "notLoggedIn")
+        return "needs_auth";
+    return "enabled";
+}
+function loadedMcpServers(snapshot) {
+    return snapshot.servers.map((server) => ({
+        name: server.name,
+        toolCount: server.tools.length,
+        status: loadedMcpStatus(server),
+        authStatus: server.authStatus,
+    }));
+}
+function loadedSurfacesFingerprint(session, extensions, mcpServers) {
+    return JSON.stringify({
+        skills: session.resourceLoader.getSkills().skills.map((skill) => ({
+            name: skill.name,
+            path: skill.filePath,
+            sourceInfo: skill.sourceInfo,
+            enabled: !skill.disableModelInvocation,
+        })),
+        extensions,
+        mcpServers,
+    });
+}
+/**
+ * Locate one media block inside a tool result by `(toolCallId, contentIndex)`.
+ *
+ * Durable session entries are searched first: they survive the live message window
+ * being compacted or trimmed away. The live `session.messages` cover the window
+ * between `tool_execution_end` and persistence. Returns `undefined` unless the index
+ * lands on an actual image block, so a text block or an out-of-range index is
+ * reported as `media_not_found` rather than as a differently-shaped success.
+ */
+function findToolResultMedia(session, toolCallId, contentIndex) {
+    const fromContent = (content) => {
+        if (!Array.isArray(content))
+            return undefined;
+        const block = content[contentIndex];
+        return block?.type === "image" ? block : undefined;
+    };
+    const matches = (message) => {
+        const candidate = message;
+        return candidate?.role === "toolResult" && candidate.toolCallId === toolCallId;
+    };
+    for (const entry of session.sessionManager.getEntries()) {
+        if (entry.type !== "message")
+            continue;
+        if (!matches(entry.message))
+            continue;
+        const found = fromContent(entry.message.content);
+        if (found)
+            return found;
+    }
+    for (const message of session.messages) {
+        if (!matches(message))
+            continue;
+        const found = fromContent(message.content);
+        if (found)
+            return found;
+    }
+    return undefined;
+}
+/**
+ * Create a per-connection RPC handler bound to one runtime host and one sink.
+ *
+ * This performs the initial `rebindSession()` and returns synchronously with a
+ * handler whose `handleInputLine` is ready to use. Signal handling, stdin
+ * wiring, and process exit are intentionally NOT done here.
+ */
+export function createRpcConnectionHandler(runtimeHost, sink, options = {}) {
+    let clientCapabilities = options.capabilities;
+    const routingSessionId = options.sessionId;
+    // True only while THIS connection's own command drives a replacement; the issuer
+    // already learns the new identity from its command response.
+    let replacementIssuedHere = false;
+    let session = runtimeHost.session;
+    let sessionControl;
+    const promptCalls = new Set();
+    let unsubscribe;
+    let unsubscribeBackpressure;
+    let unsubscribeLoadedSurfaces;
+    let unsubscribeExtensionEvents;
+    let mcpWireStatus = { servers: [] };
+    /** Abort owner of the last settled turn; `session.currentAbortSource` clears on settle. */
+    let lastAbortSource;
+    let loadedSurfacesDigest;
+    let rpcCommandsDigest;
+    let suppressLoadedSurfaceEvents = false;
+    const eventOutput = createRpcEventOutputBuffer(sink.writeRaw, options.eventFlushScheduler);
+    const tagSessionRecord = (value) => routingSessionId === undefined ? value : { ...value, sessionId: routingSessionId };
+    const output = (obj) => {
+        eventOutput.writeImmediate(tagSessionRecord(obj));
+    };
+    const outputEvent = (event) => {
+        eventOutput.enqueueEvent(tagSessionRecord(event));
+    };
+    const currentLoadedSurfaces = () => {
+        const extensions = loadedExtensions(session);
+        const mcpServers = loadedMcpServers(mcpWireStatus);
+        return {
+            data: { extensions, mcpServers },
+            digest: loadedSurfacesFingerprint(session, extensions, mcpServers),
+        };
+    };
+    const recordLoadedSurfaces = (emitChange) => {
+        const current = currentLoadedSurfaces();
+        const changed = loadedSurfacesDigest !== undefined && loadedSurfacesDigest !== current.digest;
+        loadedSurfacesDigest = current.digest;
+        if (emitChange && changed && !suppressLoadedSurfaceEvents) {
+            outputEvent({ type: "loaded_surfaces_changed" });
+        }
+        return current;
+    };
+    const requestMcpWireStatus = async () => {
+        let response;
+        const request = {
+            sessionId: session.sessionId,
+            respond(snapshot) {
+                response ??= snapshot;
+            },
+        };
+        session.resourceLoader.emitExtensionEvent?.(MCP_CONTROL_INVENTORY_REQUEST_EVENT, request);
+        mcpWireStatus = response === undefined ? { servers: [] } : await response;
+    };
+    const subscribeLoadedSurfaceEvents = () => {
+        unsubscribeLoadedSurfaces?.();
+        unsubscribeLoadedSurfaces = session.resourceLoader.onExtensionEvent?.(MCP_CONTROL_INVENTORY_CHANGED_EVENT, (data) => {
+            if (!isMcpControlInventoryChanged(data) || data.sessionId !== session.sessionId)
+                return;
+            mcpWireStatus = data.snapshot;
+            if (!suppressLoadedSurfaceEvents)
+                recordLoadedSurfaces(true);
+        });
+    };
+    const unsubscribeProviderAccountEvents = subscribeProviderAccountEvents((event) => {
+        if (event.type === "accounts_changed") {
+            outputEvent({ type: "auth_accounts_changed", provider: event.provider });
+            return;
+        }
+        outputEvent({
+            type: "account_failover",
+            provider: event.provider,
+            from: event.from,
+            to: event.to,
+            reason: event.reason,
+        });
+    });
+    const waitForRpcBackpressure = async () => {
+        eventOutput.flushEvents();
+        await sink.waitForBackpressure();
+    };
+    const success = (id, command, data) => {
+        if (data === undefined) {
+            return { id, type: "response", command, success: true };
+        }
+        return { id, type: "response", command, success: true, data };
+    };
+    const error = (id, command, message, errorCode, errorData) => {
+        const details = errorData === undefined && (command === "edit_user_message" || command === "navigate_tree")
+            ? { leafId: session.sessionManager.getLeafId() }
+            : errorData;
+        return {
+            id,
+            type: "response",
+            command,
+            success: false,
+            error: message,
+            ...(errorCode ? { errorCode } : {}),
+            ...(details === undefined ? {} : { errorData: details }),
+        };
+    };
+    // Pending extension UI requests waiting for response
+    const pendingExtensionRequests = new SessionExtensionUiRequests();
+    const questions = new ConnectionQuestionBridge(output);
+    let shutdownRequested = false;
+    // In-flight OAuth logins, keyed by provider. login_start registers one; the
+    // login promise clears it on completion; login_cancel aborts it. The flow is
+    // fire-command-then-subscribe: login_start responds immediately and the URL +
+    // terminal result arrive as auth_login_url / auth_login_end events.
+    const activeLogins = new Map();
+    /** Helper for dialog methods with signal/timeout support */
+    function createDialogPromise(opts, defaultValue, request, parseResponse) {
+        if (opts?.signal?.aborted)
+            return Promise.resolve(defaultValue);
+        const id = crypto.randomUUID();
+        return new Promise((resolve, reject) => {
+            let timeoutId;
+            const cleanup = () => {
+                if (timeoutId)
+                    clearTimeout(timeoutId);
+                opts?.signal?.removeEventListener("abort", onAbort);
+                pendingExtensionRequests.delete(id);
+            };
+            const onAbort = () => {
+                cleanup();
+                resolve(defaultValue);
+            };
+            opts?.signal?.addEventListener("abort", onAbort, { once: true });
+            if (opts?.timeout) {
+                timeoutId = setTimeout(() => {
+                    cleanup();
+                    resolve(defaultValue);
+                }, opts.timeout);
+            }
+            pendingExtensionRequests.set(id, {
+                resolve: (response) => {
+                    cleanup();
+                    resolve(parseResponse(response));
+                },
+                reject,
+            });
+            output({ type: "extension_ui_request", id, ...request });
+        });
+    }
+    /**
+     * Create an extension UI context that uses the RPC protocol.
+     */
+    const createExtensionUIContext = () => ({
+        question: (request, opts) => clientCapabilities?.includes(QUESTION_CAPABILITY)
+            ? questions.ask(request, opts)
+            : degradeQuestion(createExtensionUIContext(), request, opts),
+        select: (title, options, opts) => createDialogPromise(opts, undefined, { method: "select", title, options, timeout: opts?.timeout }, (r) => "cancelled" in r && r.cancelled ? undefined : "value" in r ? r.value : undefined),
+        confirm: (title, message, opts) => createDialogPromise(opts, false, { method: "confirm", title, message, timeout: opts?.timeout }, (r) => "cancelled" in r && r.cancelled ? false : "confirmed" in r ? r.confirmed : false),
+        input: (title, placeholder, opts) => createDialogPromise(opts, undefined, { method: "input", title, placeholder, timeout: opts?.timeout }, (r) => "cancelled" in r && r.cancelled ? undefined : "value" in r ? r.value : undefined),
+        notify(message, type) {
+            // Fire and forget - no response needed
+            output({
+                type: "extension_ui_request",
+                id: crypto.randomUUID(),
+                method: "notify",
+                message,
+                notifyType: type,
+            });
+        },
+        onTerminalInput() {
+            // Raw terminal input not supported in RPC mode
+            return () => { };
+        },
+        setStatus(key, text) {
+            // Fire and forget - no response needed
+            output({
+                type: "extension_ui_request",
+                id: crypto.randomUUID(),
+                method: "setStatus",
+                statusKey: key,
+                statusText: text,
+            });
+        },
+        setWorkingMessage(_message) {
+            // Working message not supported in RPC mode - requires TUI loader access
+        },
+        setWorkingVisible(_visible) {
+            // Working visibility not supported in RPC mode - requires TUI loader access
+        },
+        setWorkingIndicator(_options) {
+            // Working indicator customization not supported in RPC mode - requires TUI loader access
+        },
+        setHiddenThinkingLabel(_label) {
+            // Hidden thinking label not supported in RPC mode - requires TUI message rendering access
+        },
+        setWidget(key, content, options) {
+            // Only string-array widgets cross the wire; a component factory needs a TUI to render into.
+            if (content === undefined || Array.isArray(content)) {
+                output({
+                    type: "extension_ui_request",
+                    id: crypto.randomUUID(),
+                    method: "setWidget",
+                    widgetKey: key,
+                    widgetLines: content,
+                    widgetPlacement: options?.placement,
+                });
+            }
+        },
+        setFooter(_factory) {
+            // Custom footer not supported in RPC mode - requires TUI access
+        },
+        setHeader(_factory) {
+            // Custom header not supported in RPC mode - requires TUI access
+        },
+        setTitle(title) {
+            // Fire and forget - host can implement terminal title control
+            output({
+                type: "extension_ui_request",
+                id: crypto.randomUUID(),
+                method: "setTitle",
+                title,
+            });
+        },
+        async custom() {
+            // Custom UI cannot be rendered in RPC mode. By default this returns
+            // undefined synchronously with NO wire message — byte-identical to the
+            // original behavior. ONLY when the client advertised the
+            // "custom_unsupported" capability do we emit an additive notice request
+            // so an opt-in client can render a "requires the classic TUI" dialog before
+            // returning undefined. The name is best-effort: ctx.ui.custom carries no
+            // extension identity, so a generic label is used.
+            const request = buildCustomUnsupportedRequest(clientCapabilities, DEFAULT_CUSTOM_EXTENSION_LABEL);
+            if (request) {
+                output(request);
+            }
+            return undefined;
+        },
+        pasteToEditor(text) {
+            // Paste handling not supported in RPC mode - falls back to setEditorText
+            this.setEditorText(text);
+        },
+        setEditorText(text) {
+            // Fire and forget - host can implement editor control
+            output({
+                type: "extension_ui_request",
+                id: crypto.randomUUID(),
+                method: "set_editor_text",
+                text,
+            });
+        },
+        getEditorText() {
+            // Synchronous method can't wait for RPC response
+            // Host should track editor state locally if needed
+            return "";
+        },
+        async editor(title, prefill) {
+            const id = crypto.randomUUID();
+            return new Promise((resolve, reject) => {
+                pendingExtensionRequests.set(id, {
+                    resolve: (response) => {
+                        if ("cancelled" in response && response.cancelled) {
+                            resolve(undefined);
+                        }
+                        else if ("value" in response) {
+                            resolve(response.value);
+                        }
+                        else {
+                            resolve(undefined);
+                        }
+                    },
+                    reject,
+                });
+                output({ type: "extension_ui_request", id, method: "editor", title, prefill });
+            });
+        },
+        addAutocompleteProvider() {
+            // Autocomplete provider composition is not supported in RPC mode
+        },
+        setEditorComponent() {
+            // Custom editor components not supported in RPC mode
+        },
+        getEditorComponent() {
+            // Custom editor components not supported in RPC mode
+            return undefined;
+        },
+        get theme() {
+            return theme;
+        },
+        getAllThemes() {
+            return [];
+        },
+        getTheme(_name) {
+            return undefined;
+        },
+        setTheme(_theme) {
+            // Theme switching not supported in RPC mode
+            return { success: false, error: "Theme switching not supported in RPC mode" };
+        },
+        getToolsExpanded() {
+            // Tool expansion not supported in RPC mode - no TUI
+            return false;
+        },
+        setToolsExpanded(_expanded) {
+            // Tool expansion not supported in RPC mode - no TUI
+        },
+    });
+    const refreshLoadedSurfacesAfter = async (operation, resetMcp) => {
+        const previousDigest = loadedSurfacesDigest;
+        const wasSuppressed = suppressLoadedSurfaceEvents;
+        suppressLoadedSurfaceEvents = true;
+        if (resetMcp)
+            mcpWireStatus = { servers: [] };
+        let commandsChanged;
+        try {
+            await operation();
+            await requestMcpWireStatus();
+            loadedSurfacesDigest = currentLoadedSurfaces().digest;
+            const commands = buildRpcCommandsForSession(session);
+            commandsChanged = createCommandsChangedEvent(rpcCommandsDigest, commands);
+            rpcCommandsDigest = rpcCommandListDigest(commands);
+        }
+        finally {
+            suppressLoadedSurfaceEvents = wasSuppressed;
+        }
+        if (!wasSuppressed && commandsChanged) {
+            outputEvent(commandsChanged);
+        }
+        if (!wasSuppressed && previousDigest !== undefined && previousDigest !== loadedSurfacesDigest) {
+            outputEvent({ type: "loaded_surfaces_changed" });
+        }
+    };
+    runtimeHost.setRebindSession(async () => {
+        // AgentSessionRuntime invokes this callback while completing a replacement.
+        // Do not await extension binding here: extensions may wait for session work
+        // that the replacement still owns. The command response must acknowledge the
+        // committed replacement; derived surfaces refresh out of band afterwards.
+        await rebindSession(true);
+    });
+    const rebindAfterLocalReplacement = async () => {
+        replacementIssuedHere = true;
+        try {
+            await rebindSession();
+        }
+        finally {
+            replacementIssuedHere = false;
+        }
+    };
+    const rebindSession = async (deferRefresh = false) => {
+        unsubscribeLoadedSurfaces?.();
+        unsubscribeExtensionEvents?.();
+        const replacedSession = session !== runtimeHost.session;
+        session = runtimeHost.session;
+        sessionQuestionBridges.set(session, questions);
+        // Installed before the bind below: extensions register their control endpoint on session_start.
+        sessionControl?.dispose();
+        sessionControl = new HostSessionControl(session, runtimeHost.launchProfile?.sessionContext?.host_socket, (line) => void process.stderr.write(`senpi rpc session ${routingSessionId ?? "classic"}: ${line}\n`));
+        session.setControlEndpointHost?.(sessionControl);
+        if (replacedSession) {
+            lastAbortSource = undefined;
+            if (routingSessionId !== undefined || !replacementIssuedHere) {
+                // A replacement can be driven by ANY attached client, so every connection must be
+                // told the live binding moved and given the new authoritative identity. Emitted
+                // before the derived-surface refresh so a client cannot act on the old identity in
+                // the window the refresh takes.
+                outputEvent({
+                    type: "session_replaced",
+                    durableSessionId: session.sessionId,
+                    sessionFile: session.sessionFile,
+                    cwd: session.sessionManager.getCwd(),
+                    sessionName: session.sessionName,
+                });
+            }
+        }
+        unsubscribeExtensionEvents = clientCapabilities?.includes(EXTENSION_EVENTS_CAPABILITY)
+            ? session.extensionRunner.onRpcEvent(({ name, data }) => {
+                outputEvent({ type: "extension_event", name, data });
+            })
+            : undefined;
+        subscribeLoadedSurfaceEvents();
+        // Subscribe to the replaced session before its bind runs, not after. The bind
+        // is deferred by design - awaiting it would deadlock a client whose
+        // session_start handler blocks on an extension_ui_request it cannot answer
+        // while still awaiting the replacement response - and it still mutates the
+        // session it owns: pi-rules appends a durable scan entry from session_start.
+        // Those entries must reach every attached connection, and nothing else can
+        // carry them, because the session file is not written until an assistant
+        // message exists, so a client that misses the notification can never
+        // reconstruct the session it is bound to. Installing here also drops the
+        // previous session's subscription immediately instead of after the bind.
+        installSessionSubscriptions();
+        const refresh = refreshLoadedSurfacesAfter(() => session.bindExtensions({
+            uiContext: createExtensionUIContext(),
+            mode: "rpc",
+            commandContextActions: {
+                waitForIdle: () => session.agent.waitForIdle(),
+                newSession: async (options) => runtimeHost.newSession(options),
+                fork: async (entryId, forkOptions) => {
+                    const result = await runtimeHost.fork(entryId, forkOptions);
+                    return { cancelled: result.cancelled };
+                },
+                navigateTree: async (targetId, options) => {
+                    const result = await session.navigateTree(targetId, {
+                        summarize: options?.summarize,
+                        customInstructions: options?.customInstructions,
+                        replaceInstructions: options?.replaceInstructions,
+                        label: options?.label,
+                        expectedLeafId: options?.expectedLeafId,
+                    });
+                    return { cancelled: result.cancelled };
+                },
+                editAssistantMessage: async (entryId, text, options) => {
+                    const result = await session.editAssistantMessage(entryId, text, {
+                        summarize: options?.summarize,
+                        customInstructions: options?.customInstructions,
+                        expectedLeafId: options?.expectedLeafId,
+                    });
+                    return { cancelled: result.cancelled, unchanged: result.unchanged, entryId: result.entryId };
+                },
+                editUserMessage: async (entryId, text, options) => {
+                    const result = await session.editUserMessage(entryId, text, {
+                        summarize: options?.summarize,
+                        customInstructions: options?.customInstructions,
+                        expectedLeafId: options?.expectedLeafId,
+                    });
+                    return { cancelled: result.cancelled, unchanged: result.unchanged, entryId: result.entryId };
+                },
+                switchSession: async (sessionPath, options) => {
+                    return runtimeHost.switchSession(sessionPath, options);
+                },
+                reload: async () => {
+                    await refreshLoadedSurfacesAfter(async () => {
+                        await session.reload();
+                    }, false);
+                },
+            },
+            shutdownHandler: () => {
+                if (options.shutdownHandler) {
+                    options.shutdownHandler();
+                }
+                else {
+                    shutdownRequested = true;
+                }
+            },
+            onError: (err) => {
+                output({
+                    type: "extension_error",
+                    extensionPath: err.extensionPath,
+                    event: err.event,
+                    error: err.error,
+                });
+            },
+        }), true);
+        function installSessionSubscriptions() {
+            unsubscribe?.();
+            unsubscribeBackpressure?.();
+            unsubscribe = session.subscribe((event) => {
+                if (event.type === "skill_invocation") {
+                    outputEvent(event);
+                    return;
+                }
+                if (event.type === "command_invocation") {
+                    outputEvent(event);
+                    return;
+                }
+                if (event.type === "thinking_level_changed" || event.type === "model_changed") {
+                    // Core emits the effective level only; the selection provenance lives beside it
+                    // on the session and is what distinguishes an explicit choice from a default.
+                    const thinkingSelection = session.thinkingSelection;
+                    outputEvent(thinkingSelection === undefined ? event : { ...event, thinkingSelection });
+                    return;
+                }
+                if (event.type === "agent_end") {
+                    // The subscribe-path `agent_end` carries only { type, messages, willRetry };
+                    // the abort provenance the extension hook receives is stripped from it. Read
+                    // it from the session, which still reports the owner at this point, and retain
+                    // it for `get_state` because the getter clears once the turn settles.
+                    const abortSource = session.currentAbortSource;
+                    if (abortSource !== undefined)
+                        lastAbortSource = abortSource;
+                    outputEvent(abortSource === undefined ? event : { ...event, aborted: true, abortSource });
+                    return;
+                }
+                outputEvent(event);
+            });
+            unsubscribeBackpressure = session.agent.subscribe(async () => {
+                await waitForRpcBackpressure();
+            });
+        }
+        if (deferRefresh) {
+            // The subscription is already installed on the replaced session above, so
+            // the deferred refresh only needs its failure reported. Re-installing here
+            // would replay the settings-source selection a second time.
+            void refresh.catch((cause) => {
+                outputEvent({ type: "rpc_error", error: String(cause) });
+            });
+            return;
+        }
+        await refresh;
+    };
+    /**
+     * Drive an OAuth login for one provider as fire-command-then-subscribe.
+     *
+     * Reuses AuthStorage.login (the same callbacks the classic TUI uses). Only the
+     * URL-based happy path is surfaced over RPC: onAuth emits an auth_login_url
+     * event; success/failure/cancel emit a single auth_login_end event. Callbacks
+     * that need interactive mid-flow input (onPrompt/onSelect) are answered over
+     * the extension UI dialog channel, so clients may either answer the dialog or
+     * finish through the browser/callback-server path. An unanswered dialog never
+     * blocks that completion path: it is released the moment the login settles.
+     * Secrets are never emitted: only the provider id, the auth URL, the prompt
+     * text/option labels, and a success flag (plus a non-secret error message)
+     * cross the wire; a client's answer is consumed in-process.
+     */
+    const startLogin = async (provider) => {
+        // A second login_start for the same provider aborts the prior attempt.
+        activeLogins.get(provider)?.abort();
+        const controller = new AbortController();
+        const settled = new AbortController();
+        const loginSignal = AbortSignal.any([controller.signal, settled.signal]);
+        activeLogins.set(provider, controller);
+        try {
+            await session.modelRegistry.authStorage.login(provider, {
+                onAuth: (info) => {
+                    outputEvent({ type: "auth_login_url", provider, url: info.url });
+                },
+                onDeviceCode: (info) => {
+                    outputEvent({ type: "auth_login_url", provider, url: info.verificationUri });
+                },
+                ...createRpcLoginPromptCallbacks(createExtensionUIContext(), loginSignal),
+                onProgress: () => { },
+                signal: controller.signal,
+            });
+            session.modelRegistry.refresh();
+            if (provider === ANTHROPIC_SUBSCRIPTION_PROVIDER_ID)
+                emitProviderAccountsChanged(provider);
+            outputEvent({ type: "auth_login_end", provider, success: true });
+        }
+        catch (loginError) {
+            const message = loginError instanceof Error ? loginError.message : String(loginError);
+            outputEvent({ type: "auth_login_end", provider, success: false, error: message });
+        }
+        finally {
+            // Release any dialog still pending so it can never outlive the login.
+            settled.abort();
+            if (activeLogins.get(provider) === controller) {
+                activeLogins.delete(provider);
+            }
+        }
+    };
+    /**
+     * Host capabilities for `applyFastMode`, mirroring what the `/fast` command passes from its
+     * extension context. The notification is dropped: a command response carries the message
+     * (`data` on success, `error` on refusal), so a duplicate `extension_ui_request` would be noise.
+     */
+    const fastModeContext = () => ({
+        cwd: session.cwd,
+        agentDir: session.agentDir,
+        model: session.model,
+        modelRegistry: session.modelRegistry,
+        serviceTier: session.serviceTier,
+        isProjectTrusted: () => session.settingsManager.isProjectTrusted(),
+        notify: () => { },
+        setSessionModel: async (model) => {
+            if (!session.modelRuntime.hasConfiguredAuth(model.provider))
+                return false;
+            await session.setSessionModel(model);
+            return true;
+        },
+        setSessionFastMode: (enabled) => session.setSessionFastMode(enabled),
+    });
+    // Handle a single command
+    const handleCommand = async (command) => {
+        const id = command.id;
+        switch (command.type) {
+            case "get_protocol_info":
+                return {
+                    id,
+                    type: "response",
+                    command: "get_protocol_info",
+                    success: true,
+                    data: {
+                        protocolVersion: 1,
+                        serverVersion: VERSION,
+                        capabilities: [
+                            ...new Set([
+                                "multi_session",
+                                AUTO_TITLE_SESSIONS_CAPABILITY,
+                                MEDIA_PLACEHOLDERS_CAPABILITY,
+                                ...(options.capabilities ?? []),
+                            ]),
+                        ],
+                        mode: "classic",
+                        ...protocolIdentity(),
+                    },
+                };
+            case "open_session":
+                return error(id, "open_session", "multi_session_disabled");
+            // =================================================================
+            // Prompting
+            // =================================================================
+            case "prompt": {
+                if (command.thinkingLevel !== undefined && session.isStreaming && command.streamingBehavior !== undefined) {
+                    return error(id, "prompt", "Cannot set thinkingLevel on a queued prompt; set it after the current turn completes.");
+                }
+                // Start prompt handling immediately, but emit the authoritative response only after
+                // prompt preflight succeeds. Queued and immediately handled prompts also count as success.
+                // The disposition is captured for the wire: AgentSession always fires promptDisposition
+                // strictly before preflightResult(true), so the success frame carries the final value.
+                let preflightSucceeded = false;
+                let disposition;
+                const promptCall = session
+                    .prompt(command.message, {
+                    images: command.images,
+                    streamingBehavior: command.streamingBehavior,
+                    thinkingLevel: command.thinkingLevel,
+                    sessionTitlePrompt: command.sessionTitlePrompt,
+                    expandPromptTemplates: command.expandPromptTemplates,
+                    unknownCommandAsText: command.unknownCommandAsText,
+                    source: "rpc",
+                    promptDisposition: (nextDisposition) => {
+                        disposition = nextDisposition;
+                    },
+                    preflightResult: (didSucceed) => {
+                        if (didSucceed && !preflightSucceeded) {
+                            preflightSucceeded = true;
+                            output(success(id, "prompt", { ...(disposition !== undefined ? { disposition } : {}) }));
+                        }
+                    },
+                })
+                    .catch((e) => {
+                    if (preflightSucceeded)
+                        return;
+                    if (e instanceof UnknownCommandError) {
+                        const { command: name, suggestions, reason } = e;
+                        output(error(id, "prompt", `${e.message} ${UNKNOWN_COMMAND_CONFIRM_HINT}`, RPC_ERROR_UNKNOWN_COMMAND, {
+                            command: name,
+                            suggestions,
+                            reason,
+                        }));
+                        return;
+                    }
+                    output(error(id, "prompt", e.message));
+                });
+                promptCalls.add(promptCall);
+                void promptCall.finally(() => promptCalls.delete(promptCall));
+                return undefined;
+            }
+            case "append_user_message": {
+                const content = command.content;
+                const message = typeof content === "string"
+                    ? { role: "user", content, timestamp: Date.now() }
+                    : { role: "user", content, timestamp: Date.now() };
+                session.sessionManager.appendMessage(message);
+                session.agent.state.messages = session.sessionManager.buildSessionContext().messages;
+                return success(id, "append_user_message");
+            }
+            case "append_session_entry": {
+                session.appendSessionEntry(command.entry);
+                return success(id, "append_session_entry");
+            }
+            case "send_custom_message": {
+                await session.sendCustomMessage({
+                    customType: command.customType,
+                    content: command.content,
+                    display: command.display,
+                    details: command.details,
+                }, { triggerTurn: command.triggerTurn, deliverAs: command.deliverAs });
+                return success(id, "send_custom_message");
+            }
+            case "steer": {
+                const disposition = await session.steer(command.message, command.images, {
+                    enqueueOrder: command.enqueueOrder,
+                    source: "rpc",
+                });
+                return success(id, "steer", { disposition });
+            }
+            case "follow_up": {
+                const disposition = await session.followUp(command.message, command.images, {
+                    enqueueOrder: command.enqueueOrder,
+                    source: "rpc",
+                });
+                return success(id, "follow_up", { disposition });
+            }
+            case "abort": {
+                void session.abort().catch((cause) => {
+                    // Abort is acknowledged once dispatched; report quiesce failures out of band.
+                    outputEvent({ type: "rpc_error", error: String(cause) });
+                });
+                return success(id, "abort");
+            }
+            case "abort_compaction": {
+                session.abortCompaction();
+                return success(id, "abort_compaction");
+            }
+            case "reload": {
+                const result = await session.reload();
+                return success(id, "reload", result);
+            }
+            case "check_reload_veto": {
+                return success(id, "check_reload_veto", await session.checkReloadVeto());
+            }
+            case "clear_queue": {
+                const cleared = session.clearQueue({ abortWillFollow: command.abortWillFollow ?? false });
+                return success(id, "clear_queue", {
+                    steering: cleared.steering,
+                    followUp: cleared.followUp,
+                    ordered: [...cleared.ordered],
+                });
+            }
+            case "get_steering_messages":
+                return success(id, "get_steering_messages", { messages: [...session.getSteeringMessages()] });
+            case "get_follow_up_messages":
+                return success(id, "get_follow_up_messages", { messages: [...session.getFollowUpMessages()] });
+            case "abort_branch_summary":
+                session.abortBranchSummary();
+                return success(id, "abort_branch_summary");
+            case "wake": {
+                const deliveryIds = Array.isArray(command.delivery_ids)
+                    ? command.delivery_ids.filter((entry) => typeof entry === "string")
+                    : undefined;
+                const result = (await sessionControl?.wake(deliveryIds)) ?? {};
+                return success(id, "wake", { admitted: result.admitted ?? [] });
+            }
+            case "new_session": {
+                const options = command.parentSession ? { parentSession: command.parentSession } : undefined;
+                const result = await runtimeHost.newSession(options);
+                if (routingSessionId === undefined && !result.cancelled && session !== runtimeHost.session)
+                    await rebindAfterLocalReplacement();
+                return success(id, "new_session", result);
+            }
+            // =================================================================
+            // State
+            // =================================================================
+            case "set_client_info":
+                if (options.clientInfo && command.capabilities !== undefined) {
+                    clientCapabilities = command.capabilities;
+                    options.clientInfo.setCapabilities(options.clientInfo.connectionId(), command.capabilities);
+                }
+                return success(id, "set_client_info");
+            case "get_state":
+                return success(id, "get_state", buildRpcSessionState(session, lastAbortSource));
+            // =================================================================
+            // Model
+            // =================================================================
+            case "set_model": {
+                const models = await session.modelRegistry.getAvailable();
+                const model = models.find((m) => m.provider === command.provider && m.id === command.modelId);
+                if (!model) {
+                    return error(id, "set_model", `Model not found: ${command.provider}/${command.modelId}`);
+                }
+                const systemPromptChange = await session.setModel(model);
+                return success(id, "set_model", { ...model, systemPromptName: systemPromptChange?.systemPromptName });
+            }
+            case "set_favorite_models":
+                session.setFavoriteModels(command.models);
+                return success(id, "set_favorite_models");
+            case "set_scoped_models":
+                session.setScopedModels(command.models);
+                return success(id, "set_scoped_models");
+            case "cycle_model": {
+                const result = await session.cycleModel(command.direction);
+                if (!result) {
+                    return success(id, "cycle_model", null);
+                }
+                return success(id, "cycle_model", result);
+            }
+            case "get_available_models": {
+                const models = await session.modelRegistry.getAvailable();
+                return success(id, "get_available_models", {
+                    models: models.map((model) => ({
+                        ...model,
+                        supportedThinkingLevels: getSupportedThinkingLevels(model),
+                    })),
+                });
+            }
+            // =================================================================
+            // Thinking
+            // =================================================================
+            case "set_thinking_level": {
+                if (command.scope === "turn") {
+                    // Validate BEFORE mutating: the session clamps an unsupported level to a supported
+                    // neighbour, so applying first would leave a REJECTED request's clamped level in
+                    // place. A failed command must not change session state.
+                    if (!session.getAvailableThinkingLevels().includes(command.level)) {
+                        return error(id, "set_thinking_level", `Thinking level ${command.level} is not supported by the active model.`);
+                    }
+                    session.setSessionThinkingLevel(command.level);
+                }
+                else {
+                    session.setThinkingLevel(command.level);
+                }
+                return success(id, "set_thinking_level");
+            }
+            case "cycle_thinking_level": {
+                const level = session.cycleThinkingLevel();
+                if (!level) {
+                    return success(id, "cycle_thinking_level", null);
+                }
+                return success(id, "cycle_thinking_level", { level });
+            }
+            case "get_available_thinking_levels":
+                return success(id, "get_available_thinking_levels", {
+                    levels: session.getAvailableThinkingLevels(),
+                });
+            // =================================================================
+            // Fast mode
+            // =================================================================
+            case "set_fast_mode": {
+                if (typeof command.enabled !== "boolean") {
+                    return error(id, "set_fast_mode", "set_fast_mode requires a boolean 'enabled' field.");
+                }
+                const model = session.model;
+                if (!model) {
+                    return error(id, "set_fast_mode", "No active model.");
+                }
+                // Same entry point as the /fast command: persistence, `-fast` key normalization,
+                // and pin precedence live in applyFastMode, never duplicated here.
+                const result = await applyFastMode(fastModeContext(), command.enabled);
+                if (!result.applied) {
+                    // A refusal (non-Codex model, active `:priority` pin, failed model switch) has no
+                    // notification channel for a command response, so it is reported as an error
+                    // instead of a success that silently did nothing.
+                    return error(id, "set_fast_mode", result.message);
+                }
+                const memoryModel = resolveServiceTierMemoryModel(session.modelRegistry, session.model ?? model);
+                return success(id, "set_fast_mode", {
+                    enabled: result.enabled,
+                    serviceTier: result.recordedTier,
+                    provider: memoryModel.provider,
+                    modelId: memoryModel.id,
+                });
+            }
+            case "get_fast_mode":
+                return success(id, "get_fast_mode", {
+                    enabled: session.isFastModeActive(),
+                    serviceTier: session.effectiveServiceTier ?? null,
+                });
+            // =================================================================
+            // Queue Modes
+            // =================================================================
+            case "set_steering_mode": {
+                session.setSteeringMode(command.mode);
+                return success(id, "set_steering_mode");
+            }
+            case "set_follow_up_mode": {
+                session.setFollowUpMode(command.mode);
+                return success(id, "set_follow_up_mode");
+            }
+            // =================================================================
+            // Compaction
+            // =================================================================
+            case "compact": {
+                const result = await session.compact(command.customInstructions);
+                return success(id, "compact", result);
+            }
+            case "set_auto_compaction": {
+                session.setAutoCompactionEnabled(command.enabled);
+                return success(id, "set_auto_compaction");
+            }
+            // =================================================================
+            // Retry
+            // =================================================================
+            case "set_auto_retry": {
+                session.setAutoRetryEnabled(command.enabled);
+                return success(id, "set_auto_retry");
+            }
+            case "abort_retry": {
+                session.abortRetry();
+                return success(id, "abort_retry");
+            }
+            // =================================================================
+            // Bash
+            // =================================================================
+            case "navigate_tree": {
+                // Addressing refusals. The command type forbids both spellings at once and neither of
+                // them, so TypeScript narrows these branches to `never` - they exist for the inbound
+                // JSON no type can police, which is why the command name is written out here.
+                if (command.entryId !== undefined && command.targetId !== undefined) {
+                    return error(id, "navigate_tree", "navigate_tree takes either entryId or targetId, not both");
+                }
+                if (command.entryId === undefined && command.targetId === undefined) {
+                    return error(id, "navigate_tree", "navigate_tree requires entryId or targetId");
+                }
+                const targetId = command.entryId ?? command.targetId;
+                if (typeof targetId !== "string" || targetId.length === 0) {
+                    return error(id, command.type, "navigate_tree requires a non-empty entryId or targetId");
+                }
+                if (command.intent !== undefined && command.intent !== "select" && command.intent !== "resume") {
+                    return error(id, command.type, "navigate_tree intent must be select or resume");
+                }
+                try {
+                    // Core owns selection/resumption, summaries, cancellation, and root reset.
+                    // Pass the requested entry itself, not a client- or handler-computed parent.
+                    const result = await session.navigateTree(targetId, {
+                        ...(command.intent !== undefined ? { intent: command.intent } : {}),
+                        summarize: command.summarize,
+                        customInstructions: command.customInstructions,
+                        replaceInstructions: command.replaceInstructions,
+                        label: command.label,
+                        expectedLeafId: command.expectedLeafId,
+                    });
+                    const leafId = session.sessionManager.getLeafId();
+                    if (command.targetId !== undefined) {
+                        return success(id, command.type, { ...result, leafId });
+                    }
+                    if (result.cancelled) {
+                        return success(id, command.type, {
+                            outcome: "cancelled",
+                            leafId,
+                            ...(result.aborted ? { aborted: true } : {}),
+                        });
+                    }
+                    return success(id, command.type, {
+                        outcome: "navigated",
+                        leafId,
+                        ...(result.editorText !== undefined ? { editorText: result.editorText } : {}),
+                        ...(result.summaryEntry ? { summaryEntryId: result.summaryEntry.id } : {}),
+                    });
+                }
+                catch (err) {
+                    if (err instanceof AssistantEditError || err instanceof SessionStreamingError) {
+                        return error(id, command.type, err.message, err.code);
+                    }
+                    throw err;
+                }
+            }
+            case "record_bash_result":
+                session.recordBashResult(command.command, command.result, {
+                    excludeFromContext: command.excludeFromContext,
+                });
+                return success(id, "record_bash_result");
+            case "set_label":
+                session.sessionManager.appendLabelChange(command.entryId, command.label);
+                return success(id, "set_label");
+            case "bash": {
+                if (routingSessionId !== undefined)
+                    outputEvent({ type: "bash_start" });
+                try {
+                    const eventResult = await session.extensionRunner.emitUserBash({
+                        type: "user_bash",
+                        command: command.command,
+                        excludeFromContext: command.excludeFromContext ?? false,
+                        cwd: session.sessionManager.getCwd(),
+                    });
+                    if (eventResult?.result) {
+                        session.recordBashResult(command.command, eventResult.result, {
+                            excludeFromContext: command.excludeFromContext,
+                        });
+                        return success(id, "bash", eventResult.result);
+                    }
+                    const result = await session.executeBash(command.command, undefined, {
+                        excludeFromContext: command.excludeFromContext,
+                        id: command.executionId,
+                        // Functions cannot cross JSONL. Host extensions may still provide the
+                        // executable operations object; client-supplied data is only a wire-safe hint.
+                        operations: eventResult?.operations,
+                    });
+                    return success(id, "bash", result);
+                }
+                finally {
+                    if (routingSessionId !== undefined)
+                        outputEvent({ type: "bash_end" });
+                }
+            }
+            case "abort_bash": {
+                session.abortBash();
+                return success(id, "abort_bash");
+            }
+            case "cleanup_bash_output":
+                await session.cleanupBashOutput(command.path);
+                return success(id, "cleanup_bash_output");
+            // =================================================================
+            // Session
+            // =================================================================
+            case "get_session_stats": {
+                const stats = session.getSessionStats();
+                return success(id, "get_session_stats", stats);
+            }
+            case "export_html": {
+                const path = await session.exportToHtml(command.outputPath, { themeName: command.themeName });
+                return success(id, "export_html", { path });
+            }
+            case "export_jsonl": {
+                return success(id, "export_jsonl", { path: session.exportToJsonl(command.outputPath) });
+            }
+            case "switch_session": {
+                const result = await runtimeHost.switchSession(command.sessionPath, { cwdOverride: command.cwdOverride });
+                if (routingSessionId === undefined && !result.cancelled && session !== runtimeHost.session)
+                    await rebindAfterLocalReplacement();
+                return success(id, "switch_session", result);
+            }
+            case "fork": {
+                const result = await runtimeHost.fork(command.entryId, { position: command.position });
+                if (routingSessionId === undefined && !result.cancelled && session !== runtimeHost.session)
+                    await rebindAfterLocalReplacement();
+                return success(id, "fork", { text: result.selectedText, cancelled: result.cancelled });
+            }
+            case "edit_assistant_message": {
+                if (typeof command.entryId !== "string" ||
+                    command.entryId.length === 0 ||
+                    typeof command.text !== "string") {
+                    return error(id, command.type, "edit_assistant_message requires a non-empty entryId and a text string");
+                }
+                try {
+                    const result = await session.editAssistantMessage(command.entryId, command.text, {
+                        summarize: command.summarize,
+                        customInstructions: command.customInstructions,
+                        expectedLeafId: command.expectedLeafId,
+                    });
+                    const leafId = session.sessionManager.getLeafId();
+                    if (result.unchanged) {
+                        return success(id, command.type, { outcome: "unchanged", leafId });
+                    }
+                    if (result.cancelled) {
+                        return success(id, command.type, {
+                            outcome: "cancelled",
+                            leafId,
+                            ...(result.aborted ? { aborted: true } : {}),
+                        });
+                    }
+                    const entry = result.entryId ? session.sessionManager.getEntry(result.entryId) : undefined;
+                    if (entry?.type !== "message" || leafId === null) {
+                        return error(id, command.type, "Edited assistant entry was not persisted");
+                    }
+                    return success(id, command.type, {
+                        outcome: "edited",
+                        entry,
+                        leafId,
+                        ...(result.summaryEntry ? { summaryEntryId: result.summaryEntry.id } : {}),
+                    });
+                }
+                catch (err) {
+                    if (err instanceof AssistantEditError || err instanceof SessionStreamingError) {
+                        return error(id, command.type, err.message, err.code);
+                    }
+                    throw err;
+                }
+            }
+            case "edit_user_message": {
+                if (typeof command.entryId !== "string" ||
+                    command.entryId.length === 0 ||
+                    typeof command.text !== "string") {
+                    return error(id, command.type, "edit_user_message requires a non-empty entryId and a text string");
+                }
+                try {
+                    const result = await session.editUserMessage(command.entryId, command.text, {
+                        summarize: command.summarize,
+                        customInstructions: command.customInstructions,
+                        expectedLeafId: command.expectedLeafId,
+                    });
+                    const leafId = session.sessionManager.getLeafId();
+                    if (result.unchanged) {
+                        return success(id, command.type, { outcome: "unchanged", leafId });
+                    }
+                    if (result.cancelled) {
+                        return success(id, command.type, {
+                            outcome: "cancelled",
+                            leafId,
+                            ...(result.aborted ? { aborted: true } : {}),
+                        });
+                    }
+                    const entry = result.entryId ? session.sessionManager.getEntry(result.entryId) : undefined;
+                    if (entry?.type !== "message" || leafId === null) {
+                        return error(id, command.type, "Edited user entry was not persisted");
+                    }
+                    return success(id, command.type, {
+                        outcome: "edited",
+                        entry,
+                        leafId,
+                        ...(result.summaryEntry ? { summaryEntryId: result.summaryEntry.id } : {}),
+                    });
+                }
+                catch (err) {
+                    if (err instanceof UserEditError ||
+                        err instanceof AssistantEditError ||
+                        err instanceof SessionStreamingError) {
+                        return error(id, command.type, err.message, err.code);
+                    }
+                    throw err;
+                }
+            }
+            case "clone": {
+                const leafId = session.sessionManager.getLeafId();
+                if (!leafId) {
+                    return error(id, "clone", "Cannot clone session: no current entry selected");
+                }
+                const result = await runtimeHost.fork(leafId, { position: "at" });
+                if (routingSessionId === undefined && !result.cancelled && session !== runtimeHost.session)
+                    await rebindAfterLocalReplacement();
+                return success(id, "clone", { cancelled: result.cancelled });
+            }
+            case "get_fork_messages": {
+                const messages = session.getUserMessagesForForking();
+                return success(id, "get_fork_messages", { messages });
+            }
+            case "get_entries": {
+                const sessionManager = session.sessionManager;
+                let entries = sessionManager.getEntries();
+                if (command.since !== undefined) {
+                    const sinceIndex = entries.findIndex((e) => e.id === command.since);
+                    if (sinceIndex === -1) {
+                        return error(id, "get_entries", `Entry not found: ${command.since}`);
+                    }
+                    entries = entries.slice(sinceIndex + 1);
+                }
+                return success(id, "get_entries", { entries, leafId: sessionManager.getLeafId() });
+            }
+            case "get_tree": {
+                const sessionManager = session.sessionManager;
+                return success(id, "get_tree", { tree: sessionManager.getTree(), leafId: sessionManager.getLeafId() });
+            }
+            case "get_last_assistant_text": {
+                const text = session.getLastAssistantText();
+                return success(id, "get_last_assistant_text", { text });
+            }
+            case "import_jsonl": {
+                const result = await runtimeHost.importFromJsonl(command.inputPath, command.cwdOverride);
+                if (routingSessionId === undefined && !result.cancelled && session !== runtimeHost.session)
+                    await rebindAfterLocalReplacement();
+                return success(id, "import_jsonl", result);
+            }
+            case "set_session_name": {
+                const name = command.name.trim();
+                if (!name) {
+                    return error(id, "set_session_name", "Session name cannot be empty");
+                }
+                session.setSessionName(name);
+                return success(id, "set_session_name");
+            }
+            // =================================================================
+            // Messages
+            // =================================================================
+            case "get_messages": {
+                return success(id, "get_messages", { messages: session.messages });
+            }
+            // On-demand fetch of a media block a `media_placeholders` client received as
+            // an `image_ref` stub. Durable session entries first (they survive the live
+            // message window being compacted away), then the live messages for a result
+            // that has not been persisted yet.
+            case "get_media": {
+                const { toolCallId, contentIndex } = command;
+                const content = findToolResultMedia(session, toolCallId, contentIndex);
+                if (!content) {
+                    return error(id, "get_media", RPC_ERROR_MEDIA_NOT_FOUND, RPC_ERROR_MEDIA_NOT_FOUND);
+                }
+                return success(id, "get_media", { toolCallId, contentIndex, content });
+            }
+            // =================================================================
+            // Commands (available for invocation via prompt)
+            // =================================================================
+            case "get_commands": {
+                return success(id, "get_commands", { commands: buildRpcCommandsForSession(session) });
+            }
+            case "get_loaded_surfaces": {
+                await requestMcpWireStatus();
+                const inventory = recordLoadedSurfaces(true);
+                return success(id, "get_loaded_surfaces", inventory.data);
+            }
+            case "extension_request": {
+                const name = command.name.trim();
+                if (name.length === 0) {
+                    return error(id, "extension_request", "Extension RPC request name cannot be empty");
+                }
+                const data = await session.extensionRunner.requestRpc(name, command.data);
+                return success(id, "extension_request", data);
+            }
+            // =================================================================
+            // Auth (task 13)
+            // =================================================================
+            case "get_auth_providers": {
+                const modelRegistry = session.modelRegistry;
+                const oauthInfos = buildLoginProviderInfos(modelRegistry, "oauth");
+                const apiKeyInfos = buildLoginProviderInfos(modelRegistry, "api_key");
+                const apiKeyRows = new Set(apiKeyInfos.map((info) => info.id));
+                const providers = [...oauthInfos, ...apiKeyInfos].map((info) => ({
+                    id: info.id,
+                    name: info.name,
+                    authType: info.authType,
+                    status: authMethodStatus(modelRegistry, info, apiKeyRows.has(info.id)),
+                }));
+                return success(id, "get_auth_providers", { providers });
+            }
+            case "login_start": {
+                // Respond IMMEDIATELY: success:true means the flow has started. The
+                // URL and terminal result are delivered via auth_login_url /
+                // auth_login_end events, because an interactive OAuth round-trip
+                // cannot fit within the request timeout.
+                void startLogin(command.provider);
+                return success(id, "login_start");
+            }
+            case "login_cancel": {
+                const controller = activeLogins.get(command.provider);
+                controller?.abort();
+                return success(id, "login_cancel");
+            }
+            case "login_api_key": {
+                session.modelRegistry.authStorage.set(command.provider, { type: "api_key", key: command.key });
+                // Answer after the registry sees the key: a client re-reading auth status on this
+                // response must not get the pre-login snapshot (#2384).
+                await session.modelRegistry.refresh();
+                return success(id, "login_api_key");
+            }
+            case "logout": {
+                session.modelRegistry.authStorage.logout(command.provider);
+                await session.modelRegistry.refresh();
+                return success(id, "logout");
+            }
+            case "get_provider_accounts": {
+                const accounts = await getCredentialAccounts(session.modelRegistry.authStorage, command.provider);
+                return success(id, "get_provider_accounts", { accounts });
+            }
+            case "account_pin": {
+                await pinCredentialAccount(session.modelRegistry.authStorage, command.provider, command.name);
+                return success(id, "account_pin");
+            }
+            case "account_remove": {
+                await removeCredentialAccount(session.modelRegistry.authStorage, command.provider, command.name);
+                return success(id, "account_remove");
+            }
+            default: {
+                const unknownCommand = command;
+                return error(id, unknownCommand.type, `Unknown command: ${unknownCommand.type}`);
+            }
+        }
+    };
+    const handleInputLine = async (line) => {
+        let parsed;
+        try {
+            parsed = JSON.parse(line);
+        }
+        catch (parseError) {
+            output(error(undefined, "parse", `Failed to parse command: ${parseError instanceof Error ? parseError.message : String(parseError)}`));
+            await waitForRpcBackpressure();
+            return;
+        }
+        const shapeError = rpcCommandShapeError(parsed);
+        if (shapeError) {
+            output(error(undefined, "parse", shapeError));
+            await waitForRpcBackpressure();
+            return;
+        }
+        if (typeof parsed === "object" &&
+            parsed !== null &&
+            "type" in parsed &&
+            parsed.type === "extension_ui_progress") {
+            questions.progress(parsed);
+            return;
+        }
+        // Handle extension UI responses
+        if (typeof parsed === "object" &&
+            parsed !== null &&
+            "type" in parsed &&
+            parsed.type === "extension_ui_response") {
+            const reply = settleExtensionUiResponse(parsed, {
+                questions,
+                dialogs: pendingExtensionRequests,
+                routed: routingSessionId !== undefined,
+            });
+            if (reply)
+                output(reply);
+            return;
+        }
+        const command = parsed;
+        const payloadError = rpcCommandPayloadError(command);
+        const messageLengthError = rpcMessageLengthError(command);
+        if (payloadError || messageLengthError) {
+            output(error(command.id, command.type, payloadError ?? messageLengthError));
+            await waitForRpcBackpressure();
+            return;
+        }
+        try {
+            const response = await handleCommand(command);
+            if (response) {
+                output(response);
+                await waitForRpcBackpressure();
+            }
+        }
+        catch (commandError) {
+            const missingCwd = commandError instanceof Error && commandError.name === "MissingSessionCwdError" && "issue" in commandError;
+            output(error(command.id, command.type, commandError instanceof Error ? commandError.message : String(commandError), missingCwd ? "missing_session_cwd" : undefined, missingCwd ? commandError.issue : undefined));
+            await waitForRpcBackpressure();
+        }
+    };
+    const dispose = async () => {
+        sessionControl?.dispose();
+        sessionControl = undefined;
+        questions.cancelAll();
+        pendingExtensionRequests.close();
+        unsubscribeProviderAccountEvents();
+        unsubscribe?.();
+        unsubscribeBackpressure?.();
+        unsubscribeLoadedSurfaces?.();
+        unsubscribeExtensionEvents?.();
+        unsubscribe = undefined;
+        unsubscribeBackpressure = undefined;
+        unsubscribeLoadedSurfaces = undefined;
+        unsubscribeExtensionEvents = undefined;
+        if (options.disposeRuntime !== false) {
+            await runtimeHost.dispose();
+        }
+    };
+    // Perform the initial bind synchronously-scheduled so the handler is ready
+    // as soon as the caller awaits `ready`.
+    const ready = rebindSession();
+    return {
+        ready,
+        async handleInputLine(line) {
+            await ready;
+            await handleInputLine(line);
+        },
+        pendingPrompts() {
+            return [...promptCalls];
+        },
+        isShutdownRequested() {
+            return shutdownRequested;
+        },
+        cancelPendingExtensionUiRequests() {
+            questions.cancelAll();
+            pendingExtensionRequests.cancelAll();
+        },
+        async dispose() {
+            await ready;
+            await dispose();
+        },
+    };
+}
+//# sourceMappingURL=connection-handler.js.map

@@ -6,12 +6,13 @@ import { closeSync, copyFileSync, mkdirSync, openSync, renameSync, truncateSync,
 import { lstat, readFile, rm, symlink, truncate, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createAgyAdapter, AGY_INSTALLER_SHA256 } from "../../src/adapters/agy";
-import { digest, fixture, sourceRoot } from "../../.omo/evidence/herdr-cli-updater/task-14/fixture";
+import { digest, fixture, sourceRoot } from "../fixtures/evidence/task-14/fixture";
 import type { FailureCode } from "../../src/protocol";
-import { hostileThrowKinds, privacyProbe, throwKinds } from "../../.omo/evidence/herdr-cli-updater/task-14/privacy";
-import { manualProbe } from "../../.omo/evidence/herdr-cli-updater/task-14/manual";
-import { largeResource, loadAdapter, nativeSize } from "../../.omo/evidence/herdr-cli-updater/task-14/r4/resource-fixture";
-import { concurrentManualCheck } from "../../.omo/evidence/herdr-cli-updater/task-14/r4/cleanup-overlap";
+import { hostileThrowKinds, privacyProbe, throwKinds } from "../fixtures/evidence/task-14/privacy";
+import { manualProbe } from "../fixtures/evidence/task-14/manual";
+import { largeResource, loadAdapter, nativeSize } from "../fixtures/evidence/task-14/r4/resource-fixture";
+import { concurrentManualCheck } from "../fixtures/evidence/task-14/r4/cleanup-overlap";
+import { artifactTest } from "../fixtures/artifacts";
 
 // Each actual filesystem/probe is isolated; no installed binary is ever invoked.
 const roots: Awaited<ReturnType<typeof fixture>>[] = [];
@@ -179,7 +180,7 @@ test("missing private snapshot or opaque optionsRef does not guess a path", asyn
   if (!i.ok) throw new TypeError(i.error.code);
   expect(missing.exactResume(r)).toEqual(failed("missing_session"));
 });
-test("reviewed bootstrap is not an updater and never proves busy-safe or core drain", async () => {
+artifactTest("reviewed bootstrap is not an updater and never proves busy-safe or core drain", async () => {
   const f = await isolated();
   const i = await f.installation(), r = await f.runtime(i);
   expect(f.adapter.updateSpec(i, "update-only")).toEqual(failed("receipt_uncertain"));
@@ -194,7 +195,7 @@ test("reviewed bootstrap is not an updater and never proves busy-safe or core dr
   f.setInstaller(null);
   expect(f.adapter.updateSpec(i, "update-only")).toEqual(failed("receipt_uncertain"));
 });
-test("actual pinned installer parser rejects invented flags and missing dir without executing installation", async () => {
+artifactTest("actual pinned installer parser rejects invented flags and missing dir without executing installation", async () => {
   const source = await readFile(join(sourceRoot, "boundedsource/install.sh"));
   expect(digest(source)).toBe(AGY_INSTALLER_SHA256);
   const path = join(sourceRoot, "boundedsource/install.sh");
@@ -208,7 +209,7 @@ test("actual pinned installer parser rejects invented flags and missing dir with
     expect(stdout.length + stderr.length).toBeGreaterThan(0);
   }
 });
-test("streams native sized resource with bounded chunks without inflating capabilities", async () => {
+artifactTest("streams native sized resource with bounded chunks without inflating capabilities", async () => {
   const f = await largeResource();
   roots.push(f);
   expect((await lstat(f.nativePath)).size).toBe(nativeSize);
@@ -323,7 +324,7 @@ test("rejects nonregular native resource before opening", async () => {
   expect(attempts).toBe(0);
 });
 
-test("hashes actual acquired agy bytes without invocation or ownership qualification", async () => {
+artifactTest("hashes actual acquired agy bytes without invocation or ownership qualification", async () => {
   const loaded = await loadAdapter();
   const path = join(sourceRoot, "acquired/extracted/antigravity");
   const before = await lstat(path, { bigint: true });
@@ -369,7 +370,7 @@ test.each([...throwKinds])("private %s callback throws settle as enum-only failu
   }
 });
 
-test("manual serializes only safe codes invariants and digests", async () => {
+artifactTest("manual serializes only safe codes invariants and digests", async () => {
   const report = await manualProbe();
   expect(Object.keys(report).sort()).toEqual(["FullDone", "cleanup", "codes", "digests", "invariants", "mechanismOnly"]);
   expect(report.codes).toEqual({
@@ -386,7 +387,7 @@ test("manual serializes only safe codes invariants and digests", async () => {
   }
 });
 
-test("manual cleans only its invocation while foreign fixture survives concurrently", async () => {
+artifactTest("manual cleans only its invocation while foreign fixture survives concurrently", async () => {
   const result = await concurrentManualCheck();
   expect(result.report.cleanup).toEqual({ rootRemoved: true, rootsEmpty: true, PIDs: 0 });
   expect(result.ownedRootObserved).toBe(true);

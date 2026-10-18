@@ -13,7 +13,7 @@ import { getOmoUpdateIntent } from "../../src/adapters/update-context";
 import type { InstallationIdentity } from "../../src/adapters/types";
 import { evaluateResourceGate, parseResourcePlan } from "../../src/install/resources";
 import { discoverExecutable } from "../../src/discovery";
-import { fixture, hash } from "../../.omo/evidence/herdr-cli-updater/task22/update-only-composition-r1/implementation-r1/fixture";
+import { fixture, hash } from "../fixtures/evidence/task22/update-only-composition-r1/implementation-r1/fixture";
 
 // Real qualifier/adapter/queue, controlled package manager and read-only native
 // wire peer. These tests do NOT attest genuine vendor or native ABI4 execution.

@@ -8,9 +8,9 @@ import { Socket } from "node:net";
 import { gunzipSync, gzipSync } from "node:zlib";
 import { createOmoUpdateSpec, executeOmoUpdate, getOmoUpdateIntent, isAuditedOmoTrustedLifecycle, qualifyOmoUpdate } from "../../src/adapters/update-context";
 import type { OmoArtifact, OmoLocalOverlayGrant, OmoUpdateQualification } from "../../src/adapters/update-context";
-import { capture, fixture, now, value } from "../../.omo/evidence/herdr-cli-updater/task-38/fixture";
-import { rawOfficialRegistryFailure } from "../../.omo/evidence/herdr-cli-updater/task-38/raw-official";
-import { fixture as childFixture } from "../../.omo/evidence/herdr-cli-updater/task22/r2/fixture";
+import { capture, fixture, now, value } from "../fixtures/evidence/task-38/fixture";
+import { rawOfficialRegistryFailure } from "../fixtures/evidence/task-38/raw-official";
+import { fixture as childFixture } from "../fixtures/evidence/task22/r2/fixture";
 import { consumeOmoUpdate } from "../../src/install/update";
 import type { OmoConsumerReceipt } from "../../src/install/update";
 

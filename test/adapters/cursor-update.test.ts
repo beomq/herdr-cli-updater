@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect } from "bun:test";
 import { createHash } from "node:crypto";
 import { chmodSync, constants, cpSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
   readdirSync, realpathSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
@@ -7,12 +7,13 @@ import { dirname, join, resolve } from "node:path";
 import { createCursorUpdateSpec, executeCursorUpdate, getCursorUpdateIntent, qualifyCursorUpdate } from "../../src/adapters/cursor-update";
 import type { NativeCursorUpdateInput } from "../../src/adapters/cursor-update";
 import type { AdapterResult, InstallationIdentity, PrivateUpdateCommand } from "../../src/adapters/types";
+import { artifactPath, artifactTest } from "../fixtures/artifacts";
 
 const now = 1_800_000_000_000, version = "2026.10.01-e373342";
 const hash = (body: string | Uint8Array): string => createHash("sha256").update(body).digest("hex");
 const rejected = { ok: false, error: { code: "verification_failed" } } as const;
 const recovery = { ok: false, error: { code: "recovery_required" } } as const;
-const evidence = resolve(import.meta.dir, "../../.omo/evidence/herdr-cli-updater/six-families/native-update/cursor-agy-current");
+const evidence = artifactPath("six-families/native-update/cursor-agy-current");
 const original = join(evidence, "cursor/package/dist-package");
 const roots: string[] = [];
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
@@ -109,7 +110,7 @@ function stageOriginalAfter(home: string, target: string): void {
   put(join(home, ".local/bin/cursor"), readFileSync(join(evidence, "probe-home/.local/bin/cursor")), 0o755);
 }
 
-test("issues a before-to-after native transition with distinct effective and download channels", async () => {
+artifactTest("issues a before-to-after native transition with distinct effective and download channels", async () => {
   // Given: pinned current original, prod POST response, lab download lane.
   const f = fixture();
   // When: private qualification issues the static spec.
@@ -130,7 +131,7 @@ test("issues a before-to-after native transition with distinct effective and dow
     row.realpath === resource.realpath && row.fingerprint === resource.fingerprint))).toBe(true);
 }, 30_000);
 
-test("binds the genuine January before bytes separately from the October original updater", async () => {
+artifactTest("binds the genuine January before bytes separately from the October original updater", async () => {
   // Given: a read-only copy of the existing January payload, checked against all
   // 349 official archive receipts. No operating executable is invoked or edited.
   const f = fixture(true), { spec } = await f.issued();
@@ -145,7 +146,7 @@ test("binds the genuine January before bytes separately from the October origina
   expect(value(result).kind).toBe("files-verified");
 }, 30_000);
 
-test("rejects forged and copied specs without invoking an executor", async () => {
+artifactTest("rejects forged and copied specs without invoking an executor", async () => {
   // Given: a genuine issued object and structural copies.
   const f = fixture(), { spec } = await f.issued(); let calls = 0;
   // When: a copy tries to cross the private issuance boundary.
@@ -156,7 +157,7 @@ test("rejects forged and copied specs without invoking an executor", async () =>
   expect(createCursorUpdateSpec({ kind: "cursor-original-update" }, "update-only", now)).toEqual(rejected);
 }, 30_000);
 
-test.each(["target", "channel", "empty", "environment", "owner", "source", "archive"] as const)(
+artifactTest.each(["target", "channel", "empty", "environment", "owner", "source", "archive"] as const)(
   "rejects receipt-bound but unqualified %s input", async change => {
     // Given: a private receipt cannot grant an unreviewed source/target/environment.
     const f = fixture(), q = f.qualification;
@@ -174,7 +175,7 @@ test.each(["target", "channel", "empty", "environment", "owner", "source", "arch
     expect(result).toEqual(rejected);
   }, 30_000);
 
-test("rejects release acquisition with a substituted request channel", async () => {
+artifactTest("rejects release acquisition with a substituted request channel", async () => {
   // Given: the lab URL is unchanged but no prod-channel acquisition exists.
   const f = fixture(), path = f.qualification.target.release.path;
   const release = JSON.parse(readFileSync(path, "utf8"));
@@ -184,7 +185,7 @@ test("rejects release acquisition with a substituted request channel", async () 
   expect(await qualifyCursorUpdate(f.authorize(q), now)).toEqual(rejected);
 }, 30_000);
 
-test("rejects an alias resolving outside its original owner", async () => {
+artifactTest("rejects an alias resolving outside its original owner", async () => {
   // Given: a byte-valid source with a substituted alias.
   const f = fixture(), alias = join(f.home, ".local/bin/agent");
   unlinkSync(alias); symlinkSync("/bin/sh", alias);
@@ -192,7 +193,7 @@ test("rejects an alias resolving outside its original owner", async () => {
   expect(await qualifyCursorUpdate(f.input, now)).toEqual(rejected);
 }, 30_000);
 
-test("rejects selecting the old installation as the separately granted original updater", async () => {
+artifactTest("rejects selecting the old installation as the separately granted original updater", async () => {
   // Given: native ownership of before does not grant its source for execution.
   const f = fixture();
   const q = { ...f.qualification, originalExecutable: f.qualification.installation.executableRealpath };
@@ -200,14 +201,14 @@ test("rejects selecting the old installation as the separately granted original 
   expect(await qualifyCursorUpdate(f.authorize(q), now)).toEqual(rejected);
 }, 30_000);
 
-test("rejects a preexisting target instead of reporting an installation noop", async () => {
+artifactTest("rejects a preexisting target instead of reporting an installation noop", async () => {
   // Given: the original install command would reuse this directory.
   const f = fixture(); mkdirSync(f.target);
   // When/Then: this grant requires an actual before-to-after transition.
   expect(await qualifyCursorUpdate(f.input, now)).toEqual(rejected);
 }, 30_000);
 
-test("rejects exit zero without independent target and alias changes", async () => {
+artifactTest("rejects exit zero without independent target and alias changes", async () => {
   // Given: an issued real command and a lying process result.
   const f = fixture(), { spec } = await f.issued(); let command: PrivateUpdateCommand | undefined;
   // When: the trusted process seam is adversarially replaced for this regression.
@@ -225,7 +226,7 @@ test("rejects exit zero without independent target and alias changes", async () 
   expect(Object.isFrozen(command?.nativeCompletion?.args)).toBe(true);
 }, 30_000);
 
-test("consumes the whole context once when observation times out", async () => {
+artifactTest("consumes the whole context once when observation times out", async () => {
   // Given: two specs from the same qualified context.
   const f = fixture(), { context, spec } = await f.issued();
   const sibling = value(createCursorUpdateSpec(context, "update-only", now)); let calls = 0;
@@ -239,7 +240,7 @@ test("consumes the whole context once when observation times out", async () => {
   expect(calls).toBe(1);
 }, 30_000);
 
-test("verifies acquired original after bytes without issuing a durable process receipt", async () => {
+artifactTest("verifies acquired original after bytes without issuing a durable process receipt", async () => {
   // Given: the retained real original after layout, used as an observation fixture.
   const f = fixture(), { spec } = await f.issued();
   // When: the private process seam is replaced with the acquired after state.
@@ -250,7 +251,7 @@ test("verifies acquired original after bytes without issuing a durable process r
   expect(value(result).durableReceipt).toBe(false);
 }, 30_000);
 
-test.each(["target", "alias", "root"] as const)("independently rejects incorrect after %s despite exit zero", async change => {
+artifactTest.each(["target", "alias", "root"] as const)("independently rejects incorrect after %s despite exit zero", async change => {
   // Given: an issued source-bound spec. This adverse executor does not attest a
   // native update: it only stages real payload bytes then corrupts one outcome.
   const f = fixture(), { spec } = await f.issued();
@@ -269,7 +270,7 @@ test.each(["target", "alias", "root"] as const)("independently rejects incorrect
   expect(result).toEqual(recovery);
 }, 30_000);
 
-test("rejects mutation from the final dispatch hook before running", async () => {
+artifactTest("rejects mutation from the final dispatch hook before running", async () => {
   // Given: callbacks are not attestation authorities.
   const f = fixture(), { spec } = await f.issued(); let calls = 0;
   // When: the dispatch hook replaces source bytes after issuance.
@@ -280,7 +281,7 @@ test("rejects mutation from the final dispatch hook before running", async () =>
   expect(result).toEqual(rejected); expect(calls).toBe(0);
 }, 30_000);
 
-test("rejects accessors without evaluating untrusted behavior", async () => {
+artifactTest("rejects accessors without evaluating untrusted behavior", async () => {
   // Given: a getter where the private plain-data input should be.
   let calls = 0;
   const input = { get qualification(): never { calls++; throw new Error("must_not_run"); },

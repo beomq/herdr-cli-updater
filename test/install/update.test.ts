@@ -7,7 +7,7 @@ import { Socket } from "node:net";
 import { consumeOmoUpdate } from "../../src/install/update";
 import type { OmoConsumerReceipt } from "../../src/install/update";
 import { getOmoUpdateIntent } from "../../src/adapters/update-context";
-import { fixture, hash, now, value } from "../../.omo/evidence/herdr-cli-updater/task22/r2/fixture";
+import { fixture, hash, now, value } from "../fixtures/evidence/task22/r2/fixture";
 
 // allow: SIZE_OK — the only authorized consumer test entry owns the complete
 // real-process authority/receipt/recovery boundary. Fixture construction is

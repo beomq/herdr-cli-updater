@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "family": "omp",
+  "release": "@oh-my-pi/pi-coding-agent@17.1.8",
+  "sourceRef": "f446b8a8193e59b4cbd2cf487ab6fa1915e0b890",
+  "qualifiedRoot": "task-39/qualified-source-v1",
+  "acquiredAt": "2026-10-02T19:14:07.180Z",
+  "archiveReceipt": {
+    "url": "https://registry.npmjs.org/@oh-my-pi/pi-coding-agent/-/pi-coding-agent-17.1.8.tgz",
+    "status": 200,
+    "size": 10033229,
+    "sha256": "0dcac21e7157207df33052fcaffe24426e6d2e41c964aa0066ca0c7fe30a52f4",
+    "sha1": "caffc9276a2c4b4f3682200ed9826b89bd22cec8",
+    "integrity": "sha512-v40KXdIwDA/yGwKSYZJC1Ggh2lIgxagU7+PdujPgZfzMlYd+k140SxDrxMoJI4Olrypq/iwsbG/V9yq1uz+JPA=="
+  },
+  "files": [
+    {
+      "path": "boundedsource/src/cli/args.ts",
+      "url": "https://raw.githubusercontent.com/can1357/oh-my-pi/f446b8a8193e59b4cbd2cf487ab6fa1915e0b890/packages/coding-agent/src/cli/args.ts",
+      "ref": "f446b8a8193e59b4cbd2cf487ab6fa1915e0b890",
+      "status": 200,
+      "rawSha256": "efca9e773a7624633db7f43f41f068e2a8422f6f5d47f61200f1f23a336687ef",
+      "rawBytes": 17638,
+      "sha256": "14b7041ad9054e34f97b539ca7e4a7eda8bd7660e637d726d1d1a8b599fa4014",
+      "bytes": 17639,
+      "materialization": "raw official commit source plus one final LF, matching original task5 artifact digest"
+    },
+    {
+      "path": "boundedsource/src/cli/flag-tables.ts",
+      "url": "https://raw.githubusercontent.com/can1357/oh-my-pi/f446b8a8193e59b4cbd2cf487ab6fa1915e0b890/packages/coding-agent/src/cli/flag-tables.ts",
+      "ref": "f446b8a8193e59b4cbd2cf487ab6fa1915e0b890",
+      "status": 200,
+      "rawSha256": "906192fe74ee818ec83699c82abddaffa0f8c72e1bc6ef33becc498fe945d032",
+      "rawBytes": 12817,
+      "sha256": "850690751d86e9414a196537eec353c77310bd586d1966600c3b8c7a03c0ba14",
+      "bytes": 12818,
+      "materialization": "raw official commit source plus one final LF, matching original task5 artifact digest"
+    },
+    {
+      "path": "boundedsource/src/commands/update.ts",
+      "url": "https://raw.githubusercontent.com/can1357/oh-my-pi/f446b8a8193e59b4cbd2cf487ab6fa1915e0b890/packages/coding-agent/src/commands/update.ts",
+      "ref": "f446b8a8193e59b4cbd2cf487ab6fa1915e0b890",
+      "status": 200,
+      "rawSha256": "67a75be31b06b1972267e496378800bccc23bb848e6c7aa402db7107936f7ee5",
+      "rawBytes": 1136,
+      "sha256": "0a51e5917748f543add84b6e9d7ff8ab512d3fad9b896600225fb4a99d6da417",
+      "bytes": 1137,
+      "materialization": "raw official commit source plus one final LF, matching original task5 artifact digest"
+    },
+    {
+      "path": "boundedsource/src/cli/update-cli.ts",
+      "url": "https://raw.githubusercontent.com/can1357/oh-my-pi/f446b8a8193e59b4cbd2cf487ab6fa1915e0b890/packages/coding-agent/src/cli/update-cli.ts",
+      "ref": "f446b8a8193e59b4cbd2cf487ab6fa1915e0b890",
+      "status": 200,
+      "rawSha256": "8aed53744df9d0ebf2a5d263ecdf50065f1e3c44683318db9e0e795da4021796",
+      "rawBytes": 42305,
+      "sha256": "ca4a417cb654ce6333cc45dbdc58f3f2109eacb68205199ae8f732bce528fd4f",
+      "bytes": 42306,
+      "materialization": "raw official commit source plus one final LF, matching original task5 artifact digest"
+    },
+    {
+      "path": "boundedsource/src/session/session-loader.ts",
+      "url": "https://raw.githubusercontent.com/can1357/oh-my-pi/f446b8a8193e59b4cbd2cf487ab6fa1915e0b890/packages/coding-agent/src/session/session-loader.ts",
+      "ref": "f446b8a8193e59b4cbd2cf487ab6fa1915e0b890",
+      "status": 200,
+      "rawSha256": "579a3376873a2e9033d4371058048bc7c34b6de255240b6fcc56afdf06a8944b",
+      "rawBytes": 10439,
+      "sha256": "c03e41aba61f8297cefd49865ca5bac06771d5450db0b8e1dc75b8b46c25b20a",
+      "bytes": 10440,
+      "materialization": "raw official commit source plus one final LF, matching original task5 artifact digest"
+    },
+    {
+      "path": "boundedsource/src/session/session-manager.ts",
+      "url": "https://raw.githubusercontent.com/can1357/oh-my-pi/f446b8a8193e59b4cbd2cf487ab6fa1915e0b890/packages/coding-agent/src/session/session-manager.ts",
+      "ref": "f446b8a8193e59b4cbd2cf487ab6fa1915e0b890",
+      "status": 200,
+      "rawSha256": "3fd19f2247e48b17f7d22e563d45eca378cc2c14fb8a430ae51f5d4c6c4a4450",
+      "rawBytes": 88502,
+      "sha256": "1deed7156dde92a1d28aa87d311d402e5a08eec085b7fd2ab7234c7f4abb3659",
+      "bytes": 88503,
+      "materialization": "raw official commit source plus one final LF, matching original task5 artifact digest"
+    }
+  ],
+  "metadataSnapshots": [
+    {
+      "path": "officialresponse/npm-version.json",
+      "sha256": "0b2f3f426a0bd3236115ecb4ffea5dda89efcab59a2b68c20a5a8ba135ccec3f",
+      "bytes": 16625,
+      "origin": "Verified read-only original task5 officialresponse snapshot; not fetched as current mutable metadata."
+    },
+    {
+      "path": "officialresponse/npm-dist-tags.json",
+      "sha256": "10690c5d3e07a88cfd5e9aae3c13953aa674f26d5f3df242ed8c571dd52cfbe9",
+      "bytes": 21,
+      "origin": "Verified read-only original task5 officialresponse snapshot; not fetched as current mutable metadata."
+    },
+    {
+      "path": "officialresponse/npm-latest.json",
+      "sha256": "9c0209891c5ded407ef34728dc35f56781bdf69490882b7bea59bbaa85ca1e66",
+      "bytes": 16084,
+      "origin": "Verified read-only original task5 officialresponse snapshot; not fetched as current mutable metadata."
+    }
+  ],
+  "legacy": {
+    "root": "task-5/families/omp",
+    "argsSha256": "d0c92c764c5647d43d7166efc3e7d350751de063c1388bd2e113fab4865529d3",
+    "retained": true,
+    "writes": 0,
+    "writer": "unconfirmed"
+  },
+  "relocation": {
+    "status": "OWN_TASK10_FIXTURE_ONLY_PENDING_PARENT_REGISTRATION",
+    "otherConsumers": "Do not relocate task5 receipts or consumer configuration until parent registers and verifies this source receipt."
+  },
+  "qualificationLimits": {
+    "signatureChainVerified": false,
+    "reproducibleRuntimeBuildVerified": false,
+    "actualIdentityDrainResumeTask32": false,
+    "FullDone": false
+  }
+}

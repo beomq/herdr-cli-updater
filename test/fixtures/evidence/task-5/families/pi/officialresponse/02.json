@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.github.com/repos/code-yeongyu/senpi/git/ref/tags/v2026.10.1-3",
+    "credentialUse": false
+  },
+  "response": {
+    "url": "https://api.github.com/repos/code-yeongyu/senpi/git/ref/tags/v2026.10.1-3",
+    "status": 200,
+    "sha256": "edff3fd048b639a9369913d2329d1848af53a26bad9c44d48bdfe8fca3d11d72",
+    "bytes": 357
+  },
+  "rawBody": "{\"ref\":\"refs/tags/v2026.10.1-3\",\"node_id\":\"REF_kwDORgY43bZyZWZzL3RhZ3MvdjIwMjYuMTAuMS0z\",\"url\":\"https://api.github.com/repos/code-yeongyu/senpi/git/refs/tags/v2026.10.1-3\",\"object\":{\"sha\":\"c196bc03276ce281e7d808959d6da55e177728ab\",\"type\":\"commit\",\"url\":\"https://api.github.com/repos/code-yeongyu/senpi/git/commits/c196bc03276ce281e7d808959d6da55e177728ab\"}}"
+}

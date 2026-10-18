@@ -27,6 +27,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.web.json",
     "test": "bun test",
+    "test:artifacts": "CLI_UPDATER_REQUIRE_ARTIFACTS=1 bun test",
     "build": "bun scripts/build.ts",
     "build:site": "bun site/build.ts"
   },

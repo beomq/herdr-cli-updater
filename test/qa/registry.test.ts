@@ -46,7 +46,7 @@ test("expansion keeps quoted input literal and expands every socket token", () =
 
 test("provenance registration expands the actual CLI source contract", async () => {
   // Given
-  const canonical: unknown = JSON.parse(await readFile(new URL("../../.omo/evidence/herdr-cli-updater/registry.json", import.meta.url), "utf8"));
+  const canonical: unknown = JSON.parse(await readFile(new URL("../fixtures/evidence/registry.json", import.meta.url), "utf8"));
   const provenance = parseDispatchRegistry(canonical).scenarios[22];
   // When
   const argv = expandInvocation(provenance, "/private/qa", "/private/evidence");

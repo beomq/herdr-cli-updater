@@ -14,7 +14,7 @@ import { serveWorker } from "../../src/service/worker";
 import { connectPrivateSocket, requestPrivateSocket } from "../../src/service/socket";
 import type { InstallationIdentity } from "../../src/adapters/types";
 import type { Job, RuntimeBinding, ServiceRequest, ServiceResponse, TargetSelection } from "../../src/protocol";
-import { fixture, hash, now } from "../../.omo/evidence/herdr-cli-updater/task22/update-only-composition-r1/implementation-r1/fixture";
+import { fixture, hash, now } from "../fixtures/evidence/task22/update-only-composition-r1/implementation-r1/fixture";
 
 // Real qualifier, adapter, SQL, queue, private UDS and native process controls.
 // This pinned controlled manager is NOT genuine vendor installation evidence.

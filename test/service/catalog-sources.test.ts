@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import type { Family } from "../../src/protocol";
 import * as filesystem from "node:fs/promises";
 import type { BufferEncodingOption, ObjectEncodingOptions, PathLike } from "node:fs";
+import { artifactPath, artifactTest } from "../fixtures/artifacts";
 
 const roots: string[] = [], owners: CatalogSourceOwner[] = [], closes: (() => Promise<void>)[] = [];
 function root(): string {
@@ -100,7 +101,7 @@ test.each(["same", "different"] as const)("isolates a refused generic alias only
 function npmNative(home: string, aliased = false) {
   const pkg = join(home, "npm/lib/node_modules/@openai/codex");
   const wrapper = artifact(join(pkg, "bin/codex.js"), readFileSync(join(import.meta.dir,
-    "../../.omo/evidence/herdr-cli-updater/task-5/families/codex/bounded-source/npm/codex.js"), "utf8"));
+    "../fixtures/evidence/task-5/families/codex/bounded-source/npm/codex.js"), "utf8"));
   artifact(join(pkg, "package.json"), JSON.stringify({
     name: "@openai/codex", version: "0.156.0", bin: { codex: "bin/codex.js" },
   }), 0o600);
@@ -157,8 +158,7 @@ function nativeClaude(home: string, body = claudeBuild("2.1.300")) {
 }
 function cursorRuntime(home: string, body: string) {
   const version = join(home, ".local/share/cursor-agent/versions/not-a-version");
-  const wrapper = artifact(join(version, "cursor-agent"), readFileSync(join(import.meta.dir,
-    "../../.omo/evidence/herdr-cli-updater/task-5/families/cursor/boundedsource/installed-wrapper.sh"), "utf8"));
+  const wrapper = artifact(join(version, "cursor-agent"), readFileSync(artifactPath("task-5/families/cursor/boundedsource/installed-wrapper.sh"), "utf8"));
   artifact(join(version, "package.json"), JSON.stringify({ name: "@anysphere/agent-cli-runtime" }), 0o600);
   artifact(join(version, "node"), "owned interpreter marker");
   const payload = artifact(join(version, "index.js"), body);
@@ -167,7 +167,7 @@ function cursorRuntime(home: string, body: string) {
   return { wrapper, payload };
 }
 async function omoFixture(home: string, provenance: "archive" | "bounded-source" = "archive") {
-  const evidence = join(import.meta.dir, "../../.omo/evidence/herdr-cli-updater/task-5/families/omo");
+  const evidence = join(import.meta.dir, "../fixtures/evidence/task-5/families/omo");
   const wrapper = join(home, "packages/omo"), engine = join(home, "engine");
   for (const [archive, digest, destination, members] of [
     ["omo-ai-5.1.9.tgz", "6140150aacec28ed0a33115fe294ac29e528737b8b0f8dc8f263e1e80d7686f6", wrapper,
@@ -175,7 +175,7 @@ async function omoFixture(home: string, provenance: "archive" | "bounded-source"
     ["senpi-2026.10.1-3.tgz", "a807496c7d4a387f28548bfb9fb8d9fc3db389681ac735754df7a391f55dc268", engine,
       ["package/package.json", "package/dist/index.js", "package/dist/bundle/cli.js", "package/dist/cli.js", "package/dist/core/brand.js"]],
   ] as const) {
-    const bytes = readFileSync(join(evidence, "acquired", archive));
+    const bytes = readFileSync(artifactPath(join("task-5/families/omo/acquired", archive)));
     if (createHash("sha256").update(bytes).digest("hex") !== digest) throw new TypeError("immutable archive drift");
     for (const [name, file] of await new Bun.Archive(bytes).files(members))
       artifact(join(destination, name.slice("package/".length)), new Uint8Array(await file.arrayBuffer()),
@@ -430,7 +430,7 @@ test("keeps an independent installation of the same family when an old executabl
   expect(catalog.observations[0]?.contract.capabilities.update.kind).not.toBe("supported");
 });
 
-test("keeps the genuine OmO wrapper when an unrelated old OmO executable drifts", async () => {
+artifactTest("keeps the genuine OmO wrapper when an unrelated old OmO executable drifts", async () => {
   // Given: the reviewed wrapper/engine closure plus an unrelated old installation.
   const home = root(), current = await omoFixture(home), legacy = join(home, "legacy");
   const old = installed(legacy, "omo");
@@ -446,7 +446,7 @@ test("keeps the genuine OmO wrapper when an unrelated old OmO executable drifts"
     && row.contract.capabilities.update.kind !== "supported")).toBe(true);
 });
 
-test("an older pre-bundle OmO engine layout stays unclassified without quarantining the current installation", async () => {
+artifactTest("an older pre-bundle OmO engine layout stays unclassified without quarantining the current installation", async () => {
   // Given: the current closure plus an npm-style old OmO whose engine declares
   // bin.pi at dist/bundle/cli.js but ships only dist/cli.js (senpi <= 2026.9.x).
   const home = root(), current = await omoFixture(home), legacy = join(home, "legacy");
@@ -484,7 +484,7 @@ test("quarantines a broken alias before resolution without hiding an independent
   expect(catalog.installations.map(row => row.executableRealpath)).toEqual([current]);
 });
 
-test("discovers a default launcher with its exact independent Bun root", async () => {
+artifactTest("discovers a default launcher with its exact independent Bun root", async () => {
   const home = root(), prefix = join(home, "independent"), layout = join(prefix, "install/global/node_modules");
   const current = await omoFixture(layout);
   // The reviewed fixture wrapper is moved into the actual Bun global slot.
@@ -515,7 +515,7 @@ test("merged aliases retain the second literal launcher hash and mode before ado
   expect(await source.verify(candidate)).toBe(false);
 });
 
-test.each([false, true])("reads the complete official Bun shim only when both branches agree: mismatch=%s", async mismatch => {
+artifactTest.each([false, true])("reads the complete official Bun shim only when both branches agree: mismatch=%s", async mismatch => {
   // Given: the two official launcher branches refer to the same entry unless changed.
   const home = root(), prefix = join(home, "independent"), layout = join(prefix, "install/global/node_modules");
   const current = await omoFixture(layout);
@@ -529,7 +529,7 @@ test.each([false, true])("reads the complete official Bun shim only when both br
   expect(observed.candidates.some(row => row.family === "omo" && row.pins.some(pin => pin.path === launcher))).toBe(!mismatch);
 });
 
-test.each(["bin/omo", "install/global/node_modules/.bin/omo"])("tracks original OmO symlink repair without repinning its entry: %s", async slot => {
+artifactTest.each(["bin/omo", "install/global/node_modules/.bin/omo"])("tracks original OmO symlink repair without repinning its entry: %s", async slot => {
   // Given: the original entry and alias have already been captured.
   const home = root(), prefix = join(home, ".bun"), layout = join(prefix, "install/global/node_modules");
   const current = await omoFixture(layout);
@@ -562,7 +562,7 @@ test.each(["bin/omo", "install/global/node_modules/.bin/omo"])("tracks original 
   expect((await source.refresh()).failures.some(row => row.sourcePath === launcher)).toBe(true);
 });
 
-test.each(["entry-drift", "foreign-branch", "extra-command", "foreign-slot"])("refuses a claimed OmO shim transition with %s", async corruption => {
+artifactTest.each(["entry-drift", "foreign-branch", "extra-command", "foreign-slot"])("refuses a claimed OmO shim transition with %s", async corruption => {
   const home = root(), prefix = join(home, ".bun"), layout = join(prefix, "install/global/node_modules");
   const current = await omoFixture(layout);
   renameSync(current.wrapper, join(layout, "omo-ai"));
@@ -708,11 +708,10 @@ test("canonical manifest bin aliases classify the terminal file without filename
   expect((await source.refresh()).candidates[0]?.installation.executableRealpath).toBe(target);
 });
 
-test("Cursor literal bridges expose the terminal resource, not private launcher dependencies", async () => {
+artifactTest("Cursor literal bridges expose the terminal resource, not private launcher dependencies", async () => {
   // Given: exact reviewed launcher source in an owned resolver fixture, no native claim.
   const home = root(), version = join(home, "cursor-version"), shim = join(home, "bin/cursor-agent");
-  const wrapper = artifact(join(version, "cursor-agent"), readFileSync(join(import.meta.dir,
-    "../../.omo/evidence/herdr-cli-updater/task-5/families/cursor/boundedsource/installed-wrapper.sh"), "utf8"));
+  const wrapper = artifact(join(version, "cursor-agent"), readFileSync(artifactPath("task-5/families/cursor/boundedsource/installed-wrapper.sh"), "utf8"));
   artifact(join(version, "package.json"), JSON.stringify({ name: "@anysphere/agent-cli-runtime" }), 0o600);
   artifact(join(version, "node"), "owned interpreter marker");
   artifact(join(version, "index.js"), "owned payload marker");
@@ -785,7 +784,7 @@ test.each(["bytes", "original-alias"] as const)("native Claude version observati
   expect((await source.refresh()).candidates.some(row => row.family === "claude")).toBe(false);
 });
 
-test("current Cursor uses the source version function rather than a release label or directory", async () => {
+artifactTest("current Cursor uses the source version function rather than a release label or directory", async () => {
   // Given: source lies beyond the small JSON body limit, with misleading unrelated metadata.
   const home = root(), version = "2026.10.05-abcdef0";
   const fixture = cursorRuntime(home, " ".repeat(300000) + 'SENTRY_RELEASE={id:"agent-cli@2000.01.01-0000000"};'
@@ -798,7 +797,7 @@ test("current Cursor uses the source version function rather than a release labe
   expect(candidate?.installation.resources.some(row => row.realpath === fixture.payload)).toBe(true);
 });
 
-test("Cursor original payload alias cannot qualify a different bin-bound family", async () => {
+artifactTest("Cursor original payload alias cannot qualify a different bin-bound family", async () => {
   // Given: the reviewed launcher and runtime name still point at a Grok package.
   const home = root(), grok = installed(home, "grok"), fixture = cursorRuntime(home,
     '"./src/utils/version.ts":(e,t,n)=>{"use strict";function r(){return null!=="2026.10.05-abcdef0"?"2026.10.05-abcdef0":"unknown"}n.d(t,{x:()=>r})}');
@@ -812,7 +811,7 @@ test("Cursor original payload alias cannot qualify a different bin-bound family"
   expect(observed.failures.some(row => row.code === "identity_mismatch")).toBe(true);
 });
 
-test.each(["payload", "payload-alias", "wrong-family"] as const)("Cursor source version is unavailable after %s drift", async change => {
+artifactTest.each(["payload", "payload-alias", "wrong-family"] as const)("Cursor source version is unavailable after %s drift", async change => {
   // Given
   const home = root(), version = "2026.10.05-abcdef0";
   const fixture = cursorRuntime(home,
@@ -860,7 +859,7 @@ test("unknown agent bytes do not fabricate missing-family certainty from a looku
   expect(result.families.every(row => row.count === 0 && row.state === "unclassified")).toBe(true);
 });
 
-test.each(["archive", "bounded-source"] as const)("groups genuine OmO %s source with physical Pi aliases but not an independent prefix", async provenance => {
+artifactTest.each(["archive", "bounded-source"] as const)("groups genuine OmO %s source with physical Pi aliases but not an independent prefix", async provenance => {
   // Given: actual immutable archive bytes; no launcher or engine is executed.
   const home = root(), fixture = await omoFixture(home, provenance);
   const independent = join(home, "independent");
@@ -889,7 +888,7 @@ test.each(["archive", "bounded-source"] as const)("groups genuine OmO %s source 
   expect(catalog.observations.every(row => Object.values(row.contract.capabilities).every(cap => cap.kind !== "supported"))).toBe(true);
 });
 
-test.each(["resolver", "launcher", "new-helper"] as const)(
+artifactTest.each(["resolver", "launcher", "new-helper"] as const)(
   "lists a previously unobserved OmO %s without granting execution authority", async change => {
     // Given: local metadata-bound wrapper, with source unknown to the updater.
     const home = root(), fixture = await omoFixture(home);
@@ -908,7 +907,7 @@ test.each(["resolver", "launcher", "new-helper"] as const)(
     expect((await source.refresh()).candidates[0]?.pins.some(pin => pin.path === path)).toBe(true);
   });
 
-test.each(["dependency-version", "main", "terminal-family"] as const)(
+artifactTest.each(["dependency-version", "main", "terminal-family"] as const)(
   "rejects unproven OmO relation after %s drift", async change => {
     // Given
     const home = root(), fixture = await omoFixture(home);
@@ -926,7 +925,7 @@ test.each(["dependency-version", "main", "terminal-family"] as const)(
     if (change === "terminal-family") expect(observed.candidates.some(row => row.family === "grok")).toBe(true);
   });
 
-test("OmO terminal disproof rejects a contradictory canonical ancestor bin binding", async () => {
+artifactTest("OmO terminal disproof rejects a contradictory canonical ancestor bin binding", async () => {
   // Given: genuine Pi manifest remains intact; an ancestor contradicts its bin.
   const home = root();
   await omoFixture(home);
@@ -940,7 +939,7 @@ test("OmO terminal disproof rejects a contradictory canonical ancestor bin bindi
   expect(result.failures.some(row => row.code === "identity_mismatch")).toBe(true);
 });
 
-test.each(["resolver", "launcher", "runtime", "brand", "engine", "mode", "alias", "manifest-alias", "deleted-helper"] as const)(
+artifactTest.each(["resolver", "launcher", "runtime", "brand", "engine", "mode", "alias", "manifest-alias", "deleted-helper"] as const)(
   "OmO first pins and alias closure reject external %s writer without relearning", async change => {
     // Given: real immutable source closure and durable first observation.
     const home = root(), fixture = await omoFixture(home), { source, directory } = owner(home);

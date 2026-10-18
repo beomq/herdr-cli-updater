@@ -3,8 +3,8 @@ import { readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { checkSubjectKey, createCheckRuntime } from "../../src/service/check-runtime";
 import type { AdapterResult } from "../../src/adapters/types";
-import { digest, fixture } from "../../.omo/evidence/herdr-cli-updater/task-4/check-runtime-r1/fixture";
-import { cancellationScenario } from "../../.omo/evidence/herdr-cli-updater/task-4/check-runtime-r1/cancel-cleanup-r1/qa";
+import { digest, fixture } from "../fixtures/evidence/task-4/check-runtime-r1/fixture";
+import { cancellationScenario } from "../fixtures/evidence/task-4/check-runtime-r1/cancel-cleanup-r1/qa";
 
 const fixtures: Awaited<ReturnType<typeof fixture>>[] = [];
 afterEach(async () => { for (const f of fixtures.splice(0)) await f.cleanup(); });

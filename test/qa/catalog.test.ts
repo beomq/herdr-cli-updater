@@ -22,6 +22,7 @@ test("catalog admits the exact parent destination and preserves the E/catalog ma
 
 test("an empty alternate destination reaches acquisition only after admission", async () => {
   // Given: a unique worker-owned directory; never occupy the parent's destination.
+  await mkdir(taskEvidence, { recursive: true });
   const root = await mkdtemp(join(taskEvidence, "catalog-admission-"));
   const destination = join(root, "alternate");
   const acquire = spyOn(runner, "withIsolation").mockImplementation(async () => {
@@ -40,6 +41,7 @@ test.each(["occupied", "symlink", "escape"] as const)(
   "catalog refuses %s before isolation or core acquisition",
   async scenario => {
     // Given: intercept only the effect boundary; do not fabricate any runtime result.
+    await mkdir(taskEvidence, { recursive: true });
     const root = await mkdtemp(join(taskEvidence, "catalog-admission-"));
     let destination = root;
     let code = "evidence-path";

@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { fixture, hash, PRIVATE_SENTINEL } from "../../.omo/evidence/herdr-cli-updater/task-16/fixture";
+import { fixture, hash, PRIVATE_SENTINEL } from "../fixtures/evidence/task-16/fixture";
 import { createGrokAdapter } from "../../src/adapters/grok";
 import type { GrokConfiguration } from "../../src/adapters/grok";
 import type { AdapterResult } from "../../src/adapters/types";
@@ -223,7 +223,7 @@ test("actual missing saved file stays missing_session", async () => {
   expect(f.adapter.exactResume(f.runtime)).toEqual(failure("missing_session"));
 });
 test("manual stdout excludes private sentinels spec and binding", async () => {
-  const child = Bun.spawn([process.execPath, "--no-env-file", ".omo/evidence/herdr-cli-updater/task-16/verify.ts"], {
+  const child = Bun.spawn([process.execPath, "--no-env-file", "test/fixtures/evidence/task-16/verify.ts"], {
     cwd: new URL("../../", import.meta.url).pathname, stdout: "pipe", stderr: "pipe",
     env: { PATH: "/usr/bin:/bin", LANG: "C", LC_ALL: "C" },
   });

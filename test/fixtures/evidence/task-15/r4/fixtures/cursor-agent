@@ -1,0 +1,5 @@
+#!/bin/sh
+case "$1" in
+  --version) printf '2026.01.23-916f423\n' ;;
+  *) exit 64 ;;
+esac

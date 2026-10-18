@@ -1,20 +1,21 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect } from "bun:test";
 import { createHash } from "node:crypto";
 import { chmodSync, constants, copyFileSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
   readdirSync, realpathSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { AGY_INSTALLER_SHA256, AGY_MANIFEST_CHANNEL } from "../../src/adapters/agy";
 import { createAgyUpdateSpec, executeAgyUpdate, getAgyUpdateIntent, observeAgyUpdate, qualifyAgyUpdate } from "../../src/adapters/agy-update";
 import type { NativeAgyUpdateInput } from "../../src/adapters/agy-update";
 import type { AdapterResult, InstallationIdentity, PrivateUpdateCommand, PrivateUpdateEvent } from "../../src/adapters/types";
+import { artifactRoot, artifactTest } from "../fixtures/artifacts";
 
 // Mechanism tests use acquired genuine source bytes and a bounded real controlled
 // child at the executor seam. That child is NOT the vendor updater. Actual vendor
 // success is the separately retained update-success-r1/REPORT.md, not these tests.
 // No production network, credential, operating install or model call is made.
-const evidence = resolve(import.meta.dir, "../../.omo/evidence/herdr-cli-updater");
+const evidence = artifactRoot;
 const current = join(evidence, "six-families/native-update/cursor-agy-current/agy");
 const now = 1_800_000_000_000, oldHash = "d15693410c904242c1c3423a579f60a81e018444bb51fbccc6505f988b62a91d";
 const newHash = "7dca095cfc1df2c057a385ed88a76c7ba98dc103258a80be87a8f42e484cb3aa";
@@ -97,7 +98,7 @@ async function controlled(f: Fixture, mode: "success" | "noop" | "drift" | "back
   return { status, signal: child.signalCode ?? null };
 }
 
-test("issues only floating update with a complete before root and planned backup/status", async () => {
+artifactTest("issues only floating update with a complete before root and planned backup/status", async () => {
   // Given: genuine old original and independently acquired current latest.
   const f = fixture();
   // When: effect-free qualification and issuance run.
@@ -122,7 +123,7 @@ test("issues only floating update with a complete before root and planned backup
   expect(createAgyUpdateSpec(context, "update-and-restart", now)).toEqual({ ok: false, error: { code: "unsupported" } });
 }, 30_000);
 
-test("mechanism: exact controlled outputs verify after intent and one direct child", async () => {
+artifactTest("mechanism: exact controlled outputs verify after intent and one direct child", async () => {
   // Given: an issued command and controlled real process, not vendor-success evidence.
   const f = fixture(), { spec } = await f.issue(), events: PrivateUpdateEvent["kind"][] = [];
   let calls = 0, invocation: PrivateUpdateCommand | undefined;
@@ -139,7 +140,7 @@ test("mechanism: exact controlled outputs verify after intent and one direct chi
   expect(Object.isFrozen(invocation?.args)).toBe(true);
 }, 30_000);
 
-test.each(["noop", "drift", "backup", "status", "extra", "symlink"] as const)(
+artifactTest.each(["noop", "drift", "backup", "status", "extra", "symlink"] as const)(
   "mechanism: %s output requires recovery and never retries", async mode => {
     // Given: two authenticated specs share one context.
     const f = fixture(), { context, spec } = await f.issue();
@@ -155,7 +156,7 @@ test.each(["noop", "drift", "backup", "status", "extra", "symlink"] as const)(
     expect(calls).toBe(1);
   }, 30_000);
 
-test.each(["owner", "source", "environment", "archive", "expectedFiles", "expiry", "manifest"] as const)(
+artifactTest.each(["owner", "source", "environment", "archive", "expectedFiles", "expiry", "manifest"] as const)(
   "rejects receipt-bound but unqualified %s data", async change => {
     // Given: matching receipt JSON is not itself executable provenance.
     const f = fixture(), q = f.qualification;
@@ -171,14 +172,14 @@ test.each(["owner", "source", "environment", "archive", "expectedFiles", "expiry
     expect(await qualifyAgyUpdate(f.authorize(altered), now)).toEqual(rejected);
   }, 30_000);
 
-test("rejects a symlink destination before any executor can run", async () => {
+artifactTest("rejects a symlink destination before any executor can run", async () => {
   // Given: a source-shaped alias points to the genuine external binary.
   const f = fixture(); unlinkSync(f.executable); symlinkSync(f.qualification.source.path, f.executable);
   // When/Then: bytes resolving through an alias do not grant write ownership.
   expect(await qualifyAgyUpdate(f.input, now)).toEqual(rejected);
 }, 30_000);
 
-test("rejects a matching archive SHA256 with a substituted manifest SHA512", async () => {
+artifactTest("rejects a matching archive SHA256 with a substituted manifest SHA512", async () => {
   // Given: refreshed local pins cannot remove the publisher's SHA512 check.
   const f = fixture(), q = f.qualification;
   const manifest = { ...f.manifest, sha512: "0".repeat(128) };
@@ -189,7 +190,7 @@ test("rejects a matching archive SHA256 with a substituted manifest SHA512", asy
     manifest: pin(q.target.manifest.path), release: pin(q.target.release.path) } }), now)).toEqual(rejected);
 }, 30_000);
 
-test("rejects symlink archive members despite coherent local digest pins", async () => {
+artifactTest("rejects symlink archive members despite coherent local digest pins", async () => {
   // Given: a tar header changed to a link with a corrected tar checksum.
   const f = fixture(), q = f.qualification, tar = gunzipSync(readFileSync(q.target.archive.path));
   tar[156] = 50; tar.fill(32, 148, 156);
@@ -204,7 +205,7 @@ test("rejects symlink archive members despite coherent local digest pins", async
     manifest: pin(q.target.manifest.path), release: pin(q.target.release.path) } }), now)).toEqual(rejected);
 }, 30_000);
 
-test("rejects stale manifest mutation at the final dispatch hook without launch", async () => {
+artifactTest("rejects stale manifest mutation at the final dispatch hook without launch", async () => {
   // Given: a fresh issued spec.
   const f = fixture(), { spec } = await f.issue(); let calls = 0;
   // When: a supplied hook invalidates the latest selection after durable dispatch.
@@ -215,7 +216,7 @@ test("rejects stale manifest mutation at the final dispatch hook without launch"
   expect(result).toEqual(rejected); expect(calls).toBe(0);
 }, 30_000);
 
-test("consumes context before accessing a throwing executor getter", async () => {
+artifactTest("consumes context before accessing a throwing executor getter", async () => {
   // Given: the executor is trusted by contract but its hooks may still fail.
   const f = fixture(), { context, spec } = await f.issue(); let calls = 0;
   // When: accessing a supplied hook fails.
@@ -226,7 +227,7 @@ test("consumes context before accessing a throwing executor getter", async () =>
   expect(createAgyUpdateSpec(context, "update-only", now)).toEqual(rejected);
 }, 30_000);
 
-test("rejects copied contexts, specs and forged intents", async () => {
+artifactTest("rejects copied contexts, specs and forged intents", async () => {
   // Given: real opaque object identities.
   const f = fixture(), { context, spec } = await f.issue(), intent = value(getAgyUpdateIntent(spec));
   // When/Then: data copies and mismatched intent identity have no authority.
@@ -235,7 +236,7 @@ test("rejects copied contexts, specs and forged intents", async () => {
   expect(createAgyUpdateSpec(context, { ...intent, targetFingerprint: "0".repeat(64) }, now)).toEqual(rejected);
 }, 30_000);
 
-test("rejects getters, nested proxies and revoked proxies without invoking traps", async () => {
+artifactTest("rejects getters, nested proxies and revoked proxies without invoking traps", async () => {
   // Given: all input-bearing paths are required to be plain data.
   const f = fixture(); let calls = 0;
   const accessor = { receipt: f.input.receipt, get qualification(): never { calls++; throw new Error("getter"); } };
@@ -249,7 +250,7 @@ test("rejects getters, nested proxies and revoked proxies without invoking traps
   expect(calls).toBe(0);
 }, 30_000);
 
-test("detects bystander files in the entire approved prefix", async () => {
+artifactTest("detects bystander files in the entire approved prefix", async () => {
   // Given: the before state contains an unrelated file outside the executable.
   const f = fixture(); put(join(f.home, "tmp/bystander"), "must not be ignored");
   // When/Then: whole-root qualification cannot silently widen write ownership.
@@ -257,7 +258,7 @@ test("detects bystander files in the entire approved prefix", async () => {
   expect(lstatSync(join(f.home, "tmp/bystander")).size).toBe(19);
 }, 30_000);
 
-test("mechanism: the issued static sandbox denies outside writes and personal content reads", async () => {
+artifactTest("mechanism: the issued static sandbox denies outside writes and personal content reads", async () => {
   // Given: an owned probe executable, not a credential or operating CLI. The
   // harmless AGENTS.md stands in for personal content covered by the same rule.
   const f = fixture(), { spec } = await f.issue();

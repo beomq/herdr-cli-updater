@@ -13,7 +13,7 @@ import type { Family } from "../../src/protocol";
 import { serveDomainWorker, startWorker, stopWorker } from "../../src/service/worker";
 import { requestPrivateSocket } from "../../src/service/socket";
 import { attachAuthenticatedWorker, isServiceResponse } from "../../src/service/client";
-import { digest as packageDigest } from "../../.omo/evidence/herdr-cli-updater/task-4/check-runtime-r1/fixture";
+import { digest as packageDigest } from "../fixtures/evidence/task-4/check-runtime-r1/fixture";
 import { upstreamPiFixture as packageFixture } from "../fixtures/pi-package";
 
 test("explicit production checker retains exact-source lastCheck across provider reconstruction", async () => {

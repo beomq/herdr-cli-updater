@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://registry.npmjs.org/omo-ai/5.1.9",
+    "credentialUse": false
+  },
+  "response": {
+    "url": "https://registry.npmjs.org/omo-ai/5.1.9",
+    "status": 200,
+    "sha256": "c22705ae9f7e873417ccc924e7c47c48460a5f507b18258c956e0c888d6b5b8d",
+    "bytes": 1870
+  },
+  "rawBody": "{\"bin\":{\"omo\":\"bin/omo.js\"},\"bugs\":{\"url\":\"https://github.com/code-yeongyu/oh-my-openagent/issues\"},\"dist\":{\"shasum\":\"f13ad9295c029bf9b90f2403b8ad50935939c084\",\"tarball\":\"https://registry.npmjs.org/omo-ai/-/omo-ai-5.1.9.tgz\",\"fileCount\":606,\"integrity\":\"sha512-tgy7PpEaUxkWcAtxrEcWDd+WSLz0qjYXPnjae9U2f/L2FOHcExDpupnJ6GMa2c2+mpUBzBSMJnSPnHQ2xgfkJA==\",\"signatures\":[{\"sig\":\"MEQCIEWuS0vwrRmD1QNtDWtZl0gGoRysa4LqBQPbhUb5CnpLAiBKXGG/RRKjDkrrGPJU9/3lqDoyjmhbznoFmn0d8LgB+g==\",\"keyid\":\"SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U\"},{\"sig\":\"MEUCIHk6/dO6kO8SOWvvR88Y66e4tDNTJTsw22xz8hKFtXucAiEAqqwzzOo92Y9k364ghtrwcy5N18G7yim6PQT2pRnhKpU=\",\"keyid\":\"SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U\"}],\"attestations\":{\"url\":\"https://registry.npmjs.org/-/npm/v1/attestations/omo-ai@5.1.9\",\"provenance\":{\"predicateType\":\"https://slsa.dev/provenance/v1\"}},\"unpackedSize\":11893281},\"name\":\"omo-ai\",\"type\":\"module\",\"engines\":{\"node\":\">=24.0.0\"},\"gitHead\":\"bcc854a49eddbaf29ab1487922ff0c544ba2d026\",\"scripts\":{\"postinstall\":\"node bin/senpi-patch.mjs\"},\"_npmUser\":{\"name\":\"GitHub Actions\",\"email\":\"npm-oidc-no-reply@github.com\",\"trustedPublisher\":{\"id\":\"github\",\"oidcConfigId\":\"afdeac2b-8963-4657-8c51-02e83c0fef05\"}},\"homepage\":\"https://github.com/code-yeongyu/oh-my-openagent#readme\",\"repository\":{\"url\":\"git+https://github.com/code-yeongyu/oh-my-openagent.git\",\"type\":\"git\"},\"_npmVersion\":\"11.18.0\",\"description\":\"OmO Native - the standalone omo command with the OMO extension built in: bun add -g omo-ai\",\"directories\":{},\"maintainers\":[{\"name\":\"code-yeongyu\",\"email\":\"code.yeon.gyu@gmail.com\"}],\"_nodeVersion\":\"24.21.0\",\"dependencies\":{\"@code-yeongyu/senpi\":\"2026.10.1-3\"},\"_hasShrinkwrap\":false,\"_npmOperationalInternal\":{\"tmp\":\"tmp/omo-ai_5.1.9_1790904050597_0.7798873007741391\",\"host\":\"s3://npm-registry-packages-npm-production\"},\"_id\":\"omo-ai@5.1.9\",\"version\":\"5.1.9\"}"
+}

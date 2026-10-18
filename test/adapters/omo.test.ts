@@ -9,10 +9,10 @@ import type { OmoConfiguration, OmoCoreRecord, OmoRuntimeRecord } from "../../sr
 import type { AdapterResult } from "../../src/adapters/types";
 import type { Runtime } from "../../src/protocol";
 import { discoverExecutable, probeExecutable } from "../../src/discovery";
-import { fixture as qualifiedFixture } from "../../.omo/evidence/herdr-cli-updater/task-9/update-consumer/fixture";
+import { fixture as qualifiedFixture } from "../fixtures/evidence/task-9/update-consumer/fixture";
 import { createOmoUpdateSpec, getOmoUpdateIntent } from "../../src/adapters/update-context";
 import { parseAdapterContract } from "../../src/adapters/types";
-import { fixture as packageFixture } from "../../.omo/evidence/herdr-cli-updater/task-4/check-runtime-r1/fixture";
+import { fixture as packageFixture } from "../fixtures/evidence/task-4/check-runtime-r1/fixture";
 
 test.each(["package", "main"] as const)("OmO %s path keeps official latest while honoring private exact target", async path => {
   const f = path === "package" ? await packageFixture("omo") : await fixture();
@@ -123,7 +123,7 @@ async function qualified() {
   return f;
 }
 
-const source = join(import.meta.dir, "../../.omo/evidence/herdr-cli-updater/task-5/families/omo/boundedsource");
+const source = join(import.meta.dir, "../fixtures/evidence/task-5/families/omo/boundedsource");
 const hash = (body: string | Uint8Array): string => createHash("sha256").update(body).digest("hex");
 const roots: string[] = [];
 afterEach(async () => {

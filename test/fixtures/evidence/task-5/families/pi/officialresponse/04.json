@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://registry.npmjs.org/-/package/@code-yeongyu%2fsenpi/dist-tags",
+    "credentialUse": false
+  },
+  "response": {
+    "url": "https://registry.npmjs.org/-/package/@code-yeongyu%2fsenpi/dist-tags",
+    "status": 200,
+    "sha256": "cf3df409b19865d285e1ded70ac841ed15c57a46d8921891744427655c470ba2",
+    "bytes": 24
+  },
+  "rawBody": "{\"latest\":\"2026.10.1-3\"}"
+}

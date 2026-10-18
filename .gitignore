@@ -1,6 +1,16 @@
 node_modules/
 dist/
 .vercel/
+# Local agent state and QA evidence (about 24GB); tests use test/fixtures instead.
+/.omo/
+/.senpi/
 # Local QA screenshots; tracked files stay tracked.
 /*.png
 /web/evidence/
+# Committed vendor-source fixtures keep their original dist/ layout.
+!/test/fixtures/evidence/**/dist/
+# Temporary directories some fixtures create beside themselves.
+/test/fixtures/evidence/**/runtime-*/
+/test/fixtures/evidence/**/test-run-*/
+/test/fixtures/evidence/task-11/sandbox/
+/test/fixtures/evidence/task-14/owned/

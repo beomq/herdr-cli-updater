@@ -1,11 +1,11 @@
-import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
+import { afterEach, beforeEach, expect, spyOn } from "bun:test";
 import { createHash } from "node:crypto";
 import { once } from "node:events";
 import { chmodSync, constants, copyFileSync, cpSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
   readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { AGY_INSTALLER_SHA256, AGY_MANIFEST_CHANNEL } from "../../src/adapters/agy";
 import { createAgyUpdateSpec, executeAgyUpdate, getAgyUpdateIntent, qualifyAgyUpdate } from "../../src/adapters/agy-update";
 import type { NativeAgyUpdateInput } from "../../src/adapters/agy-update";
@@ -17,10 +17,11 @@ import type { ResourcePlan } from "../../src/install/resources";
 import { loadNativeUpdateRuntime, NATIVE_UPDATE_RUNTIME_PROFILE, validateNativeUpdateRuntimeInputs } from "../../src/service/native-update-runtime";
 import type { NativeUpdateRuntimeInputs } from "../../src/service/native-update-runtime";
 import type { PluginRuntimeLoad } from "../../src/service/plugin-runtime";
+import { artifactRoot, artifactTest } from "../fixtures/artifacts";
 
 // Retained genuine official sources; these tests never run a native command,
 // acquire network data, read credentials or assert actual update success.
-const evidence = resolve(import.meta.dir, "../../.omo/evidence/herdr-cli-updater");
+const evidence = artifactRoot;
 const current = join(evidence, "six-families/native-update/cursor-agy-current");
 const now = 1_800_000_000_000, cursorVersion = "2026.10.01-e373342";
 const hash = (body: string | Uint8Array) => createHash("sha256").update(body).digest("hex");
@@ -167,7 +168,7 @@ function first<T>(rows: readonly T[]): T {
   const row = rows[0]; if (!row) throw new TypeError("fixture_profile"); return row;
 }
 
-test("parses a closed family union without reading files or invoking input behavior", () => {
+artifactTest("parses a closed family union without reading files or invoking input behavior", () => {
   // Given: hostile values at the persisted-data boundary.
   let calls = 0;
   const getter = { get profile() { calls++; return NATIVE_UPDATE_RUNTIME_PROFILE; } };
@@ -178,7 +179,7 @@ test("parses a closed family union without reading files or invoking input behav
   expect(calls).toBe(0);
 });
 
-test("loads both genuine native profiles without core, native execution or persistent writes", async () => {
+artifactTest("loads both genuine native profiles without core, native execution or persistent writes", async () => {
   // Given: pinned producer records and only the updater's own socket.
   const f = await fixture(["cursor", "agy"]), before = readdirSync(f.root).sort();
   // When: the source-only composition loads.
@@ -197,7 +198,7 @@ test("loads both genuine native profiles without core, native execution or persi
   }
 }, 60_000);
 
-test.each(["cursor", "agy"] as const)("checks the %s official channel at actual completion time without a native probe", async family => {
+artifactTest.each(["cursor", "agy"] as const)("checks the %s official channel at actual completion time without a native probe", async family => {
   // Given: authenticated installed bytes and an acquired official response.
   const f = await fixture([family]), runtime = await f.load(), p = first(runtime.runner.profiles ?? []);
   clock.mockReturnValue(now + 1000);
@@ -226,7 +227,7 @@ test.each(["cursor", "agy"] as const)("checks the %s official channel at actual 
   expect(first(f.input.profiles).update.qualification.target.checkedAt).toBe(now);
 }, 60_000);
 
-test.each(["cursor", "agy"] as const)("observes newer %s HTTP metadata independently from the qualified acquisition", async family => {
+artifactTest.each(["cursor", "agy"] as const)("observes newer %s HTTP metadata independently from the qualified acquisition", async family => {
   // Given: fixed qualification plus deliberately newer wire fixtures, not actual
   // vendor release claims. Only the public HTTP boundary is replaced.
   const f = await fixture([family]), runtime = await f.load(), p = first(runtime.runner.profiles ?? []);
@@ -247,7 +248,7 @@ test.each(["cursor", "agy"] as const)("observes newer %s HTTP metadata independe
   expect(first(f.input.profiles).update.qualification.target.checkedAt).toBe(now);
 }, 60_000);
 
-test("rejects extra fields, mixed families, arbitrary environment and duplicate installation IDs", async () => {
+artifactTest("rejects extra fields, mixed families, arbitrary environment and duplicate installation IDs", async () => {
   // Given: one structurally valid AGY profile; structural parsing need not issue.
   const f = await fixture(), p = first(f.input.profiles);
   // When/Then: persisted JSON cannot select callbacks, modules or another issuer.
@@ -264,7 +265,7 @@ test("rejects extra fields, mixed families, arbitrary environment and duplicate 
   expect(validateNativeUpdateRuntimeInputs(f.input)).toEqual(f.input);
 }, 30_000);
 
-test("requires independent expectedAfter and rejects fake before-to-after resources", async () => {
+artifactTest("requires independent expectedAfter and rejects fake before-to-after resources", async () => {
   // Given: an independently pinned document substituted with the unchanged source.
   const f = await fixture(), p = first(f.input.profiles);
   const expectedAfterPin = put(p.expectedAfterPin.path, JSON.stringify(p.update.qualification.installation));
@@ -275,7 +276,7 @@ test("requires independent expectedAfter and rejects fake before-to-after resour
   expect(result).toEqual({ kind: "unsupported", reason: "inputs" });
 }, 30_000);
 
-test.each(["provenance", "source", "release", "config", "after"] as const)("revokes issued product authority after %s changes", async change => {
+artifactTest.each(["provenance", "source", "release", "config", "after"] as const)("revokes issued product authority after %s changes", async change => {
   // Given: genuine qualification and an already composed adapter.
   const f = await fixture(), runtime = await f.load(), p = first(runtime.runner.profiles ?? []), input = first(f.input.profiles);
   const path = change === "provenance" ? input.provenance.path : change === "source" ? p.contract.installation.executableRealpath
@@ -288,7 +289,7 @@ test.each(["provenance", "source", "release", "config", "after"] as const)("revo
   expect((await p.adapter.detect(p.contract.installation.executableRealpath)).ok).toBe(false);
 }, 60_000);
 
-test("expires update capability without renewing acquisition authority", async () => {
+artifactTest("expires update capability without renewing acquisition authority", async () => {
   // Given: a previously issued fresh profile.
   const f = await fixture(), runtime = await f.load(), p = first(runtime.runner.profiles ?? []);
   clock.mockReturnValue(now + 300_000);
@@ -299,7 +300,7 @@ test("expires update capability without renewing acquisition authority", async (
   expect(p.adapter.updateSpec(p.contract.installation, "update-only").ok).toBe(false);
 }, 60_000);
 
-test("admits a native-free owner with its updater socket and complete real resource census", async () => {
+artifactTest("admits a native-free owner with its updater socket and complete real resource census", async () => {
   // Given: no native runtime, genuine AGY root and an existing updater socket.
   const f = await fixture(), runtime = await f.load(), p = first(runtime.runner.profiles ?? []);
   const spec = value(p.adapter.updateSpec(p.contract.installation, "update-only"));
@@ -313,7 +314,7 @@ test("admits a native-free owner with its updater socket and complete real resou
   expect(evaluateResourceGate(plan, observation)).toEqual({ ok: true, value: null });
 }, 60_000);
 
-test("rejects an unregistered socket anywhere in owned HOME namespaces", async () => {
+artifactTest("rejects an unregistered socket anywhere in owned HOME namespaces", async () => {
   // Given: load qualified clean HOME before an unknown socket appears.
   const f = await fixture(), runtime = await f.load(), p = first(runtime.runner.profiles ?? []);
   const input = first(f.input.profiles);
@@ -323,7 +324,7 @@ test("rejects an unregistered socket anywhere in owned HOME namespaces", async (
   expect(p.adapter.updateSpec(before, "update-only").ok).toBe(false);
 }, 60_000);
 
-test("rejects an unregistered socket outside HOME but within the coverage root", async () => {
+artifactTest("rejects an unregistered socket outside HOME but within the coverage root", async () => {
   // Given: the native owner is unchanged; another covered namespace has a socket.
   const f = await fixture(), runtime = await f.load(), p = first(runtime.runner.profiles ?? []);
   mkdirSync(join(f.root, "other"), { mode: 0o700 }); await socket(join(f.root, "other", "unknown.sock"));
@@ -338,7 +339,7 @@ test("rejects an unregistered socket outside HOME but within the coverage root",
   expect(result).toEqual({ ok: false, error: { code: "unsupported" } });
 }, 60_000);
 
-test("rejects a coverage census that omits the actual worker PID", async () => {
+artifactTest("rejects a coverage census that omits the actual worker PID", async () => {
   // Given: matching producer data without the current worker root.
   const f = await fixture(), p = first(f.input.profiles);
   const altered = { ...f.input, profiles: [{ ...p, coverage: { ...p.coverage, rootPids: [1] } }] };
@@ -348,7 +349,7 @@ test("rejects a coverage census that omits the actual worker PID", async () => {
   expect(result).toEqual({ kind: "unsupported", reason: "inputs" });
 }, 30_000);
 
-test.each(["cursor", "agy"] as const)("rejects %s exit-zero noops and does not expose restart authority", async family => {
+artifactTest.each(["cursor", "agy"] as const)("rejects %s exit-zero noops and does not expose restart authority", async family => {
   // Given: one real issuer object, with only the executor result adversarially replaced.
   const f = await fixture([family]), runtime = await f.load(), p = first(runtime.runner.profiles ?? []);
   const spec = value(p.adapter.updateSpec(p.contract.installation, "update-only")); let calls = 0;

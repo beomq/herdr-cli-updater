@@ -8,10 +8,10 @@ import { createOmpAdapter } from "../../src/adapters/omp";
 import type { OmpConfiguration, OmpCoreEvidence, OmpPrivateRuntime } from "../../src/adapters/omp";
 import type { RuntimeIdentity } from "../../src/adapters/types";
 import type { FailureCode } from "../../src/protocol";
-import { ompSourceR2, verifyOmpSourceReceipt } from "../../.omo/evidence/herdr-cli-updater/task-10/source-r2";
+import { ompSourceR2, verifyOmpSourceReceipt } from "../fixtures/evidence/task-10/source-r2";
 
 const sourceRoot = ompSourceR2.root;
-const evidenceRoot = resolve(import.meta.dir, "../../.omo/evidence/herdr-cli-updater/task-10");
+const evidenceRoot = resolve(import.meta.dir, "../fixtures/evidence/task-10");
 const hash = (body: string | Uint8Array): string => createHash("sha256").update(body).digest("hex");
 const roots: string[] = [];
 function absolute(path: string): path is `/${string}` { return path.startsWith("/"); }

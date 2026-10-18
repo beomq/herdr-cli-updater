@@ -1,21 +1,22 @@
-import { expect, test } from "bun:test";
+import { expect } from "bun:test";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { once } from "node:events";
 import { chmodSync, constants, cpSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
   readdirSync, realpathSync, rmSync, symlinkSync, watch, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { createCursorUpdateSpec, qualifyCursorUpdate } from "../../src/adapters/cursor-update";
 import type { NativeCursorUpdateInput } from "../../src/adapters/cursor-update";
 import { executePrivateUpdate, getPrivateUpdateIntent } from "../../src/adapters/update-context";
 import type { AdapterResult, InstallationIdentity } from "../../src/adapters/types";
 import { consumePrivateUpdate } from "../../src/install/update";
 import type { PrivateConsumerReceipt } from "../../src/install/update";
+import { artifactPath, artifactTest } from "../fixtures/artifacts";
 
 const now = 1_800_000_000_000, version = "2026.10.01-e373342";
 const hash = (bytes: string | Uint8Array) => createHash("sha256").update(bytes).digest("hex");
-const evidence = resolve(import.meta.dir, "../../.omo/evidence/herdr-cli-updater/six-families/native-update/cursor-agy-current");
+const evidence = artifactPath("six-families/native-update/cursor-agy-current");
 const original = join(evidence, "cursor/package/dist-package");
 const rejected = { ok: false, error: { code: "verification_failed" } } as const;
 const recovery = { ok: false, error: { code: "recovery_required" } } as const;
@@ -98,7 +99,7 @@ function fixture() {
   }, cleanup() { rmSync(root, { recursive: true, force: true }); } };
 }
 
-test("joins the original detached cleanup before durable native success", async () => {
+artifactTest("joins the original detached cleanup before durable native success", async () => {
   // Given: actual pinned vendor source; a foreign owner has an independently held child.
   const f = fixture();
   const foreign = spawn("/bin/cat", [], { stdio: ["pipe", "ignore", "ignore"] });
@@ -133,7 +134,7 @@ test("joins the original detached cleanup before durable native success", async 
   }
 }, 60_000);
 
-test.each(["copy", "context", "nativeCompletion"] as const)("rejects native %s spoofing before any process", async spoof => {
+artifactTest.each(["copy", "context", "nativeCompletion"] as const)("rejects native %s spoofing before any process", async spoof => {
   // Given: only object identity in the static issuer grants authority.
   const f = fixture();
   try {
@@ -149,7 +150,7 @@ test.each(["copy", "context", "nativeCompletion"] as const)("rejects native %s s
   } finally { f.cleanup(); }
 }, 60_000);
 
-test("rejects zero-exit native noop through the common static dispatcher", async () => {
+artifactTest("rejects zero-exit native noop through the common static dispatcher", async () => {
   // Given: a genuine native issuance, with no installation mutation.
   const f = fixture();
   try {
@@ -163,7 +164,7 @@ test("rejects zero-exit native noop through the common static dispatcher", async
   } finally { f.cleanup(); }
 }, 60_000);
 
-test("retains cleanup observation after abandonment and never replays the native effect", async () => {
+artifactTest("retains cleanup observation after abandonment and never replays the native effect", async () => {
   // Given: subscribe to the exact operation journal before launching.
   const f = fixture(), abandoned = new AbortController(), complete = Promise.withResolvers<void>();
   const watcher = watch(f.journal, () => {

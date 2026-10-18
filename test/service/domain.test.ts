@@ -13,7 +13,7 @@ import type { ServiceRequest, TargetTransaction } from "../../src/protocol";
 import { domainStoreDirectory } from "../../src/service/domain";
 import { createDomain } from "../../src/service/domain";
 import { createCatalogProvider, registerCatalog } from "../../src/service/catalog-provider";
-import { digest as packageDigest, fixture as packageFixture } from "../../.omo/evidence/herdr-cli-updater/task-4/check-runtime-r1/fixture";
+import { digest as packageDigest, fixture as packageFixture } from "../fixtures/evidence/task-4/check-runtime-r1/fixture";
 
 test("sessions deduplicate socket pane pairs without merging different sockets or granting targets", async () => {
   // Given: two sockets share a pane label; duplicate same-socket observations exist.

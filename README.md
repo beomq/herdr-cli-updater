@@ -71,4 +71,6 @@ bun run build
 bun pm pack --destination dist
 ```
 
+테스트 fixture는 `test/fixtures/evidence/`에 있습니다. Cursor·Antigravity 패키지, codex 바이너리, OmO 배포 아카이브처럼 저장소에 넣을 수 없는 외부 산출물이 필요한 테스트는 산출물이 없으면 `bun test`에서 건너뜁니다. 산출물 폴더를 `CLI_UPDATER_TEST_ARTIFACTS`로 지정하고 `bun run test:artifacts`를 실행하면 모두 실행하며, 산출물이 없으면 빠진 경로와 함께 실패합니다.
+
 런타임 TypeScript와 웹 배포 파일을 함께 패키징합니다. 워커·준비 프로세스의 진입 경로가 이동 후에도 유지되도록 서버 전체를 하나의 번들로 합치지 않습니다. 기존 Herdr 플러그인 진입점은 `scripts/plugin.ts`에 별도로 유지합니다.
