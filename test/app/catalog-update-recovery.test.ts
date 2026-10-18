@@ -138,6 +138,15 @@ test('a running CLI inside the installation is not an installer',async()=>{
   }finally{f.close();}
 });
 
+test.each(['installed','bare'] as const)('a running %s self-update of the CLI blocks recovery',async(mode)=>{
+  const f=fixture();try{
+    const job=f.seed();
+    const program=mode==='installed'?f.target.executable:f.target.executable.split('/').at(-1);
+    f.processes([{pid:999,parent:1,uid:0,command:`${program} update`}]);
+    await expect(f.updates.recover(job.id,job.revision,'reconcile')).rejects.toMatchObject({detail:'recovery_executor_active'});
+    expect(f.executions()).toBe(0);
+  }finally{f.close();}
+});
 test('stale revisions and active executor cannot archive or unlock a job',async()=>{
   const f=fixture();try{
     const job=f.seed();

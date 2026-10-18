@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { basename } from 'node:path';
 import { z } from 'zod';
 import { catalogIds, isSupportedCli } from './catalog-types';
 import type { CatalogEntry, CatalogId, CatalogInstallation } from './catalog-types';
@@ -145,7 +146,14 @@ export function createCatalogUpdates(options:Options,dependencies:{
       let processes:ReturnType<typeof readProcesses>;
       try{processes=(dependencies.processes??readProcesses)();}
       catch(error){if(!(error instanceof Error))throw error;throw new AppError('unavailable','process_observation_unavailable');}
-      if(processes.some(row=>row.pid===job.executorPid
+      // A CLI session inside the installation is not an installer, but its own
+      // update/upgrade/install subcommand (for example `claude update`) is.
+      const selfUpdate=(command:string)=>{
+        const [program,subcommand]=command.trim().split(/\s+/);
+        return !!program&&/^(?:update|upgrade|install)$/.test(subcommand??'')&&(program.startsWith(job.target.target+'/')
+          ||basename(program)===basename(job.target.executable));
+      };
+      if(processes.some(row=>row.pid===job.executorPid||selfUpdate(row.command)
         ||/^(?:\S*\/)?(?:npm|bun|brew)\s+(?:install|add|upgrade)\b|^(?:\S*\/)?node\s+\S*\/npm-cli\.js\s+(?:install|add|upgrade)\b|^(?:\S*\/)?(?:ba)?sh\s+\S*\/install\.sh\b/.test(row.command)))
         throw new AppError('busy','recovery_executor_active');
       if(JSON.stringify(get(id))!==JSON.stringify(job))throw new AppError('conflict','stale_update_plan');

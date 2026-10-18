@@ -1,3 +1,6 @@
 node_modules/
 dist/
 .vercel/
+# Local QA screenshots; tracked files stay tracked.
+/*.png
+/web/evidence/

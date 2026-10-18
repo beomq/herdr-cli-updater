@@ -154,7 +154,7 @@ test('selecting another installation transfers the sole automatic policy without
   const f=await catalogUpdateFixture();try{
     const rows=['first','second'].map(id=>({id,catalogId:'codex' as const,manager:'npm' as const,root:f.root,packageName:'codex-pkg',path:f.executable(),identityPath:f.executable(),isDefault:id==='first',receiptId:null,version:'1.0.0'}));
     f.setRows(rows);
-    await f.command({kind:'automation',installationId:'catalog:codex',enabled:true,paneSessions:'keep'});
+    await f.command({kind:'automation',installationId:'catalog:codex',enabled:true});
     await f.command({kind:'catalog-select',catalogId:'codex',installationId:'second'});
     expect(f.controller.snapshot().catalog?.[0]?.selectedInstallationId).toBe('second');
     expect(f.executableSelections.get('codex')).toBe(f.executable());
@@ -163,6 +163,29 @@ test('selecting another installation transfers the sole automatic policy without
     expect(f.controller.snapshot().policies.filter(p=>p.mode!=='off')).toHaveLength(1);
     expect(f.controller.snapshot().policies[0]?.lastInstalledVersion).toBe('1.0.0');
     expect(f.executions()).toBe(0);expect(f.effects).toEqual({stops:0,restarts:0});
+  }finally{await f.close();}
+});
+test('a herdr without executable selection still switches the update target without claiming a herdr launch',async()=>{
+  const f=await catalogUpdateFixture();try{
+    const rows=['first','second'].map(id=>({id,catalogId:'codex' as const,manager:'npm' as const,root:f.root,packageName:'codex-pkg',path:f.executable(),identityPath:f.executable(),isDefault:id==='first',receiptId:null,version:'1.0.0'}));
+    f.setRows(rows);
+    // Given: released herdr 0.9.3 rejects the unknown method as invalid_request.
+    f.failHerdrExecutable(new AppError('unavailable','herdr_invalid_request'));
+    await f.command({kind:'catalog-select',catalogId:'codex',installationId:'second'});
+    expect(f.controller.snapshot().catalog?.[0]?.selectedInstallationId).toBe('second');
+    expect(f.executableSelections.has('codex')).toBe(false);
+    expect(f.controller.snapshot().catalog?.[0]?.herdrLaunch).toEqual({status:'unavailable',executable:null});
+  }finally{await f.close();}
+});
+test('a failed policy switch restores the previous herdr executable selection',async()=>{
+  const f=await catalogUpdateFixture();try{
+    const rows=['first','second'].map(id=>({id,catalogId:'codex' as const,manager:'npm' as const,root:f.root,packageName:'codex-pkg',path:f.executable(),identityPath:f.executable(),isDefault:id==='first',receiptId:null,version:'1.0.0'}));
+    f.setRows(rows);
+    f.executableSelections.set('codex','/previous/codex');
+    const store=f.store();
+    store.switchCatalogPolicy=()=>{throw new AppError('unavailable','store_write_failed');};
+    await expect(f.command({kind:'catalog-select',catalogId:'codex',installationId:'second'})).rejects.toThrow('store_write_failed');
+    expect(f.executableSelections.get('codex')).toBe('/previous/codex');
   }finally{await f.close();}
 });
 test('controller reconciliation and acknowledgement unlock without installer or session effects',async()=>{
@@ -219,7 +242,8 @@ test('whole catalog workflow checks first, serializes commands and preserves act
   const held=f.holdLatest();
   try{
     const session=(await f.command({kind:'launch',installationId:'fixture',cwd:f.root})).managed[0];
-    await f.command({kind:'automation',installationId:'catalog:codex',enabled:true,paneSessions:'restart-idle'});
+    await f.command({kind:'automation-settings',paneSessions:'restart-idle'});
+    await f.command({kind:'automation',installationId:'catalog:codex',enabled:true});
     await f.command({kind:'catalog-update-all-plan'});await held.entered;
     await expect(f.command({kind:'catalog-update-plan',catalogId:'codex'})).rejects.toThrow('bulk_in_progress');
     await expect(f.controller.close()).rejects.toThrow('operation_in_progress');
@@ -591,8 +615,9 @@ async function fixture(holdPreparation = false, catalog?: typeof createCatalog, 
   const paneAgent = (pids: number[]) => paneStatus === null ? null : ({ paneId: "w1:p1", workspaceId: "w1", terminalId: "t", agent: "pi",
     status: paneStatus, stateChangeSeq: 1, cwd: null, title: null, foregroundPids: pids });
   const executableSelections=new Map<string,string>();
+  let herdrExecutableError:Error|null=null;
   const herdr = {
-    executable:async(kind:string)=>executableSelections.get(kind)??null,
+    executable:async(kind:string)=>{if(herdrExecutableError)throw herdrExecutableError;return executableSelections.get(kind)??null;},
     selectExecutable:async(kind:string,executable:string|null)=>{if(executable===null)executableSelections.delete(kind);else executableSelections.set(kind,executable);},
     socketPath: "/fake",
     agents: async () => { const row = paneAgent([observedPid ?? 0]); return row ? [row] : []; },
@@ -712,6 +737,7 @@ async function fixture(holdPreparation = false, catalog?: typeof createCatalog, 
     root, controller, calls, effects, observe, executableSelections,
     connections:()=>connectionCalls,timerCount:()=>timers.size,
     failRestart(id:string|null){failRestartId=id;},
+    failHerdrExecutable(error:Error|null){herdrExecutableError=error;},
     setObservedPid(pid: number | null, startedAt: string | null = null, installationId: string | null = null) { observedPid = pid; observedStart = startedAt; observedInstallationId = installationId; observationFails = false; },
     setPane(status: "idle" | "working" | "blocked" | null) { paneStatus = status; panePid = 0; },
     paneCalls,

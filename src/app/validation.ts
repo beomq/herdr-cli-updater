@@ -22,7 +22,7 @@ const envelope = z.object({
     z.object({ kind: z.literal("refresh") }).strict(),
     z.object({ kind: z.literal("native-restart"), installation: z.custom<InstallSelection>(isInstallSelection),
       target: z.custom<TargetSelection>(isTargetSelection) }).strict(),
-    z.object({kind:z.literal('automation'),installationId:id,enabled:z.boolean(),paneSessions:paneSessionPolicy.optional()}).strict(),
+    z.object({kind:z.literal('automation'),installationId:id,enabled:z.boolean()}).strict(),
     z.object({kind:z.literal('catalog-select'),catalogId:z.enum(catalogIds),installationId:id,
       reviewed:z.object({path,identityPath:path,version:z.string().min(1).max(128).regex(/^[^\x00-\x1f\x7f]*$/),makeDefault:z.boolean()}).strict().optional()}).strict(),
     z.object({kind:z.literal('default-plan'),catalogId:z.enum(catalogIds),installationId:id}).strict(),

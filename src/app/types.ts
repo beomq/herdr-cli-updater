@@ -151,7 +151,7 @@ export type AppCommand =
   | { readonly kind: 'automation-settings'; readonly paneSessions: PaneSessionPolicy }
   | { readonly kind: "refresh" }
   | { readonly kind: "native-restart"; readonly installation: InstallSelection; readonly target: TargetSelection }
-  | { readonly kind:'automation'; readonly installationId:string; readonly enabled:boolean; readonly paneSessions?:PaneSessionPolicy|undefined }
+  | { readonly kind:'automation'; readonly installationId:string; readonly enabled:boolean }
   | { readonly kind:'catalog-select';readonly catalogId:CatalogId;readonly installationId:string;
     readonly reviewed?:{readonly path:string;readonly identityPath:string;readonly version:string;readonly makeDefault:boolean}|undefined }
   | { readonly kind:'default-plan';readonly catalogId:CatalogId;readonly installationId:string }

@@ -260,30 +260,32 @@ export async function createController(options: Options, dependencies: {
       if(JSON.stringify(store.policies())!==before)throw new AppError('conflict','policy_changed');
       const next=previous&&target?{...previous,installationId:`catalog:${id}`,mode:'update' as const,catalogBinding:updateBinding(target),
         lastInstalledVersion:installation.version,lastCheckedAt:null,waitingReason:null,nextCheckAt:clock.now()+previous.intervalMinutes*60_000}:null;
-      const connectHerdr=herdr&&isSupportedCli(id);
-      if(connectHerdr){
-        if(!herdr.executable||!herdr.selectExecutable)throw new AppError('unsupported','herdr_executable_selection_unsupported');
+      // Released herdr builds without executable selection reject the read; the update
+      // target still switches and the snapshot reports the herdr launch as unavailable.
+      let connectHerdr=false,previousHerdr:string|null=null;
+      if(herdr?.executable&&herdr.selectExecutable){
+        try{previousHerdr=await herdr.executable(id);connectHerdr=true;}
+        catch(error){if(!(error instanceof AppError))throw error;}
       }
-      const previousHerdr=connectHerdr&&herdr.executable?await herdr.executable(id):null;
-      if(connectHerdr&&herdr.selectExecutable)await herdr.selectExecutable(id,installation.path);
+      if(connectHerdr)await herdr!.selectExecutable!(id,installation.path);
       try{if(makeDefault){
         const plan=planDefaultSwitch({...options,shell:options.shell??process.env['SHELL']??'/bin/zsh',installation});
         const result=await applyDefaultSwitch(plan,{home:options.home,path:options.path,guard:()=>{
           if(JSON.stringify(store.policies())!==before)throw new AppError('conflict','policy_changed');
         }});
         store.putDefaultJob({id:plan.id,requestId:plan.id,catalogId:id,installationId:installation.id,revision:1,stage:'completed',plan,result,createdAt:clock.now(),updatedAt:clock.now(),failure:null});
-      }}catch(error){
-        if(connectHerdr&&herdr.selectExecutable){
-          try{await herdr.selectExecutable(id,previousHerdr);}
+      }
+      store.switchCatalogPolicy(id,installation.id,[...activePolicies.filter(row=>row.installationId!==next?.installationId)
+        .map(row=>({...row,mode:'off' as const,nextCheckAt:null,waitingReason:null})),...(next?[next]:[])]);
+      }catch(error){
+        if(connectHerdr){
+          try{await herdr!.selectExecutable!(id,previousHerdr);}
           catch{throw new AppError('uncertain','herdr_selection_rollback_unverified');}
         }
         throw error;
       }
-      if(connectHerdr&&herdr.selectExecutable){
-        herdrLaunches.set(id,installation.path);
-      }
-      store.switchCatalogPolicy(id,installation.id,[...activePolicies.filter(row=>row.installationId!==next?.installationId)
-        .map(row=>({...row,mode:'off' as const,nextCheckAt:null,waitingReason:null})),...(next?[next]:[])]);
+      if(connectHerdr)herdrLaunches.set(id,installation.path);
+      else herdrLaunches.delete(id);
       for(const job of store.catalogUpdates())if(job.catalogId===id&&job.stage==='ready')
         store.putCatalogUpdate({...job,stage:'failed',revision:job.revision+1,failure:'installation_selection_changed',updatedAt:clock.now()});
       catalogChecks.delete(id);changed();schedule();
