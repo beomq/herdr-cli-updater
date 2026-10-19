@@ -1002,8 +1002,10 @@ export async function createController(options: Options, dependencies: {
         case 'catalog-update-plan':await updates.plan(action.catalogId,request.requestId);break;
         case 'catalog-update-recover':await updates.recover(action.jobId,action.revision,action.action);break;
         case 'catalog-check':if(!isSupportedCli(action.catalogId))throw new AppError('unsupported','cli_not_supported');background(checkCatalog(action.catalogId).then(()=>{}));break;
-        case 'catalog-check-all':background(bulk.plan(false));break;
-        case 'catalog-update-all-plan':background(bulk.plan(true));break;
+        // Re-read installed versions first: an update made outside this app (or a downgrade)
+        // must not be compared against the inventory from service start.
+        case 'catalog-check-all':background((async()=>{catalog.refresh();await catalog.settled();await bulk.plan(false);})());break;
+        case 'catalog-update-all-plan':background((async()=>{catalog.refresh();await catalog.settled();await bulk.plan(true);})());break;
         case 'catalog-update-all-confirm':background(bulk.confirm(action.batchId,action.revision));break;
         case 'catalog-update-confirm':{
           const job=store.catalogUpdates().find(row=>row.id===action.jobId);

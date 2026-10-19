@@ -1,5 +1,36 @@
 # CLI updater terminal design
 
+## October 19 session-apply contract (current)
+This section supersedes conflicting session-restart rules below. Bulk updates still
+keep sessions; applying an update to open sessions is a separate, reviewed step.
+
+- Updates shows a fourth compact metric, Sessions to apply N: herdr-pane sessions whose
+  recorded running version differs from the installed version. Inferred running versions
+  never count. The metric navigates to Terminal sessions and performs nothing.
+- Terminal sessions leads with Review restart of N outdated sessions, counting only
+  outdated panes that can restart right now (engine idle, or the screen rule). Working
+  panes are never queued; they stay on their card's own button. The dialog lists each
+  pane with a checkbox (all selected), its running and installed versions and the rule
+  that admits it, warns when any item relies on the screen rule, binds to the server
+  instance and every pane's pid, start, conversation and state sequence, and sends one
+  pane-restart-batch command. The service restarts the selected panes one at a time and
+  reports each through the existing per-pane restart job on its card.
+- The screen rule: when the engine exposes no session-activity signal (activity
+  unknown), a pane is admitted only while herdr reports idle or done, the screen ends
+  at a prompt, and the pid was quiet for two consecutive observations. The default
+  Review session restart stays locked for unknown activity; only Review screen-based
+  restart opens, with a notice that background monitors and child tasks stay unverified.
+  The server re-verifies the same three readings before the exit command.
+- Automatic policy restarts (restart-idle, restart-all) use the same screen rule and record
+  one result per pane; History shows them under the update as Session restarts after the
+  update, with completed, skipped-working, skipped-blocked and failed reasons.
+- An OmO session without a conversation file is refused before any input (session_empty).
+- Update check and Update all re-read installed versions before comparing.
+
+Verification boundary: static render tests for metric, batch button and history results;
+browser fixture test for the batch dialog (selection, drift); controller tests with an
+engine that exposes no activity. Live proof on one macOS machine with OmO 5.1.35 only.
+
 ## October 16 card-first update workspace contract (current)
 This section supersedes conflicting workspace and automation rules below. Keep
 the existing tokens, typography, stack/cluster, cli-entry, Button, Badge, Notice,

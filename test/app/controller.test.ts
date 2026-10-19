@@ -817,6 +817,24 @@ test('a batch restart reviews every pane before the first input and then restart
     expect(f.paneCalls).toEqual(['/exit','omo --session 01a1300b-f131-7cf3-a037-7bf50e61a5f4']);
   }finally{await f.close();}
 });
+test('an update check re-reads installed versions first so a change made outside the app is not compared stale',async()=>{
+  // Given: the disk version changed since the last inventory (an update done outside the app).
+  const root=realpathSync(mkdtempSync('/tmp/catalog-recheck-'));const executable=join(root,'omo');writeFileSync(executable,'');
+  let diskVersion='1.0.0',refreshes=0;
+  const catalog:typeof createCatalog=()=>({entries:()=>[{id:'omo',name:'OmO',description:{ko:'',en:''},executable:'omo',sourceUrl:'https://example.test',method:'npm',availability:'installable',reason:null,
+      installed:{path:executable,version:diskVersion,managed:false}}],refresh:()=>{refreshes++;diskVersion='0.9.0';},busy:()=>false,settled:async()=>{},
+    recover:async()=>{throw new AppError('unsupported');},select:async()=>{throw new AppError('unsupported');},plan:async()=>{throw new AppError('unsupported');},confirm:async()=>{throw new AppError('unsupported');}});
+  const f=await fixture(false,catalog,executable,0,undefined,async()=>'1.0.0');
+  try{
+    const before=refreshes;
+    const checked=f.observe(value=>value.catalogBulk?.stage==='completed');
+    await f.command({kind:'catalog-check-all'});
+    const item=(await checked).catalogBulk?.items.find(row=>row.catalogId==='omo');
+    expect(refreshes).toBeGreaterThan(before);
+    // The comparison baseline is the re-read disk version, not the one from service start.
+    expect(item).toMatchObject({beforeVersion:'0.9.0'});
+  }finally{await f.close();rmSync(root,{recursive:true,force:true});}
+});
 test('two observations inside one second keep the previous cpu reading instead of clearing it',async()=>{
   const f=await fixture();try{
     f.setObservedPid(456,'2026-10-12T09:00:00.000Z','fixture');f.setPane('idle');
