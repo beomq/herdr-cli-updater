@@ -1,6 +1,6 @@
 id = "beomq.cli-updater"
 name = "CLI updater"
-version = "0.1.0"
+version = "0.2.0"
 min_herdr_version = "0.9.1"
 description = "CLI updates and same-session restart in a terminal panel with an explicitly configured native runtime."
 platforms = ["macos"]
