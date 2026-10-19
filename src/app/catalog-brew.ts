@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { accessSync, constants, lstatSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, rmSync } from 'node:fs';
+import { accessSync, constants, existsSync, lstatSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, rmSync } from 'node:fs';
 import { basename, dirname, join, normalize } from 'node:path';
 import { tmpdir } from 'node:os';
 import { z } from 'zod';
@@ -249,14 +249,26 @@ export async function latestBrewVersion(target:BrewTarget):Promise<string> {
     }
   }
 }
+/** A third-party tap that has since been untapped (the formula moved taps or the tap was
+ * renamed): brew no longer resolves the tap-qualified name, but still addresses the installed
+ * keg by its bare name. Official taps and casks keep the strict qualified query. */
+function formulaReference(target:BrewTarget,tap:string):{readonly name:string;readonly tapped:boolean} {
+  if(target.packageKind!=='formula'||tap.startsWith('homebrew/'))return {name:target.packageName,tapped:true};
+  const [user,repository]=tap.split('/');
+  const tapped=existsSync(join(target.target,'Library/Taps',user??'',`homebrew-${repository??''}`));
+  return {name:tapped?target.packageName:basename(target.packageName),tapped};
+}
 async function installedInfo(target:BrewTarget,options:Options):Promise<void> {
   validateBrewTarget(target);environmentGuard(target,options.home);
-  const output=await runProcess(target.manager,['info','--json=v2',`--${target.packageKind}`,target.packageName],env(options),options.home,30_000);
+  const reference=formulaReference(target,receiptState(target).tap);
+  const output=await runProcess(target.manager,['info','--json=v2',`--${target.packageKind}`,reference.name],env(options),options.home,30_000);
   validateBrewTarget(target);
   const state=receiptState(target),name=basename(target.packageName);
   switch(target.packageKind) {
     case 'formula': {
-      const data=z.object({formulae:z.array(z.object({name:z.literal(name),full_name:z.literal(target.packageName),tap:z.literal(state.tap),
+      // An untapped third-party formula reports whatever tap brew resolves the keg to now; the
+      // keg name, installed version and Cellar fingerprint still bind the target.
+      const data=z.object({formulae:z.array(z.object({name:z.literal(name),full_name:reference.tapped?z.literal(target.packageName):z.string(),tap:reference.tapped?z.literal(state.tap):z.string(),
         installed:z.array(z.object({version:versionSchema}))})).length(1)}).parse(JSON.parse(output));
       if(!data.formulae[0]?.installed.some(row=>row.version===state.version))changed();break;
     }
@@ -272,7 +284,7 @@ export async function executeBrewRemoval(target:BrewTarget,options:Options):Prom
   validateBrewTarget(target);await probe(target,options);await installedInfo(target,options);
   await probe(target,options);
   environmentGuard(target,options.home);validateBrewTarget(target);
-  await runProcess(target.manager,['uninstall',`--${target.packageKind}`,target.packageName],env(options),options.home,60_000);
+  await runProcess(target.manager,['uninstall',`--${target.packageKind}`,formulaReference(target,receiptState(target).tap).name],env(options),options.home,60_000);
 }
 export function brewVersionEvidence(target:BrewTarget):{readonly packageVersion:string;readonly releaseVersion:string} {
   validateBrewTarget(target);

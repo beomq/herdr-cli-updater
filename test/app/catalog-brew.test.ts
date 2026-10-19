@@ -6,7 +6,7 @@ import type { BrewTarget } from '../../src/app/catalog-brew';
 import { AppStore } from '../../src/app/store';
 import { createCatalogUpdates } from '../../src/app/catalog-updates';
 
-function fixture(kind:'formula'|'cask'='formula',splitRepository=false) {
+function fixture(kind:'formula'|'cask'='formula',splitRepository=false,sourceTap?:string) {
   const directory=realpathSync(mkdtempSync('/tmp/catalog-brew-')),home=join(directory,'home'),prefix=join(directory,'brew');
   const repository=splitRepository?join(prefix,'Homebrew'):prefix,manager=join(prefix,'bin/brew'),executable=join(prefix,'bin/codex');
   const control=join(directory,'control.json'),log=join(directory,'commands.jsonl');
@@ -14,7 +14,7 @@ function fixture(kind:'formula'|'cask'='formula',splitRepository=false) {
   const payloadRoot=join(prefix,kind==='formula'?'Cellar':'Caskroom','codex',initial);
   const receipt=kind==='formula'?join(payloadRoot,'INSTALL_RECEIPT.json'):join(prefix,'Caskroom/codex/.metadata/INSTALL_RECEIPT.json');
   const definition=kind==='formula'?join(payloadRoot,'.brew/codex.rb'):join(prefix,'Caskroom/codex/.metadata',initial,'20261011000000.000/Casks/codex.json');
-  const tap=kind==='formula'?'homebrew/core':'homebrew/cask';
+  const tap=sourceTap??(kind==='formula'?'homebrew/core':'homebrew/cask');
   function file(path:string,text:string){mkdirSync(dirname(path),{recursive:true});writeFileSync(path,text);}
   function binary(path:string,text:string){file(path,text);chmodSync(path,0o755);}
   function install(version:string) {
@@ -39,7 +39,7 @@ function fixture(kind:'formula'|'cask'='formula',splitRepository=false) {
   // A real inert child process: only the temp fixture can be changed, and argv/env
   // must match the exact package/prefix contract before any payload write.
   file(join(repository,'Library/Homebrew/fixture.js'),`
-import {readFileSync,writeFileSync,appendFileSync,mkdirSync,chmodSync,symlinkSync,unlinkSync,rmSync,realpathSync} from 'node:fs';
+import {readFileSync,writeFileSync,appendFileSync,mkdirSync,chmodSync,symlinkSync,unlinkSync,rmSync,realpathSync,existsSync} from 'node:fs';
 import {dirname,join,basename} from 'node:path';
 const prefix=${JSON.stringify(prefix)},repository=${JSON.stringify(repository)},home=${JSON.stringify(home)};
 const kind=${JSON.stringify(kind)},control=${JSON.stringify(control)},log=${JSON.stringify(log)},executable=${JSON.stringify(executable)};
@@ -55,15 +55,19 @@ if(args[0]==='--cellar'||args[0]==='--caskroom'){console.log(flags.container??jo
 const root=dirname(dirname(realpathSync(executable))),version=basename(root);
 const receipt=kind==='formula'?join(root,'INSTALL_RECEIPT.json'):join(prefix,'Caskroom/codex/.metadata/INSTALL_RECEIPT.json');
 const tab=JSON.parse(readFileSync(receipt,'utf8')),tap=tab.source.tap;
+// A third-party tap that is no longer tapped: brew only knows the keg by its bare name.
+const tapped=tap.startsWith('homebrew/')||existsSync(join(prefix,'Library/Taps',tap.split('/')[0],'homebrew-'+tap.split('/')[1]));
 const full=tap===(kind==='formula'?'homebrew/core':'homebrew/cask')?'codex':tap+'/codex';
+const reference=tapped?full:'codex';
 if(args[0]==='info'){
-  if(JSON.stringify(args)!==JSON.stringify(['info','--json=v2','--'+kind,full]))process.exit(73);
+  if(!tapped&&args[3]===full){console.error('Error: No available formula with the name "'+full+'".');process.exit(1);}
+  if(JSON.stringify(args)!==JSON.stringify(['info','--json=v2','--'+kind,reference]))process.exit(73);
   if(flags.redirectReceipt){unlinkSync(receipt);symlinkSync(flags.redirectReceipt,receipt);}
-  console.log(JSON.stringify(kind==='formula'?{formulae:[{name:'codex',full_name:full,tap,installed:[{version:flags.infoVersion??version}]}]}:
+  console.log(JSON.stringify(kind==='formula'?{formulae:[{name:'codex',full_name:reference,tap:tapped?tap:'homebrew/core',installed:[{version:flags.infoVersion??version}]}]}:
     {casks:[{token:'codex',full_token:full,tap,installed:flags.infoVersion??version,artifacts:flags.artifacts??tab.uninstall_artifacts}]}));
   process.exit(0);
 }
-if(!['upgrade','uninstall'].includes(args[0])||JSON.stringify(args.slice(1))!==JSON.stringify(['--'+kind,full]))process.exit(74);
+if(!['upgrade','uninstall'].includes(args[0])||JSON.stringify(args.slice(1))!==JSON.stringify(['--'+kind,reference]))process.exit(74);
 if(flags.fail)process.exit(23);
 if(args[0]==='uninstall'){
   unlinkSync(executable);rmSync(root,{recursive:true});console.log('private-fixture-token');process.exit(0);
@@ -232,6 +236,27 @@ for(const kind of ['formula','cask'] as const)test(`removes only the exact ${kin
     expect(readFileSync(join(f.home,'.codex/sessions/history'),'utf8')).toBe('conversation');
     expect(readFileSync(join(f.prefix,'unrelated/keep'),'utf8')).toBe('unrelated');
     expect(readFileSync(join(f.prefix,'etc/user.conf'),'utf8')).toBe('config');
+  }finally{f.close();}
+});
+test('a formula whose third-party tap was untapped is verified and uninstalled by its keg name',async()=>{
+  const f=fixture('formula',false,'sst/tap');
+  try {
+    const target=await f.target();expect(target.packageName).toBe('sst/tap/codex');
+    await executeBrewRemoval(target,f.options);
+    expect(f.commands().filter(row=>row.args[0]==='info').map(row=>row.args[3])).toEqual(expect.arrayContaining(['codex']));
+    expect(f.commands().filter(row=>row.args[0]==='info').some(row=>row.args[3]==='sst/tap/codex')).toBe(false);
+    expect(f.commands().find(row=>row.args[0]==='uninstall')?.args).toEqual(['uninstall','--formula','codex']);
+    expect(existsSync(f.executable)).toBe(false);
+  }finally{f.close();}
+});
+test('a third-party formula whose tap is still present keeps the strict full-name query',async()=>{
+  const f=fixture('formula',false,'sst/tap');
+  try {
+    mkdirSync(join(f.prefix,'Library/Taps/sst/homebrew-tap'),{recursive:true});
+    const target=await f.target();
+    await executeBrewRemoval(target,f.options);
+    expect(f.commands().filter(row=>row.args[0]==='info').every(row=>row.args[3]==='sst/tap/codex')).toBe(true);
+    expect(f.commands().find(row=>row.args[0]==='uninstall')?.args).toEqual(['uninstall','--formula','sst/tap/codex']);
   }finally{f.close();}
 });
 test('rechecks receipt redirection by the final metadata child before invoking uninstall',async()=>{
