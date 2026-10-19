@@ -3,8 +3,9 @@ import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,readdirSync,rmSync} fro
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 
+const version=(JSON.parse(readFileSync(resolve('package.json'),'utf8')) as {version:string}).version;
 const installer=resolve('site/dist/install.sh');
-const archive=resolve('site/dist/downloads/herdr-cli-updater-0.1.0.tgz');
+const archive=resolve(`site/dist/downloads/herdr-cli-updater-${version}.tgz`);
 beforeAll(async()=>{
   const build=Bun.spawn(['bun','run','build:site'],{cwd:resolve('.'),stdout:'pipe',stderr:'pipe'});
   const [code,,stderr]=await Promise.all([build.exited,new Response(build.stdout).text(),new Response(build.stderr).text()]);
@@ -39,7 +40,7 @@ test('installer installs the real archive, preserves current on bad checksum and
     const result=await run(['/bin/sh',installer],env);
     expect(result.code,{...result}.stderr).toBe(0);
     const cli=join(home,'.local/bin/cli-updater');
-    expect(await run([cli,'--version'],env)).toMatchObject({code:0,stdout:'0.1.0\n'});
+    expect(await run([cli,'--version'],env)).toMatchObject({code:0,stdout:version+'\n'});
     const status=await run([cli,'status'],env);
     expect(status.code).toBe(0);expect(JSON.parse(status.stdout)).toEqual({running:false});
     const bad=join(home,'bad.tgz');writeFileSync(bad,'not the expected archive');

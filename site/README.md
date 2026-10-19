@@ -15,7 +15,7 @@ Upload **site/dist only**, never the repository root or dist/web. The site build
 copies an explicit list of HTML, CSS, branding assets and Vercel configuration.
 It has no API, environment variables, analytics or connection to localhost.
 The site build also packs the explicit package.json files allowlist into
-`downloads/herdr-cli-updater-0.1.0.tgz`, writes its SHA-256 file, and fills the
+`downloads/herdr-cli-updater-<version>.tgz`, writes its SHA-256 file, and fills the
 download URL and digest in `/install.sh`. Build the local app before packing it.
 The installer requires Bun 1.4.2+ and Node.js 24+, installs without sudo into
 `~/.local/share/cli-updater-app/releases`, and activates a verified release via

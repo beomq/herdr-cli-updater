@@ -25,7 +25,7 @@ Bun 1.4.2 이상과 Node 24 이상이 필요합니다. 관리 대상 CLI의 전�
 
 ```sh
 mkdir -p "$HOME/.local/share/cli-updater-app"
-bun add --cwd "$HOME/.local/share/cli-updater-app" /absolute/path/herdr-cli-updater-0.1.0.tgz
+bun add --cwd "$HOME/.local/share/cli-updater-app" /absolute/path/herdr-cli-updater-0.2.0.tgz
 export PATH="$HOME/.local/share/cli-updater-app/node_modules/.bin:$PATH"
 cli-updater
 ```
