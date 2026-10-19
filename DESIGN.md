@@ -1,8 +1,17 @@
 # CLI updater terminal design
 
 ## October 19 session-apply contract (current)
-This section supersedes conflicting session-restart rules below. Bulk updates still
-keep sessions; applying an update to open sessions is a separate, reviewed step.
+This section supersedes conflicting session-restart rules below. Manual and bulk
+updates apply to open sessions by default: the review dialogs carry the pane-session
+choice preset to restart-all (idle panes restart into the same conversation right
+away, working panes once they finish, blocked panes are skipped). Choosing keep
+leaves sessions alone; the Terminal sessions batch review below then applies them
+later. Pane restarts run in the background per update and never delay the next CLI.
+
+- Organize installations: today's PATH-default copy is held only while the kept
+  installation is not itself reachable on PATH. When it is, removing the default copy
+  merely shifts the command to the kept copy and no shell file changes; the panel says
+  so. A configured new-terminal default is never removable.
 
 - Updates shows a fourth compact metric, Sessions to apply N: herdr-pane sessions whose
   recorded running version differs from the installed version. Inferred running versions

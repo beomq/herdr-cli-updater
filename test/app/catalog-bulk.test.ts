@@ -76,9 +76,17 @@ test('one approval executes sequentially, keeps sessions and continues after an 
     expect(f.executions).toEqual(['codex']);expect(()=>f.bulk.plan(false)).toThrow('bulk_in_progress');
     f.release.resolve();await running;
     expect(f.executions).toEqual(['codex','claude']);expect(f.bulk.snapshot()?.items.map(i=>i.status)).toEqual(['uncertain','completed','unsupported']);
-    expect(f.store.catalogUpdates().every(job=>job.paneSessions==='keep')).toBe(true);expect(f.policies).toEqual(['claude']);
+    // Updates apply to open sessions by default: idle panes restart now, working ones after they finish.
+    expect(f.store.catalogUpdates().every(job=>job.paneSessions==='restart-all')).toBe(true);expect(f.policies).toEqual(['claude']);
     expect(()=>f.bulk.confirm(batch.id,batch.revision)).toThrow('stale_bulk_plan');
   }finally{f.release.resolve();await f.updates.settled();f.close();}
+});
+test('an explicit keep choice on batch approval leaves sessions alone',async()=>{
+  const f=fixture();try{
+    await f.bulk.plan(true);const batch=f.bulk.snapshot();if(!batch)throw new Error('missing batch');
+    await f.bulk.confirm(batch.id,batch.revision,'keep');
+    expect(f.store.catalogUpdates().every(job=>job.paneSessions==='keep')).toBe(true);
+  }finally{await f.updates.settled();f.close();}
 });
 test('a changed selection or stale approval rejects the whole batch before execution',async()=>{
   const f=fixture();try{
@@ -97,7 +105,8 @@ test('restart retains results but never replays interrupted batch updates',async
   }finally{f.close();}
 });
 test('batch approval cannot inject restart choices or paths',()=>{
-  expect(()=>parseCommand({requestId:'a',command:{kind:'catalog-update-all-confirm',batchId:'b',revision:0,paneSessions:'restart-all'}})).toThrow();
+  expect(parseCommand({requestId:'a',command:{kind:'catalog-update-all-confirm',batchId:'b',revision:0,paneSessions:'keep'}}).command).toMatchObject({paneSessions:'keep'});
+  expect(()=>parseCommand({requestId:'a',command:{kind:'catalog-update-all-confirm',batchId:'b',revision:0,paneSessions:'everything'}})).toThrow();
   expect(()=>parseCommand({requestId:'a',command:{kind:'catalog-check-all',target:'/tmp'}})).toThrow();
 });
 test('a failed lookup does not prevent remaining CLI checks',async()=>{

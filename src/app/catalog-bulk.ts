@@ -73,7 +73,9 @@ export function createCatalogBulk(options:Options){
     }finally{running=false;options.changed();}
     })();
   }
-  function confirm(id:string,revision:number):Promise<void>{
+  // Updates apply to open sessions by default: idle panes restart into the same conversation
+  // right away and working panes once they finish. Restarts run in the background per item.
+  function confirm(id:string,revision:number,paneSessions:'keep'|'restart-idle'|'restart-all'='restart-all'):Promise<void>{
     if(running)throw new AppError('busy','bulk_in_progress');
     if(!current||current.id!==id||current.revision!==revision||current.stage!=='ready')throw new AppError('conflict','stale_bulk_plan');
     options.guard();
@@ -104,7 +106,7 @@ export function createCatalogBulk(options:Options){
           };
           if(!permitted())throw new AppError('source_changed','installation_selection_changed');
           changeItem(item.catalogId,{status:'updating'});
-          try{await options.updates.confirm(jobId,jobRevision,permitted,'keep');}
+          try{await options.updates.confirm(jobId,jobRevision,permitted,paneSessions);}
           catch(error){
             // An earlier item can rewrite a manifest shared by the whole prefix (bun's global
             // package.json and bun.lock), which changes this item's reviewed fingerprint while
@@ -117,7 +119,7 @@ export function createCatalogBulk(options:Options){
             const replanned=await options.updates.plan(item.catalogId,`${current?.id}:replan:${item.catalogId}`);
             options.store.putCatalogUpdate({...stale,stage:'failed',revision:stale.revision+1,failure:'update_target_changed',updatedAt:Date.now()});
             jobId=replanned.id;jobRevision=replanned.revision;changeItem(item.catalogId,{jobId,jobRevision});
-            await options.updates.confirm(jobId,jobRevision,permitted,'keep');
+            await options.updates.confirm(jobId,jobRevision,permitted,paneSessions);
           }
           await options.updates.settled();
           const job=options.store.catalogUpdates().find(job=>job.id===jobId);

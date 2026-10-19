@@ -11,6 +11,14 @@ const entry:CatalogEntry={id:'omo',name:'OmO',description:{ko:'',en:''},executab
 const snapshot:AppSnapshot={revision:1,service:'ready',failure:null,installations:[],managed:[],operations:[],policies:[],catalog:[entry],removalJobs:[],
   external:[{id:'e1',pid:77,family:'omo',installationId:null,executable:npm.identityPath,cwd:null,runningVersion:null,control:'observation-only',processState:'observed'}]};
 
+test('the PATH default copy becomes removable when the kept installation is itself on PATH',()=>{
+  const reachable={...entry,installations:[{...bun,onPath:true},{...nvm,onPath:true}]};
+  expect(cleanupRows(reachable,{...snapshot,external:[]}).map(row=>[row.installation.id,row.status])).toEqual([['bun','management-target'],['nvm','removable']]);
+  const unreachable={...entry,installations:[{...bun,onPath:false},{...nvm,onPath:true}]};
+  expect(cleanupRows(unreachable,{...snapshot,external:[]}).map(row=>row.status)).toEqual(['management-target','path-default']);
+  // A configured new-terminal default is still never removable.
+  expect(cleanupRows({...reachable,configuredDefaultInstallationId:'nvm'},{...snapshot,external:[]}).map(row=>row.status)).toEqual(['management-target','configured-default']);
+});
 test('cleanupRows keeps the management target, PATH default and unknown managers, and protects installations with running sessions',()=>{
   const rows=cleanupRows(entry,snapshot);
   expect(rows.map(row=>[row.installation.id,row.status])).toEqual([['bun','management-target'],['npm','in-use'],['nvm','path-default'],['raw','unknown-manager']]);

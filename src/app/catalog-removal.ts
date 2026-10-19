@@ -48,8 +48,12 @@ export function createRemoval(options:Options, dependencies:{readonly discover?:
     const installed=installationId?entry?.installations?.find(row=>row.id===installationId):entry?.installed;
     if(!installed)throw new AppError('not_found','installation_missing');
     if(installationId&&entry?.selectedInstallationId===installationId)throw new AppError('conflict','cannot_remove_selected_installation');
+    // The copy that `name` resolves to today may go only when the kept installation is itself
+    // on PATH, so the command keeps working from a new terminal without editing shell files.
+    const kept=entry?.installations?.find(row=>row.id===entry.selectedInstallationId);
+    const fallbackOnPath=!!kept&&kept.id!==installationId&&kept.onPath===true;
     if(installationId&&(entry?.configuredDefaultInstallationId===installationId
-      ||(!entry?.configuredDefaultInstallationId&&entry?.installations?.find(row=>row.id===installationId)?.isDefault)))
+      ||(!entry?.configuredDefaultInstallationId&&entry?.installations?.find(row=>row.id===installationId)?.isDefault&&!fallbackOnPath)))
       throw new AppError('conflict','cannot_remove_default_installation');
     const receipt=options.store.installJobs().find(row=>row.catalogId===catalogId&&row.stage==='completed'&&row.executablePath===installed.path)??null;
     let refusal='removal_source_unverified';

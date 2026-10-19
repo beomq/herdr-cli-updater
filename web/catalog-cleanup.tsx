@@ -8,13 +8,16 @@ import { useLanguage } from './i18n';
 type Act=(command:AppCommand)=>Promise<boolean>;
 export type CleanupRow={readonly installation:CatalogInstallation;readonly status:'removable'|'management-target'|'path-default'|'configured-default'|'in-use'|'unknown-manager';readonly sessionPids:readonly number[]};
 export function cleanupRows(entry:CatalogEntry,snapshot:AppSnapshot):readonly CleanupRow[]{
+  // When the kept installation is reachable on PATH, removing today's PATH default only shifts the
+  // command to the kept copy; the hold exists for the case where the command would vanish.
+  const keptOnPath=(entry.installations??[]).find(row=>row.id===entry.selectedInstallationId)?.onPath===true;
   return (entry.installations??[]).map(installation=>{
     const sessionPids=snapshot.external.filter(session=>session.processState!=='exited'
       &&(session.family===entry.id||session.catalogId===entry.id||(entry.id==='omo'&&session.family==='pi'))
       &&(session.executable===installation.identityPath||session.executable===installation.path||session.executable.startsWith(installation.root+'/'))).map(session=>session.pid);
     const status:CleanupRow['status']=installation.id===entry.selectedInstallationId?'management-target'
       :entry.configuredDefaultInstallationId===installation.id?'configured-default'
-      :(!entry.configuredDefaultInstallationId&&installation.isDefault)?'path-default'
+      :(!entry.configuredDefaultInstallationId&&installation.isDefault&&!keptOnPath)?'path-default'
       :installation.removalSupport?.kind==='unsupported'||(installation.manager==='unknown'&&installation.removalSupport?.kind!=='review')?'unknown-manager'
       :sessionPids.length?'in-use':'removable';
     return {installation,status,sessionPids};
@@ -110,6 +113,7 @@ export function CatalogCleanup({entry,snapshot,act,disabled,onInstall}:{readonly
         {(entry.installations??[]).map(row=><label className="check consolidation-choice" key={row.id}><input type="radio" name={'retain-'+entry.id} checked={targetId===row.id} onChange={()=>{setTargetId(row.id);setMakeDefault(false);}}/><span className="stack"><strong>{managers[row.manager]} · {row.version??t('버전 미확인','Version unknown')}</strong><span className="path">{row.path}</span><span className="cluster">{row.id===entry.selectedInstallationId&&<Badge>{t('업데이트 대상','Update target')}</Badge>}{row.isDefault&&<Badge>{t('현재 기본 실행','Current default')}</Badge>}{row.id===entry.configuredDefaultInstallationId&&<Badge>{t('새 터미널 기본','New-terminal default')}</Badge>}</span></span></label>)}
       </fieldset>
       {target&&(entry.installations?.length??0)>1&&<div className="stack cleanup-preview"><h3>{t('나머지 사본','Other copies')}</h3>{outcome(preview,target.id)}</div>}
+      {target&&preview.some(row=>row.status==='removable'&&row.installation.isDefault)&&<Notice>{t(`제거하면 새 터미널의 ${entry.executable} 명령은 남길 설치(${target.path})를 실행합니다. 이미 PATH에 있어 셀 설정은 바꾸지 않습니다.`,`After removal, ${entry.executable} in new terminals runs the kept installation (${target.path}). It is already on PATH; no shell files change.`)}</Notice>}
       <p className="muted">{herdrNote}</p>
       <details className="cleanup-advanced"><summary>{t('고급: 일반 터미널 PATH','Advanced: general terminal PATH')}</summary>
         <label className="check"><input type="checkbox" checked={makeDefault} disabled={blocked||!target||target.manager==='owned'||selectedDefault?.id===targetId} onChange={e=>setMakeDefault(e.target.checked)}/><span>{t('새 zsh 터미널에서도 이 설치를 기본으로 사용 (~/.zshrc PATH 변경)','Also use this installation in new zsh terminals (changes PATH in ~/.zshrc)')}</span></label>

@@ -21,6 +21,8 @@ export type CatalogInstallation = {
   readonly path:string;
   readonly identityPath:string;
   readonly isDefault:boolean;
+  /** Reachable through some PATH directory (not necessarily first). Absent means unknown. */
+  readonly onPath?:boolean;
   readonly receiptId:string|null;
   readonly version:string|null;
   readonly versionStatus?:'checking'|'known'|'unsupported'|'timeout'|'failed'|'unrecognized';

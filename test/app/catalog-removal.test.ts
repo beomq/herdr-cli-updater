@@ -28,6 +28,21 @@ function fixture(){
   const removal=createRemoval(options,dependencies);
   return {store,removal,options,dependencies,entered,release,executions:()=>executions,block:()=>{blocked=true;},replace:()=>{identity='b'.repeat(64);},close:()=>{store.close();rmSync(directory,{recursive:true,force:true});}};
 }
+test('the PATH-default copy can be removed only when the kept installation is itself on PATH',async()=>{
+  const f=fixture();try{
+    const row=(id:string,path:string,isDefault:boolean,onPath?:boolean)=>({id,catalogId:'codex' as const,manager:'unknown' as const,root:path.replace(/\/codex$/,''),packageName:null,path,identityPath:path,isDefault,receiptId:null,version:'1.0.0',...(onPath===undefined?{}:{onPath})});
+    const entries=(kept:ReturnType<typeof row>)=>()=>[{...f.options.entries()[0]!,installations:[row('brew',f.options.directory+'/brew/bin/codex',true,true),kept],selectedInstallationId:kept.id,inventoryStatus:'ready' as const}];
+    // Kept copy reachable on PATH: removing the default copy just shifts `codex` to the kept one.
+    const reachable=createRemoval({...f.options,entries:entries(row('kept',f.options.directory+'/owned/bin/codex',false,true))},f.dependencies);
+    await reachable.plan('codex','r1','brew');
+    expect(f.store.removalJobs().at(-1)?.stage).toBe('ready');
+    // Kept copy not on PATH (or unknown): removing the default copy would leave no `codex` command.
+    for(const onPath of [false,undefined]){
+      const unreachable=createRemoval({...f.options,entries:entries(row('kept',f.options.directory+'/owned/bin/codex',false,onPath))},f.dependencies);
+      await expect(unreachable.plan('codex','r2','brew')).rejects.toThrow('cannot_remove_default_installation');
+    }
+  }finally{f.close();}
+});
 test('removal only runs once after fresh explicit confirmation',async()=>{
   const f=fixture();
   try{

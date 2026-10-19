@@ -31,7 +31,7 @@ const envelope = z.object({
     z.object({ kind:z.literal("catalog-check"),catalogId:z.enum(catalogIds) }).strict(),
     z.object({kind:z.literal('catalog-check-all')}).strict(),
     z.object({kind:z.literal('catalog-update-all-plan')}).strict(),
-    z.object({kind:z.literal('catalog-update-all-confirm'),batchId:id,revision:generation}).strict(),
+    z.object({kind:z.literal('catalog-update-all-confirm'),batchId:id,revision:generation,paneSessions:paneSessionPolicy.optional()}).strict(),
     z.object({ kind:z.literal("catalog-update-confirm"),jobId:id,revision:generation,paneSessions:paneSessionPolicy.optional() }).strict(),
     z.object({kind:z.literal('catalog-update-recover'),jobId:id,revision:generation,action:z.enum(['reconcile','archive-unverified'])}).strict(),
     z.object({ kind: z.literal("install-plan"), catalogId: z.enum(catalogIds),method:officialMethodSchema.optional(),makeDefault:z.boolean().optional() }).strict(),

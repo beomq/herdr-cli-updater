@@ -50,6 +50,9 @@ test('collects distinct npm prefixes and nvm versions while collapsing proven PA
     expect(rows).toHaveLength(3);expect(rows.every(row=>row.manager==='npm')).toBe(true);
     expect(new Set(rows.map(row=>row.root))).toEqual(new Set([a,b,nvm]));
     expect(rows.filter(row=>row.isDefault).map(row=>row.root)).toEqual([b]);
+    // Every copy reachable through PATH is marked, not only the first one.
+    expect(rows.filter(row=>row.onPath).map(row=>row.root).sort()).toEqual([a,b].sort());
+    expect(rows.find(row=>row.root===nvm)?.onPath).toBe(false);
   }finally{f.close();}
 });
 test('multiple entry scripts from one package remain one installation',async()=>{

@@ -131,7 +131,7 @@ for(const mode of ['recovery','update'] as const)test('actual App '+mode+' revie
     expect(await confirm.isDisabled()).toBe(false);
     const response=page.waitForResponse(response=>response.url().endsWith('/api/command'));
     await confirm.click();await response;
-    expect(app.commands).toEqual([mode==='recovery'?{kind:'catalog-update-recover',jobId:'uncertain-codex',revision:8,action:'reconcile'}:{kind:'catalog-update-confirm',jobId:'uncertain-codex',revision:8,paneSessions:'keep'}]);
+    expect(app.commands).toEqual([mode==='recovery'?{kind:'catalog-update-recover',jobId:'uncertain-codex',revision:8,action:'reconcile'}:{kind:'catalog-update-confirm',jobId:'uncertain-codex',revision:8,paneSessions:'restart-all'}]);
   }finally{await page.close();}
 });
 for(const mode of ['recovery','update'] as const)for(const change of ['identity','source','version','selection','server','job'] as const)test('actual App '+mode+' review blocks '+change+' drift',async()=>{

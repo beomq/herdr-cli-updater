@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { AppCommand, AppSnapshot } from '../src/app/types';
+import type { AppCommand, AppSnapshot, PaneSessionPolicy } from '../src/app/types';
 import type { CatalogEntry, CatalogInstallation } from '../src/app/catalog-types';
+import { PaneSessionChoice } from './pane-session-choice';
 import type { CatalogUpdateJob } from '../src/app/catalog-updates';
 import { AgentMark } from './agent-mark';
 import { CatalogInstallations, installationControlsBlocked } from './catalog-installations';
@@ -98,6 +99,8 @@ export function CatalogDashboardRow({entry,snapshot,guardSnapshot=snapshot,act,d
   const [pending,setPending]=useState(false);
   const [waiting,setWaiting]=useState<{readonly ids:readonly string[];readonly server:string|undefined;readonly binding:string}|null>(null);
   const [review,setReview]=useState<{readonly job:CatalogUpdateJob;readonly server:string|undefined;readonly binding:string;readonly checkedAt:number|null}|null>(null);
+  // Updates apply to open sessions by default; the review keeps the choice visible.
+  const [paneSessions,setPaneSessions]=useState<PaneSessionPolicy>('restart-all');
   const busy=useRef(false);
   const jobs=(snapshot.catalogUpdates??[]).filter(job=>job.catalogId===entry.id);
   const activeJob=jobs.find(job=>job.stage==='updating'||job.stage==='uncertain');
@@ -143,7 +146,7 @@ export function CatalogDashboardRow({entry,snapshot,guardSnapshot=snapshot,act,d
   const confirm=async()=>{
     if(!review||stale||blocked||busy.current)return;
     busy.current=true;setPending(true);
-    try{if(await act({kind:'catalog-update-confirm',jobId:review.job.id,revision:review.job.revision,paneSessions:'keep'}))setReview(null);}
+    try{if(await act({kind:'catalog-update-confirm',jobId:review.job.id,revision:review.job.revision,paneSessions}))setReview(null);}
     finally{busy.current=false;setPending(false);}
   };
   return <section className="cli-entry" data-catalog-id={entry.id}>
@@ -188,8 +191,9 @@ export function CatalogDashboardRow({entry,snapshot,guardSnapshot=snapshot,act,d
       </div>
     </div>}
     {review&&<Dialog title={entry.name+' · '+t('업데이트 검토','Review update')} onClose={()=>setReview(null)}>
-      <Notice>{t('선택한 설치만 업데이트합니다. 실행 중인 세션은 종료하거나 다시 시작하지 않습니다. 실행 시 배포처의 최신 버전을 받아 설치한 뒤 버전을 검증합니다.','Updates only this installation. Running sessions are not stopped or restarted. The latest release is fetched at execution and its installed version is verified.')}</Notice>
+      <Notice>{t('선택한 설치만 업데이트합니다. 실행 시 배포처의 최신 버전을 받아 설치한 뒤 버전을 검증하고, 아래 선택에 따라 herdr 창 세션을 같은 대화로 다시 시작합니다.','Updates only this installation. The latest release is fetched at execution and its installed version is verified; herdr-pane sessions then restart into the same conversation per the choice below.')}</Notice>
       <CatalogUpdateReviewFacts job={review.job} checkedAt={review.checkedAt}/>
+      <PaneSessionChoice name="catalog-update-pane-sessions" value={paneSessions} disabled={blocked||stale} onChange={setPaneSessions} compact/>
       {stale&&<Notice tone="warning">{t('설치 또는 계획이 바뀌었습니다. 닫고 다시 검토하세요.','The installation or plan changed. Close and review again.')}</Notice>}
       <div className="cluster"><Button onClick={()=>setReview(null)}>{t('취소','Cancel')}</Button><Button data-action="catalog-update-confirm" tone="primary" disabled={blocked||stale} onClick={()=>void confirm()}>{t('설치 업데이트 실행','Update installation')}</Button></div>
     </Dialog>}

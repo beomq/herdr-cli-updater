@@ -253,7 +253,7 @@ test('whole catalog workflow checks first, serializes commands and preserves act
     expect(batch.stage).toBe('ready');expect(f.executions()).toBe(0);
     await f.command({kind:'catalog-update-all-confirm',batchId:batch.id,revision:batch.revision});await f.controller.settled();
     expect(f.controller.snapshot().catalogBulk?.items[0]?.status).toBe('completed');
-    expect(f.controller.snapshot().catalogUpdates?.[0]?.paneSessions).toBe('keep');
+    expect(f.controller.snapshot().catalogUpdates?.[0]?.paneSessions).toBe('restart-all');
     expect(f.controller.snapshot().policies[0]?.lastInstalledVersion).toBe('2.0.0');
     expect(f.controller.snapshot().managed[0]?.pid).toBe(session?.pid);
     expect(f.effects).toEqual({stops:0,restarts:0});

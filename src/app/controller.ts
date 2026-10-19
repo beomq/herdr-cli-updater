@@ -1006,7 +1006,7 @@ export async function createController(options: Options, dependencies: {
         // must not be compared against the inventory from service start.
         case 'catalog-check-all':background((async()=>{catalog.refresh();await catalog.settled();await bulk.plan(false);})());break;
         case 'catalog-update-all-plan':background((async()=>{catalog.refresh();await catalog.settled();await bulk.plan(true);})());break;
-        case 'catalog-update-all-confirm':background(bulk.confirm(action.batchId,action.revision));break;
+        case 'catalog-update-all-confirm':background(bulk.confirm(action.batchId,action.revision,action.paneSessions??'restart-all'));break;
         case 'catalog-update-confirm':{
           const job=store.catalogUpdates().find(row=>row.id===action.jobId);
           await updates.confirm(action.jobId,action.revision,()=>true,action.paneSessions??paneSessionPolicy(`catalog:${job?.catalogId??''}`));break;

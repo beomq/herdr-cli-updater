@@ -202,5 +202,6 @@ export async function discoverCatalogInstallations(options:Options,dependencies:
     const selected=matches.find(row=>row.path===candidate?.path)??matches[0];
     if(selected)defaults.add(selected.id);
   }
-  return rows.map(row=>({...row,isDefault:defaults.has(row.id)}));
+  return rows.map(row=>({...row,isDefault:defaults.has(row.id),
+    onPath:pathRows.some(candidate=>candidate.catalogId===row.catalogId&&candidate.identityPath===row.identityPath)}));
 }
