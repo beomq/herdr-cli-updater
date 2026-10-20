@@ -83,3 +83,10 @@
   .dashboard-summary small {grid-column:1/-1}
   .cli-status {grid-template-columns:minmax(0,1fr)}
 }
+
+/* Update review: the change itself leads; details fold. */
+.update-change{font-size:1.15rem;font-variant-numeric:tabular-nums}
+.update-change strong{font-weight:700}
+.update-row+.update-row{border-top:1px solid var(--line, rgba(128,128,128,.25));padding-top:.5rem}
+button.link{background:none;border:0;padding:0;color:var(--accent, inherit);text-decoration:underline;cursor:pointer;font:inherit}
+button.link:disabled{opacity:.5;cursor:default}

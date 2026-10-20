@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { PaneSessionPolicy } from '../src/app/types';
 import { useLanguage } from './i18n';
 
@@ -6,6 +7,15 @@ export const paneSessionLabels=(t:(ko:string,en:string)=>string):Record<PaneSess
   'restart-idle':[t('대기 중 세션만 다시 시작','Restart idle sessions only'),t('업데이트 직후 대기 중인 herdr 창 세션을 같은 대화로 다시 시작합니다. 작업 중인 세션은 건드리지 않습니다.','Right after the update, idle herdr-pane sessions are restarted in the same conversation. Working sessions are left alone.')],
   'restart-all':[t('모두 다시 시작 (작업 끝나면)','Restart all (after work finishes)'),t('대기 중 세션은 바로, 작업 중 세션은 끝날 때까지 기다렸다가 다시 시작합니다. 30분 안에 안 끝나면 그대로 둡니다.','Idle sessions restart now; working sessions restart once they finish. Sessions still working after 30 minutes are left alone.')],
 });
+/** One line stating what happens to open sessions, with the full choice folded behind "Change". */
+export function PaneSessionSummary({value,disabled,onChange,name='pane-sessions'}:{value:PaneSessionPolicy;disabled:boolean;onChange:(value:PaneSessionPolicy)=>void;name?:string}){
+  const {t}=useLanguage();const labels=paneSessionLabels(t);const [open,setOpen]=useState(false);
+  return <div className="stack" data-pane-session-summary={value}>
+    <p className="cluster"><span><strong>{t('열린 세션','Open sessions')}:</strong> {labels[value][0]} · <span className="muted">{labels[value][1]}</span></span>
+      {!open&&<button type="button" className="link" data-action="pane-sessions-change" disabled={disabled} onClick={()=>setOpen(true)}>{t('바꾸기','Change')}</button>}</p>
+    {open&&<PaneSessionChoice name={name} value={value} disabled={disabled} onChange={onChange} compact/>}
+  </div>;
+}
 export function PaneSessionChoice({value,disabled,onChange,compact,name='pane-sessions'}:{value:PaneSessionPolicy;disabled:boolean;onChange:(value:PaneSessionPolicy)=>void;compact?:boolean;name?:string}){
   const {t}=useLanguage();const labels=paneSessionLabels(t);
   return <fieldset className="stack"><legend>{t('업데이트 후 herdr 창 세션','herdr-pane sessions after update')}</legend>

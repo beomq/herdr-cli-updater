@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AppCommand, AppSnapshot, PaneSessionPolicy } from '../src/app/types';
 import type { CatalogEntry, CatalogInstallation } from '../src/app/catalog-types';
-import { PaneSessionChoice } from './pane-session-choice';
+import { PaneSessionSummary } from './pane-session-choice';
 import type { CatalogUpdateJob } from '../src/app/catalog-updates';
 import { AgentMark } from './agent-mark';
 import { CatalogInstallations, installationControlsBlocked } from './catalog-installations';
@@ -190,12 +190,13 @@ export function CatalogDashboardRow({entry,snapshot,guardSnapshot=snapshot,act,d
         </>:tab==='installations'?<CatalogCleanup entry={entry} snapshot={guardSnapshot} act={act} disabled={disabled||globalBusy||installationControlsBlocked(entry,guardSnapshot,{automation:false})}/>:tab==='sessions'?sessions:tab==='history'?history:automation}
       </div>
     </div>}
-    {review&&<Dialog title={entry.name+' · '+t('업데이트 검토','Review update')} onClose={()=>setReview(null)}>
-      <Notice>{t('선택한 설치만 업데이트합니다. 실행 시 배포처의 최신 버전을 받아 설치한 뒤 버전을 검증하고, 아래 선택에 따라 herdr 창 세션을 같은 대화로 다시 시작합니다.','Updates only this installation. The latest release is fetched at execution and its installed version is verified; herdr-pane sessions then restart into the same conversation per the choice below.')}</Notice>
-      <CatalogUpdateReviewFacts job={review.job} checkedAt={review.checkedAt}/>
-      <PaneSessionChoice name="catalog-update-pane-sessions" value={paneSessions} disabled={blocked||stale} onChange={setPaneSessions} compact/>
+    {review&&<Dialog title={entry.name+' '+t('업데이트','update')} onClose={()=>setReview(null)}>
+      <p className="update-change"><span data-version="installed">{review.job.beforeVersion??t('미확인','Unknown')}</span> → <strong data-version="checked-latest">{review.job.checkedVersion??t('최신','latest')}</strong></p>
+      <p className="muted">{t('공식 배포처의 최신 버전을 설치하고 설치된 버전을 확인합니다.','Installs the latest official release and verifies the installed version.')}</p>
+      <details><summary>{t('자세히','Details')}</summary><CatalogUpdateReviewFacts job={review.job} checkedAt={review.checkedAt}/></details>
+      <PaneSessionSummary name="catalog-update-pane-sessions" value={paneSessions} disabled={blocked||stale} onChange={setPaneSessions}/>
       {stale&&<Notice tone="warning">{t('설치 또는 계획이 바뀌었습니다. 닫고 다시 검토하세요.','The installation or plan changed. Close and review again.')}</Notice>}
-      <div className="cluster"><Button onClick={()=>setReview(null)}>{t('취소','Cancel')}</Button><Button data-action="catalog-update-confirm" tone="primary" disabled={blocked||stale} onClick={()=>void confirm()}>{t('설치 업데이트 실행','Update installation')}</Button></div>
+      <div className="cluster"><Button onClick={()=>setReview(null)}>{t('취소','Cancel')}</Button><Button data-action="catalog-update-confirm" tone="primary" disabled={blocked||stale} onClick={()=>void confirm()}>{t('업데이트','Update')}</Button></div>
     </Dialog>}
   </section>;
 }
