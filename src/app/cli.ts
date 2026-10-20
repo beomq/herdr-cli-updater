@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { version } from "../../package.json";
-import { commandServer, controlServer, readServerOwner } from "./server";
+import { commandServer, controlServer, readLiveServerOwner } from "./server";
 import { parseCommand } from "./validation";
 import { AppError } from "./types";
 import { captureCurrentConversation } from "./observations";
@@ -33,7 +33,7 @@ function options(args: readonly string[]) {
   }
 }
 async function open(directory: string, port: number) {
-  const existing = readServerOwner(directory);
+  const existing = readLiveServerOwner(directory);
   if (existing) {
     const result = await controlServer(existing, "open", captureCurrentConversation());
     if (!result.url) throw new AppError("protocol");
@@ -80,7 +80,7 @@ export async function runCLI(args: readonly string[]): Promise<void> {
     if (!["open", "serve", "status", "stop", "native-targets", "native-restart"].includes(command)) throw new AppError("invalid_request", "unsupported_command");
     const parsed = options(command === first ? args.slice(1) : args);
     if (command === "native-targets" || command === "native-restart") {
-      const owner = readServerOwner(parsed.directory);
+      const owner = readLiveServerOwner(parsed.directory);
       if (!owner) throw new AppError("unavailable", "service_not_running");
       const selected: unknown = command === "native-restart"
         ? JSON.parse(readFileSync(parsed.selection ?? "", "utf8")) : null;
@@ -90,7 +90,7 @@ export async function runCLI(args: readonly string[]): Promise<void> {
       return;
     }
     if (command === "status" || command === "stop") {
-      const owner = readServerOwner(parsed.directory);
+      const owner = readLiveServerOwner(parsed.directory);
       if (!owner) { console.log(JSON.stringify({ running: false })); return; }
       const result = await controlServer(owner, command === "status" ? "status" : "stop");
       console.log(JSON.stringify({ running: command === "status", pid: result.pid, origin: result.origin, service: result.service }));

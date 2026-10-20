@@ -14,6 +14,22 @@ import type { AppResponse, AppSnapshot, CommandEnvelope } from "./types";
 const ownerSchema = z.object({ version: z.literal(1), pid: z.number().int().positive(), instance: z.string().uuid(),
   origin: z.string().regex(/^http:\/\/127\.0\.0\.1:\d+$/), secret: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 export type ServerOwner = z.infer<typeof ownerSchema>;
+/** The recorded owner process no longer exists (crash, reboot, kill -9), so its record and
+ * lock only block the next start. An owner that is alive is never touched, even when it does
+ * not answer. */
+function ownerAlive(owner: ServerOwner): boolean {
+  try { process.kill(owner.pid, 0); return true; }
+  catch (error) { return !(error instanceof Error && "code" in error && error.code === "ESRCH"); }
+}
+export function readLiveServerOwner(directory: string): ServerOwner | null {
+  const owner = readServerOwner(directory);
+  if (!owner || ownerAlive(owner)) return owner;
+  for (const name of ["server.json", "server.lock"]) {
+    try { unlinkSync(join(directory, name)); }
+    catch (error) { if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error; }
+  }
+  return null;
+}
 export function readServerOwner(directory: string): ServerOwner | null {
   const path = join(directory, "server.json");
   const stat = lstatSync(path, { throwIfNoEntry: false });
@@ -67,7 +83,7 @@ export async function startServer(options: Options) {
   const assets = options.assets ?? fileURLToPath(new URL("../../dist/web/", import.meta.url));
   if (["index.html", "main.js", "main.css"].some(name => !lstatSync(join(assets, name), { throwIfNoEntry: false })?.isFile()))
     throw new AppError("unavailable", "web_assets_missing");
-  if (readServerOwner(options.directory)) throw new AppError("conflict", "service_already_owned");
+  if (readLiveServerOwner(options.directory)) throw new AppError("conflict", "service_already_owned");
   const lockPath = join(options.directory, "server.lock");
   let lock: number;
   try { lock = openSync(lockPath, "wx", 0o600); }

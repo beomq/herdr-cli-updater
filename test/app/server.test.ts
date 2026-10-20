@@ -177,3 +177,27 @@ test("real standalone HTTP service authenticates, streams changes, rejects forei
     rmSync(root, { recursive: true });
   }
 }, 20_000);
+
+
+test("a server record left by a dead service is reclaimed instead of blocking the next start", async () => {
+  // Given: the previous service died without cleaning up (crash, reboot, kill -9).
+  const root = realpathSync(mkdtempSync("/tmp/server-stale-"));
+  const assets = join(root, "assets"); mkdirSync(assets, { recursive: true });
+  for (const name of ["index.html", "main.js", "main.css"]) writeFileSync(join(assets, name), "");
+  const directory = join(root, "state"); mkdirSync(directory, { mode: 0o700 });
+  // PID 1 is alive but never this user's service; use an exited child's pid for a provably dead owner.
+  const child = Bun.spawn(["/bin/sh", "-c", "exit 0"]); await child.exited;
+  writeFileSync(join(directory, "server.json"), JSON.stringify({ version: 1, pid: child.pid, instance: "00000000-0000-4000-8000-000000000000", origin: "http://127.0.0.1:1", secret: "f".repeat(64) }), { mode: 0o600 });
+  writeFileSync(join(directory, "server.lock"), "", { mode: 0o600 });
+  // When: a new service starts on the same state directory.
+  const service = await startServer({ directory, home: root, path: "", prefixes: [], assets });
+  try {
+    // Then: the stale record is replaced by the live owner.
+    expect(service.owner.pid).toBe(process.pid);
+    expect(JSON.parse(await Bun.file(join(directory, "server.json")).text()).pid).toBe(process.pid);
+  } finally {
+    // The controller initializes asynchronously; stop through the control endpoint once it reports a state.
+    for (let attempt = 0; attempt < 200; attempt++) { if ((await controlServer(service.owner, "status")).service !== "connecting") break; await new Promise(resolve => setTimeout(resolve, 50)); }
+    await controlServer(service.owner, "stop"); await service.closed; rmSync(root, { recursive: true, force: true });
+  }
+});
