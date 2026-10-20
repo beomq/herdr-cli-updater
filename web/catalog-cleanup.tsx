@@ -123,7 +123,7 @@ export function CatalogCleanup({entry,snapshot,act,disabled,onInstall}:{readonly
     </>}
     {approved&&<section className="stack" data-cleanup-approved="true">
       <Facts items={[[t('남길 설치','Kept installation'),<span className="path">{approved.target.path}</span>]]}/>
-      {!ready&&<Notice tone="warning">{t('전환 결과 또는 설치가 달라졌습니다. 삭제는 진행하지 않습니다. 선택부터 다시 검토하세요.','Transition or installations changed. Removal is blocked; review from selection again.')}</Notice>}
+      {!ready&&<Notice tone="warning">{t('전환 결과 또는 설치가 달라졌습니다. 삭제는 진행하지 않습니다. 선택부터 다시 하세요.','Transition or installations changed. Removal is blocked; start again from selection.')}</Notice>}
       {others.length>0&&outcome(actual,approved.target.id)}
       {cleanupComplete(entry,approved.target.id)?<Notice tone="success">{t('정리 완료 · 남길 설치 하나만 확인됨','Done · only the kept installation remains')}</Notice>
         :remaining===0&&!current?<Notice>{t(`더 제거할 사본이 없습니다 · 이번에 제거 ${done.length}개`,`Nothing else to remove · ${done.length} removed this time`)}</Notice>
@@ -137,7 +137,7 @@ export function CatalogCleanup({entry,snapshot,act,disabled,onInstall}:{readonly
           [t('보존 (대화·로그인·데이터)','Preserved (conversations, login, data)'),removalReview.job.target.preserve.map(path=><span key={path} className="path">{path}</span>)],
         ]}/></div>
         {!!removalReview.job.references?.length&&<Notice tone="warning">{t('이 설치를 참조하는 설정 때문에 보류합니다.','Held because configuration references this installation.')}<ul>{removalReview.job.references.map(path=><li key={path} className="path">{path}</li>)}</ul></Notice>}
-        {removalStale&&<Notice tone="warning">{t('제거 대상 또는 계획이 바뀌었습니다. 선택부터 다시 검토하세요.','Removal target or plan changed. Review from selection again.')}</Notice>}
+        {removalStale&&<Notice tone="warning">{t('제거 대상 또는 계획이 바뀌었습니다. 선택부터 다시 하세요.','Removal target or plan changed. Start again from selection.')}</Notice>}
         <div className="cluster"><Button data-action="cleanup-remove" tone="danger" disabled={blocked||!ready||failed||removalStale||!!removalReview.job.references?.length} onClick={()=>void remove(removalReview.job)}>{t('제거','Remove')}</Button><Button data-action="cleanup-keep" disabled={pending} onClick={()=>keep(removalReview.installation.id)}>{t('이 사본은 유지','Keep this copy')}</Button></div>
       </section>}
       {current&&!job&&<Notice>{t('제거 계획 확인 중','Preparing removal review')}</Notice>}

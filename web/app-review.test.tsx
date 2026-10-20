@@ -21,7 +21,7 @@ async function engineHistory(page:Page) {
   const row=page.locator('[data-engine-installation="engine"]');
   await row.getByRole('button',{name:'Details',exact:true}).click();
   await row.getByRole('tab',{name:'History',exact:true}).click();
-  await row.getByRole('button',{name:'Review update impact',exact:true}).click();
+  await row.getByRole('button',{name:'Run update',exact:true}).click();
   return page.locator('.app-dialog[open]');
 }
 async function publish(page:Page,next:AppSnapshot) {
@@ -38,7 +38,7 @@ for(const policy of [undefined,'keep','restart-idle','restart-all'] as const)tes
     const row=page.locator('[data-engine-installation="engine"]');
     await row.getByRole('button',{name:'Details',exact:true}).click();await row.getByRole('tab',{name:'Automation',exact:true}).click();
     expect(await row.locator('input[name="pane-sessions"]').count()).toBe(0);
-    await row.getByRole('tab',{name:'History',exact:true}).click();await row.getByRole('button',{name:'Review update impact',exact:true}).click();
+    await row.getByRole('tab',{name:'History',exact:true}).click();await row.getByRole('button',{name:'Run update',exact:true}).click();
     const response=page.waitForResponse(response=>response.url().endsWith('/api/command'));
     await page.getByRole('button',{name:'Approve update to this version',exact:true}).click();await response;
     expect(app.commands).toEqual([{kind:'confirm',operationId:'ready-engine',revision:1,sessions:[],restart:false,paneSessions:policy??'keep'}]);

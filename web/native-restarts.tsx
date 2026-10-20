@@ -44,7 +44,7 @@ export function NativeRestarts({ snapshot, act, disabled }: {
       <Button disabled={disabled || busy} onClick={() => setSelected({ target: item.target, server: snapshot.serverInstance,
         installation: { installationId: row.installation.installationId, resourcesFingerprint: row.installation.resourcesFingerprint,
           owner: row.installation.owner, installedVersion: row.installation.installedVersion } })}>
-        {t('세션 재시작 검토', 'Review session restart')}
+        {t('세션 다시 시작','Restart session')}
       </Button>
     </div>))}
     {native?.jobs.map(job => {

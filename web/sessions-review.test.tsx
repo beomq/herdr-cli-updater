@@ -19,7 +19,7 @@ afterAll(async()=>{await browser?.close();server?.stop(true);});
 async function open(page:Page,kind:'pane'|'native'|'managed'|'history',disabled=false){
   await page.goto('http://127.0.0.1:'+server.port+'/?'+(kind==='history'?'history&':'')+(disabled?'disabled':''));
   await page.evaluate(()=>new Promise<void>(resolve=>{if(window.reviewReady)resolve();else window.addEventListener('review-render',()=>resolve(),{once:true});}));
-  const button=kind==='pane'?page.locator('[data-action="review-pane-restart"]'):kind==='history'?page.locator('[data-action="catalog-update-reconcile"]'):page.getByRole('button',{name:'Review session restart',exact:true}).nth(kind==='native'?0:1);
+  const button=kind==='pane'?page.locator('[data-action="review-pane-restart"]'):kind==='history'?page.locator('[data-action="catalog-update-reconcile"]'):page.getByRole('button',{name:'Restart session',exact:true}).nth(kind==='native'?0:1);
   return button;
 }
 for(const kind of ['pane','native','managed'] as const)for(const change of (kind==='managed'?['server','conversation','activity','both'] as const:['server'] as const))test(kind+' review rejects '+change+' drift',async()=>{

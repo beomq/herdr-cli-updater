@@ -49,7 +49,7 @@ export function AutomationSettings({snapshot,act,disabled}:{readonly snapshot:Ap
       <p>{t('저장하면 현재와 앞으로 추가할 모든 자동 업데이트 정책에 적용합니다. 자동화를 켜거나 실행 주기를 변경하지 않으며, 지금 세션을 재시작하지 않습니다.','Saving applies to all existing and future automatic update policies. It does not enable automation, change schedules or restart sessions now.')}</p>
       {mixed&&<Notice tone="warning"><span data-automation-mixed="true">{t('기존 정책 중 다른 세션 설정이 있습니다. 저장 전까지 각 정책의 기존 선택이 유지됩니다. 저장하면 아래 선택으로 통일합니다.','Some existing policies use different session settings. Their choices remain until you save; saving unifies them to the choice below.')}</span></Notice>}
       <PaneSessionChoice name="automatic-pane-sessions" value={review.value} disabled={blocked||stale} onChange={value=>setReview({...review,value})}/>
-      {stale&&<Notice tone="warning">{t('설정 또는 서비스가 바뀌었습니다. 닫고 다시 검토하세요.','Settings or service changed. Close and review again.')}</Notice>}
+      {stale&&<Notice tone="warning">{t('설정 또는 서비스가 바뀌었습니다. 닫고 다시 여세요.','Settings or service changed. Close and open it again.')}</Notice>}
       <Button data-action="automation-settings-save" tone="primary" disabled={blocked||stale} onClick={()=>void save()}>{t('모든 자동 업데이트에 저장','Save for all automatic updates')}</Button>
     </Dialog>}
   </>;

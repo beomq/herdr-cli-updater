@@ -35,6 +35,22 @@ async function publish(page:Page,next:AppSnapshot,selector:string,attribute:stri
   }),{next,selector,attribute,value});
 }
 
+test('a whole-catalog plan opens its confirmation by itself even though planning refreshes the inventory first',async()=>{
+  const model=initial();const page=await open(model);
+  try{
+    await page.locator('[data-action="catalog-update-all-plan"]').click();
+    // The service re-scans installations before planning, so inventory statuses flip while the batch is planning.
+    const planning:AppSnapshot={...model,revision:model.revision+1,catalog:model.catalog?.map(entry=>({...entry,inventoryStatus:'checking' as const})),catalogBulk:{id:'batch-1',revision:0,stage:'planning',items:[]}};
+    await publish(page,planning,'[data-catalog-bulk]','data-bulk-stage','planning');
+    const job={...reviewSnapshot().catalogUpdates![0]!,id:'bulk-codex',revision:1,stage:'ready' as const};
+    const ready:AppSnapshot={...model,revision:model.revision+2,catalogUpdates:[job],catalogBulk:{id:'batch-1',revision:1,stage:'ready',items:[{catalogId:'codex',name:'Codex',beforeVersion:'1.0.0',latestVersion:'2.0.0',status:'ready',reason:null,jobId:job.id,jobRevision:job.revision}]}};
+    await publish(page,ready,'[data-catalog-bulk]','data-bulk-stage','ready');
+    // Then: the confirmation is open without another click, and the same button now re-opens it.
+    await page.locator('.app-dialog[open] [data-action="catalog-update-all-confirm"]').waitFor({timeout:5000});
+    expect(await page.locator('[data-action="catalog-bulk-review"]').count()).toBe(1);
+    expect(app.commands).toEqual([{kind:'catalog-update-all-plan'}]);
+  }finally{await page.close();}
+});
 test('card automation toggles directly without opening detail or session choices',async()=>{
   const page=await open();try{
     const row=page.locator('[data-catalog-id="codex"]');

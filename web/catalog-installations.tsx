@@ -56,12 +56,12 @@ function LocationRemoval({entry,snapshot,act,disabled,installation}:{entry:Catal
     catch{setUnknown(true);}finally{busy.current=false;setPending(false);}
   };
   return <>
-    {held&&<div data-removal-blocked="true"><Notice tone="warning">{state?.sessionPids.length?t(`실행 중인 세션이 있습니다: ${state.sessionPids.join(', ')}`,`Sessions are running: ${state.sessionPids.join(', ')}`):sourceHeld?removalExplanation(installation.removalSupport?.reason??'removal_source_unverified',t):t('터미널 기본 실행입니다. 다른 설치로 전환한 뒤 다시 검토하세요.','This is the terminal default. Review switching to another installation first.')}</Notice></div>}
+    {held&&<div data-removal-blocked="true"><Notice tone="warning">{state?.sessionPids.length?t(`실행 중인 세션이 있습니다: ${state.sessionPids.join(', ')}`,`Sessions are running: ${state.sessionPids.join(', ')}`):sourceHeld?removalExplanation(installation.removalSupport?.reason??'removal_source_unverified',t):t('터미널 기본 실행입니다. 다른 설치로 전환한 뒤 다시 시도하세요.','This is the terminal default. Switch to another installation, then try again.')}</Notice></div>}
     {installationControlsBlocked(entry,snapshot)&&<p className="muted">{t('자동 업데이트·진행 중이거나 결과 미확인인 작업·설치 목록을 먼저 확인하세요.','Removal is blocked by automation, active or uncertain work, or unverified inventory.')}</p>}
-    <Button data-action="location-remove-plan" disabled={blocked||pending||!!waiting} onClick={()=>void plan()}>{t('이 위치 제거 검토','Review removal at this location')}</Button>
+    <Button data-action="location-remove-plan" disabled={blocked||pending||!!waiting} onClick={()=>void plan()}>{t('이 위치 제거','Remove at this location')}</Button>
     {waiting&&<Button onClick={()=>setWaiting(null)}>{t('닫기','Close pending review')}</Button>}
     {unknown&&<Notice tone="warning">{t('요청 결과가 미확인입니다. 자동 재시도하지 않습니다. 최신 상태를 확인한 뒤 다시 여세요.','Request outcome is unknown. No automatic retry; inspect fresh state and reopen.')}</Notice>}
-    {review&&<Dialog title={t('이 위치 제거 검토','Review removal at this location')} onClose={()=>setReview(null)}>
+    {review&&<Dialog title={t('이 위치의 설치를 제거할까요?','Remove the installation at this location?')} onClose={()=>setReview(null)}>
       <div className="removal-facts"><Facts items={[
         [t('정확한 실행 파일','Exact executable'),<span className="path">{review.job.target.executable}</span>],
         [t('버전','Version'),review.row.version??t('미확인','Unknown')],
@@ -72,7 +72,7 @@ function LocationRemoval({entry,snapshot,act,disabled,installation}:{entry:Catal
       <Notice>{t('대화·로그인·사용자 데이터를 보존합니다.','Conversations, login and user data are preserved.')}</Notice>
       {(review.job.target.kind==='owned'||review.job.target.kind==='standalone')&&<Notice>{t('파일을 보관하고 실행 경로에서 제거합니다. 디스크 공간을 비우는 완전 삭제가 아닙니다.','Files are archived and removed from the launch path; this does not reclaim disk space.')}</Notice>}
       {!!review.job.references?.length&&<Notice tone="warning">{t('이 위치를 참조하는 설정 때문에 제거할 수 없습니다.','Configuration references block removal.')}<ul>{review.job.references.map(path=><li className="path" key={path}>{path}</li>)}</ul></Notice>}
-      {stale&&<Notice tone="warning">{t('위치·버전·계획 또는 서비스가 바뀌었습니다. 닫고 다시 검토하세요.','Location, version, plan or service changed. Close and review again.')}</Notice>}
+      {stale&&<Notice tone="warning">{t('위치·버전·계획 또는 서비스가 바뀌었습니다. 닫고 다시 여세요.','Location, version, plan or service changed. Close and open it again.')}</Notice>}
       <Button data-action="location-remove-confirm" tone="danger" disabled={blocked||pending||stale||!!review.job.references?.length} onClick={()=>void confirm()}>{t('이 위치 제거 승인','Confirm removal at this location')}</Button>
     </Dialog>}
   </>;
@@ -160,7 +160,7 @@ export function CatalogInstallations({entry,snapshot,act,disabled}:Props) {
     <p className="muted">{t('출처 미확인 행은 관찰된 실행 경로이며 별개의 설치 패키지로 확인된 수가 아닙니다.','Unknown-manager rows are observed execution paths, not a count of proven distinct installed packages.')}</p>
     {entry.inventoryStatus!=='ready'&&<Notice tone="warning">{entry.inventoryStatus==='checking'?t('설치 목록 확인 중','Checking installation inventory'):t('설치 목록이 확인되지 않았습니다.','Installation inventory is not verified.')}</Notice>}
     {selectionBlocked&&<p className="muted">{t('진행 중이거나 결과 미확인인 작업과 설치 목록을 확인한 뒤 관리 대상을 변경할 수 있습니다.','Verify inventory and inspect active or uncertain jobs before changing the management target.')}</p>}
-    {blocked&&!selectionBlocked&&<p className="muted">{t('관리 대상은 선택할 수 있습니다. 기본 실행 전환은 자동 업데이트를 끈 뒤 검토하세요.','Management target selection is available. Disable automation before reviewing a shell default switch.')}</p>}
+    {blocked&&!selectionBlocked&&<p className="muted">{t('관리 대상은 선택할 수 있습니다. 기본 실행 전환은 자동 업데이트를 끈 뒤 할 수 있습니다.','Management target selection is available. Switching the default launcher needs automation turned off first.')}</p>}
     {!rows.length&&<Notice>{t('확인된 설치 인스턴스가 없습니다.','No verified installation instances.')}</Notice>}
     <div className="stack">{rows.map(row=><div className="summary-row" key={row.id} data-installation-id={row.id}>
       <div className="stack">
@@ -183,14 +183,14 @@ export function CatalogInstallations({entry,snapshot,act,disabled}:Props) {
     <section className="stack" data-role="installation-removal"><h3>{t('설치 삭제','Remove installations')}</h3>
     {rows.map(row=><details key={row.id} data-removal-installation={row.id}><summary>{t('이 설치 제거','Remove this installation')+' · '+managers[row.manager]+' · '+(row.version??'—')}</summary><div className="stack"><p className="path">{row.path}</p><p className="muted">{t('이 설치만 제거하며 대화·로그인·사용자 데이터는 보존합니다.','Remove only this installation; preserve conversations, login and user data.')}</p><LocationRemoval entry={entry} snapshot={snapshot} act={act} disabled={locked} installation={row}/></div></details>)}
     </section>
-    {waiting&&<Button onClick={()=>setWaiting(null)}>{t('검토 대기 닫기','Close pending review')}</Button>}
+    {waiting&&<Button onClick={()=>setWaiting(null)}>{t('대기 취소','Stop waiting')}</Button>}
     {unknown&&<Notice tone="warning">{t('요청 결과가 확인되지 않았습니다. 자동으로 재시도하지 않습니다. 최신 작업 상태와 실제 경로를 확인하세요.','The request outcome is unknown. It will not retry automatically. Inspect the latest job state and actual paths.')}<Button disabled={disabled||pending} onClick={()=>void act({kind:'refresh'}).then(ok=>{if(ok){setUnknown(false);setWaiting(null);setReview(null);}})}>{t('최신 상태 확인','Refresh status')}</Button></Notice>}
     {jobs.filter(job=>job.stage!=='ready').map(job=><div className="stack" key={job.id} data-default-job={job.id} data-stage={job.stage}><Badge tone={job.stage==='completed'?'success':job.stage==='failed'?'error':'warning'}>{job.stage}</Badge><p className="path">{job.plan.executable}</p>{job.result&&<Facts items={[[t('검증 버전','Verified version'),job.result.version],[t('런처','Launcher'),<span className="path">{job.result.launcher}</span>],[t('프로필','Profile'),<span className="path">{job.result.profile}</span>],[t('백업','Backup'),<span className="path">{job.result.backup??t('없음','None')}</span>]]}/>}<p className="muted">{t('새 대화형 zsh에 적용됩니다. 현재 열린 셸과 세션이 바뀌었다는 뜻은 아닙니다.','Applies to new interactive zsh shells, not all existing shells or sessions.')}</p>{job.failure&&<Notice tone="warning">{job.failure+' · '+t('실제 경로를 확인하세요. 자동 재시도하지 않습니다.','Inspect actual paths. No automatic retry.')}</Notice>}</div>)}
-    {review&&<Dialog title={t('기본 실행 전환 검토','Review default launcher switch')} onClose={()=>setReview(null)}>
+    {review&&<Dialog title={t('기본 실행을 전환할까요?','Switch the default launcher?')} onClose={()=>setReview(null)}>
       <Notice tone="warning">{t('공식 실행 파일의 폴더를 ~/.zshrc의 PATH 앞에 둡니다. 같은 폴더의 다른 명령도 우선될 수 있습니다. 앱 전용 런처는 만들지 않으며 새 대화형 zsh에 적용됩니다.','Prepends the official executable directory to PATH in ~/.zshrc. Other commands in that directory may also take precedence. No app-owned launcher is created; applies to new interactive zsh shells.')}</Notice>
       <div className="removal-facts"><Facts items={[[t('정확한 실행 파일','Exact executable'),<span className="path">{review.plan.executable}</span>],[t('셸 프로필 (~/.zshrc)','Shell profile (~/.zshrc)'),<span className="path">{review.plan.profile}</span>]]}/></div>
       {review.plan.limitations.map((limitation,index)=><p className="muted" key={index}>{limitation}</p>)}
-      {stale&&<Notice tone="warning">{t('선택·경로·계획이 바뀌었습니다. 닫고 새 계획을 검토하세요.','Selection, paths or plan changed. Close and review a fresh plan.')}</Notice>}
+      {stale&&<Notice tone="warning">{t('선택·경로·계획이 바뀌었습니다. 닫고 다시 여세요.','Selection, paths or plan changed. Close and open it again.')}</Notice>}
       <div className="cluster"><Button onClick={()=>setReview(null)}>{t('취소','Cancel')}</Button><Button data-action="default-confirm" tone="primary" disabled={locked||stale} onClick={()=>void confirm()}>{t('기본 실행 전환 승인','Confirm default switch')}</Button></div>
     </Dialog>}
   </section>;

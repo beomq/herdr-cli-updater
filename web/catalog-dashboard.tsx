@@ -44,7 +44,7 @@ export function catalogUpdateAction(entry:CatalogEntry,jobs:readonly CatalogUpda
 }
 
 export function updateActionLabel(kind:UpdateAction['kind'],t:Translate):string {
-  return kind==='review'?t('업데이트 검토','Review update'):kind==='progress'?t('진행 상태 보기','View progress')
+  return kind==='review'?t('업데이트','Update'):kind==='progress'?t('진행 상태 보기','View progress')
     :kind==='inspect'?t('과거 작업 보기','View past operation'):t('업데이트','Update');
 }
 export function updateReasonText(reason:UpdateBlockReason,t:Translate):string {
@@ -169,7 +169,7 @@ export function CatalogDashboardRow({entry,snapshot,guardSnapshot=snapshot,act,d
         {inlineStage&&<p><strong>{inlineStage==='checking'?t('최신 버전 확인 중','Checking latest version'):inlineStage==='updating'?t('설치 업데이트 및 검증 중','Updating and verifying installation'):inlineStage==='ready'?t('업데이트 승인 대기','Awaiting update confirmation'):inlineStage==='completed'?t('검증된 설치 업데이트','Verified installation update'):inlineStage==='uncertain'?t('과거 업데이트 성공 미확인','Past update success unverified'):inlineStage==='failed'?t('이전 업데이트 실패','Previous update failed'):inlineStage==='archived-unverified'?t('성공 미확인으로 보관됨','Archived with success unverified'):labels[status]}</strong></p>}
         {outcome&&!bulkActive&&<p className="muted">{stamp(outcome.updatedAt)} · {t('당시 버전','Previous version')} {outcome.beforeVersion??'—'} · {t('현재 설치','Current installation')} <span data-current-installation-version="">{entry.installed?.version??'—'}</span>{outcome.stage==='completed'&&<> · {t('검증된 결과','Verified result')} <span data-verified-version="">{outcome.installedVersion??'—'}</span></>}</p>}
         {(outcome?.failure||check?.failure||bulk?.reason)&&<UpdateExplanation code={outcome?.failure??check?.failure??bulk?.reason??'bulk_check_failed'}/>}
-        {outcome?.stage==='uncertain'&&tab!=='history'&&<><p className="muted">{t('현재 설치를 확인한 뒤 성공 미확인으로 보관하면 잠금을 해제하고 새 업데이트를 검토할 수 있습니다. 과거 성공을 증명하거나 설치를 다시 실행하지 않습니다.','Check the current installation, then archive the unverified outcome to release the lock and review a fresh update. This does not prove past success or replay an installer.')}</p><CatalogUpdateHistory snapshot={snapshot} guardSnapshot={guardSnapshot} jobIds={[outcome.id]} act={act} disabled={disabled} actionsOnly/></>}
+        {outcome?.stage==='uncertain'&&tab!=='history'&&<><p className="muted">{t('현재 설치를 확인한 뒤 성공 미확인으로 보관하면 잠금을 해제하고 새 업데이트를 실행할 수 있습니다. 과거 성공을 증명하거나 설치를 다시 실행하지 않습니다.','Check the current installation, then archive the unverified outcome to release the lock and review a fresh update. This does not prove past success or replay an installer.')}</p><CatalogUpdateHistory snapshot={snapshot} guardSnapshot={guardSnapshot} jobIds={[outcome.id]} act={act} disabled={disabled} actionsOnly/></>}
       </div>
     </div>
     {waiting&&<Notice>{t('설치 출처와 업데이트 대상을 확인 중입니다.','Checking installation source and update target.')}<Button onClick={()=>setWaiting(null)}>{t('닫기','Close')}</Button></Notice>}
@@ -190,12 +190,12 @@ export function CatalogDashboardRow({entry,snapshot,guardSnapshot=snapshot,act,d
         </>:tab==='installations'?<CatalogCleanup entry={entry} snapshot={guardSnapshot} act={act} disabled={disabled||globalBusy||installationControlsBlocked(entry,guardSnapshot,{automation:false})}/>:tab==='sessions'?sessions:tab==='history'?history:automation}
       </div>
     </div>}
-    {review&&<Dialog title={entry.name+' '+t('업데이트','update')} onClose={()=>setReview(null)}>
+    {review&&<Dialog title={t(entry.name+'를 업데이트할까요?','Update '+entry.name+'?')} onClose={()=>setReview(null)}>
       <p className="update-change"><span data-version="installed">{review.job.beforeVersion??t('미확인','Unknown')}</span> → <strong data-version="checked-latest">{review.job.checkedVersion??t('최신','latest')}</strong></p>
       <p className="muted">{t('공식 배포처의 최신 버전을 설치하고 설치된 버전을 확인합니다.','Installs the latest official release and verifies the installed version.')}</p>
       <details><summary>{t('자세히','Details')}</summary><CatalogUpdateReviewFacts job={review.job} checkedAt={review.checkedAt}/></details>
       <PaneSessionSummary name="catalog-update-pane-sessions" value={paneSessions} disabled={blocked||stale} onChange={setPaneSessions}/>
-      {stale&&<Notice tone="warning">{t('설치 또는 계획이 바뀌었습니다. 닫고 다시 검토하세요.','The installation or plan changed. Close and review again.')}</Notice>}
+      {stale&&<Notice tone="warning">{t('설치 또는 계획이 바뀌었습니다. 닫고 다시 여세요.','The installation or plan changed. Close and open it again.')}</Notice>}
       <div className="cluster"><Button onClick={()=>setReview(null)}>{t('취소','Cancel')}</Button><Button data-action="catalog-update-confirm" tone="primary" disabled={blocked||stale} onClick={()=>void confirm()}>{t('업데이트','Update')}</Button></div>
     </Dialog>}
   </section>;
